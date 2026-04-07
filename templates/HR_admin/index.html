@@ -150,8 +150,10 @@
                     </div>
                     <div class="col col-stats ms-3">
                         <div class="numbers">
-                            <p class="card-category">Leave Request</p>
-                            <h4 class="card-title">1</h4>
+                            <a href="/hr/employee-leave-approved/" class="text-decoration-none text-dark">
+                                <p class="card-category">Leave Request</p>
+                                <h4 class="card-title" id="statLeaveRequest">-</h4>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -174,42 +176,8 @@
                     </div>
                 </div>
                 <div style="overflow:hidden; height:220px;">
-                    <div class="card-list holiday-list">
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">15 Augest</div>
-                                <div class="status text-muted small">Independence Day</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">28 Augest</div>
-                                <div class="status text-muted small">Raksha Bandhan</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">04 September</div>
-                                <div class="status text-muted small">Janmashtami</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">02 October</div>
-                                <div class="status text-muted small">Mahatma Gandhi Jayanti</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">08 November</div>
-                                <div class="status text-muted small">Diwali</div>
-                            </div>
-                        </div>
+                    <div class="card-list holiday-list" id="upcomingHolidaysList">
+                        <p class="text-muted text-center py-3 small">Loading...</p>
                     </div>
                 </div>
             </div>
@@ -228,27 +196,8 @@
                     </div>
                 </div>
                 <div style="overflow:hidden; height:220px;">
-                    <div class="card-list today-bday-list">
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar">
-                                <img src="{% static 'images/profile/user.png' %}" alt="profile" class="rounded-circle" width="42" height="42">
-                            </div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">Jay Prakash</div>
-                                <div class="status text-muted small">Department: Rajasthan ULB</div>
-                                <div class="status text-muted small">DOB: 12 March</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar">
-                                <img src="{% static 'images/profile/user.png' %}" alt="profile" class="rounded-circle" width="42" height="42">
-                            </div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">Ranjan Kumar</div>
-                                <div class="status text-muted small">Department: Bihar ULB</div>
-                                <div class="status text-muted small">DOB: 12 March</div>
-                            </div>
-                        </div>
+                    <div class="card-list today-bday-list" id="todayBirthdayList">
+                        <p class="text-muted text-center py-3 small">Loading...</p>
                     </div>
                 </div>
             </div>
@@ -267,37 +216,8 @@
                     </div>
                 </div>
                 <div style="overflow:hidden; height:220px;">
-                    <div class="card-list month-bday-list">
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar">
-                                <img src="{% static 'images/profile/user.png' %}" alt="profile" class="rounded-circle" width="42" height="42">
-                            </div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">Shubham Kumar</div>
-                                <div class="status text-muted small">Department: Bihar ULB</div>
-                                <div class="status text-muted small">DOB: 20 March</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar">
-                                <img src="{% static 'images/profile/user.png' %}" alt="profile" class="rounded-circle" width="42" height="42">
-                            </div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">Vikas Kumar</div>
-                                <div class="status text-muted small">Department: Rajasthan ULB</div>
-                                <div class="status text-muted small">DOB: 22 March</div>
-                            </div>
-                        </div>
-                        <div class="item-list d-flex align-items-center py-2">
-                            <div class="avatar">
-                                <img src="{% static 'images/profile/user.png' %}" alt="profile" class="rounded-circle" width="42" height="42">
-                            </div>
-                            <div class="info-user ms-3">
-                                <div class="username fw-semibold">Rahul Kumar</div>
-                                <div class="status text-muted small">Department: Rajasthan ULB</div>
-                                <div class="status text-muted small">DOB: 25 March</div>
-                            </div>
-                        </div>
+                    <div class="card-list month-bday-list" id="monthBirthdayList">
+                        <p class="text-muted text-center py-3 small">Loading...</p>
                     </div>
                 </div>
             </div>
@@ -319,6 +239,86 @@ document.addEventListener('DOMContentLoaded', async function() {
             const count = Array.isArray(data) ? data.length : (data.count || (data.results && data.results.length) || 0);
             document.getElementById('statTotalEmployees').textContent = count;
         }
+    } catch(e) { console.error(e); }
+
+    // Pending leave requests count
+    try {
+        const res = await fetch('/api/leave/leave-requests/?status=PENDING', {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            const count = Array.isArray(data) ? data.length : (data.count || (data.results && data.results.length) || 0);
+            document.getElementById('statLeaveRequest').textContent = count;
+        }
+    } catch(e) { console.error(e); }
+
+    // ── Upcoming Holidays ────────────────────────────────────────────────────
+    try {
+        const res = await fetch('/api/attendance/holidays/', { headers: { 'Authorization': 'Token ' + token } });
+        const data = res.ok ? await res.json() : [];
+        const holidays = (Array.isArray(data) ? data : (data.results || []))
+            .filter(h => new Date(h.date) >= new Date())
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 6);
+
+        const el = document.getElementById('upcomingHolidaysList');
+        el.innerHTML = holidays.length ? holidays.map(h => {
+            const d = new Date(h.date);
+            const dateStr = d.toLocaleDateString('en-IN', { day:'2-digit', month:'long' });
+            return `<div class="item-list d-flex align-items-center py-2">
+                <div class="avatar text-muted"><i class="ri-calendar-event-line" style="font-size:22px;"></i></div>
+                <div class="info-user ms-3">
+                    <div class="username fw-semibold">${dateStr}</div>
+                    <div class="status text-muted small">${h.holiday_name}</div>
+                </div>
+            </div>`;
+        }).join('') : '<p class="text-muted text-center py-3 small">No upcoming holidays</p>';
+    } catch(e) { console.error(e); }
+
+    // ── Birthdays ─────────────────────────────────────────────────────────────
+    try {
+        const res = await fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + token } });
+        const data = res.ok ? await res.json() : [];
+        const employees = Array.isArray(data) ? data : (data.results || []);
+
+        const now = new Date();
+        const todayM = now.getMonth() + 1, todayD = now.getDate(), curMonth = now.getMonth() + 1;
+
+        const todayBdays = [], monthBdays = [];
+        const defaultPhoto = "{% static 'images/profile/user.png' %}";
+
+        employees.forEach(emp => {
+            const p = emp.employee_profile || {};
+            const ed = emp.employment_details || {};
+            const dob = p.date_of_birth;
+            if (!dob) return;
+            const d = new Date(dob);
+            const m = d.getMonth() + 1, day = d.getDate();
+            const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim() || emp.user_id;
+            const dept = ed.department || '-';
+            const photo = p.profile_photo || defaultPhoto;
+            const dobStr = d.toLocaleDateString('en-IN', { day:'2-digit', month:'long' });
+
+            const item = `<div class="item-list d-flex align-items-center py-2">
+                <div class="avatar">
+                    <img src="${photo}" alt="profile" class="rounded-circle" width="42" height="42"
+                         onerror="this.src='${defaultPhoto}'">
+                </div>
+                <div class="info-user ms-3">
+                    <div class="username fw-semibold">${name}</div>
+                    <div class="status text-muted small">Department: ${dept}</div>
+                    <div class="status text-muted small">DOB: ${dobStr}</div>
+                </div>
+            </div>`;
+
+            if (m === todayM && day === todayD) todayBdays.push(item);
+            if (m === curMonth) monthBdays.push(item);
+        });
+
+        const noData = '<p class="text-muted text-center py-3 small">None</p>';
+        document.getElementById('todayBirthdayList').innerHTML  = todayBdays.length  ? todayBdays.join('')  : noData;
+        document.getElementById('monthBirthdayList').innerHTML  = monthBdays.length  ? monthBdays.join('')  : noData;
     } catch(e) { console.error(e); }
 });
 </script>
