@@ -1,0 +1,347 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee ID Card - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== ID CARD LAYOUT ===== */
+    .id-card-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: center;
+        padding: 20px 0;
+    }
+    .id-card {
+        width: 260px;
+        min-height: 420px;
+        border: 1.5px solid #ddd;
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 11px;
+    }
+
+    /* FRONT */
+    .card-front .logo-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    .card-front .logo-row img {
+        height: 42px;
+        max-width: 100px;
+        object-fit: contain;
+    }
+    .card-front .org-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #CC0033;
+        text-align: center;
+        width: 100%;
+        margin-bottom: 8px;
+        letter-spacing: 0.3px;
+    }
+    .card-front .profile-img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        object-fit: cover;
+        margin: 4px 0 8px;
+    }
+    .card-front .emp-name {
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+    .card-front .emp-details {
+        width: 100%;
+        text-align: center;
+        line-height: 1.7;
+        font-size: 10px;
+    }
+    .card-front .signature-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        width: 100%;
+        margin-top: auto;
+        padding-top: 10px;
+        font-size: 8px;
+        line-height: 1.3;
+    }
+    .card-front .signature-row img {
+        height: 24px;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    /* BACK */
+    .card-back {
+        text-align: center;
+        font-size: 11px;
+        line-height: 1.6;
+        justify-content: flex-start;
+        padding-top: 18px;
+    }
+    .card-back .back-logo {
+        height: 48px;
+        margin-bottom: 6px;
+        object-fit: contain;
+    }
+    .card-back .company-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #CC0033;
+        margin-bottom: 8px;
+    }
+    .card-back .back-text {
+        font-size: 10px;
+        text-align: center;
+        margin-bottom: 10px;
+        padding: 0 4px;
+    }
+    .card-back .back-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #CC0033;
+        margin: 6px 0 2px;
+    }
+    .card-back .back-value {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+
+    @media print {
+        .d-print-none { display: none !important; }
+        .id-card { box-shadow: none; border: 1px solid #aaa; }
+        .id-card-wrapper { gap: 30px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">ID Card</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Management</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>ID Card</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+
+            <!-- Search -->
+            <div class="card-header d-print-none">
+                <div class="row align-items-end">
+                    <div class="col-lg-4 col-md-5 col-sm-8">
+                        <div class="form-group mb-0">
+                            <label for="empSelect">Employee Name</label>
+                            <select class="form-select" id="empSelect">
+                                <option value="">Select</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-4 mt-2">
+                        <button class="btn btn-primary btn-md" id="searchBtn">
+                            <i class="ri-search-line"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                <div id="loadingState" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading...</p>
+                </div>
+                <div id="errorState" class="alert alert-danger d-none"></div>
+
+                <div id="cardContent" class="d-none">
+                    <div class="card">
+                        <div class="card-header d-print-none">
+                            <h4 class="card-title">Employee ID Card</h4>
+                        </div>
+                        <div class="card-body">
+
+                            <div class="id-card-wrapper" id="printableArea">
+
+                                <!-- ===== FRONT ===== -->
+                                <div class="id-card card-front">
+                                    <div class="logo-row">
+                                        <img src="{% static 'images/logo/sspl_logo.png' %}" alt="Left Logo">
+                                        <img src="{% static 'images/logo/sspl_logo.png' %}" alt="Right Logo">
+                                    </div>
+                                    <div class="org-name">JAIPUR MUNICIPAL COUNCIL</div>
+                                    <img src="{% static 'images/profile/user.png' %}" class="profile-img" id="cardPhoto" alt="Photo">
+                                    <div class="emp-name" id="cardName">-</div>
+                                    <div class="emp-details">
+                                        Emp. Code : <strong id="cardEmpCode">-</strong><br>
+                                        Desg. : <strong id="cardDesignation">-</strong><br>
+                                        Mobile: <strong id="cardMobile">-</strong><br>
+                                        Address: <strong id="cardAddress">-</strong>
+                                    </div>
+                                    <div class="signature-row">
+                                        <div>
+                                            <img src="{% static 'images/sign/sample_sign.png' %}" alt="sign">
+                                            <span>Signature of<br>Deputy Commissioner (Revenue I) /<br>Revenue Officer (UDT)</span>
+                                        </div>
+                                        <div class="text-end">
+                                            <img src="{% static 'images/sign/sample_sign.png' %}" alt="sign">
+                                            <span>Issuing<br>Authority</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- ===== END FRONT ===== -->
+
+                                <!-- ===== BACK ===== -->
+                                <div class="id-card card-back">
+                                    <img src="{% static 'images/logo/sspl_logo.png' %}" class="back-logo" alt="Logo">
+                                    <div class="company-name">SPARROW SOFTECH PVT. LTD.</div>
+                                    <p class="back-text">This Card is the property of Sparrow Softech Pvt. Ltd. Loss of this card should immediately be reported to the Security Department.</p>
+                                    <div class="back-label">Address</div>
+                                    <div class="back-value">C-52, KESHAV ENCLAVE, LAL KOTHI,</div>
+                                    <div class="back-value">JAIPUR - 302015 (RAJASTHAN)</div>
+                                    <div class="back-label">Contact No.</div>
+                                    <div class="back-value">1414007852</div>
+                                    <div class="back-label">Employee Blood Group : <span id="cardBloodGroup">-</span></div>
+                                </div>
+                                <!-- ===== END BACK ===== -->
+
+                            </div><!-- end printableArea -->
+
+                        </div>
+                        <div class="d-print-none text-center pb-3">
+                            <button class="btn btn-info btn-sm px-4" onclick="printCard()"><strong>Print</strong></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function val(v) { return v || '-'; }
+
+    async function loadEmployeeList() {
+        try {
+            let all = [], url = '/api/accounts/employees/';
+            while (url) {
+                const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (Array.isArray(data)) { all = data; url = null; }
+                else { all = all.concat(data.results || []); url = data.next || null; }
+            }
+            const sel = document.getElementById('empSelect');
+            if (!all.length) { sel.innerHTML = '<option value="">No employees found</option>'; return; }
+            all.forEach(emp => {
+                const name = [(emp.first_name || ''), (emp.last_name || '')].join(' ').trim().toUpperCase();
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${name} (${emp.user_id})`;
+                sel.appendChild(opt);
+            });
+        } catch (err) { console.error('Failed to load employees:', err); }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', async function () {
+        const empId = document.getElementById('empSelect').value;
+        if (!empId) { alert('Please select an employee.'); return; }
+
+        document.getElementById('cardContent').classList.add('d-none');
+        document.getElementById('errorState').classList.add('d-none');
+        document.getElementById('loadingState').classList.remove('d-none');
+
+        try {
+            const res = await fetch(`/api/accounts/employees/${empId}/`, {
+                headers: { 'Authorization': 'Token ' + token }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            populateCard(await res.json());
+        } catch (err) {
+            document.getElementById('loadingState').classList.add('d-none');
+            const el = document.getElementById('errorState');
+            el.textContent = 'Error: ' + err.message;
+            el.classList.remove('d-none');
+        }
+    });
+
+    function populateCard(emp) {
+        const profile    = emp.employee_profile   || {};
+        const employment = emp.employment_details || {};
+
+        const name = [(emp.first_name || ''), (emp.last_name || '')].join(' ').trim().toUpperCase();
+        const address = [profile.present_address, profile.present_city, profile.present_state]
+            .filter(Boolean).join(', ');
+
+        document.getElementById('cardName').textContent        = name || '-';
+        // Profile photo
+        if (profile.profile_photo) {
+            document.getElementById('cardPhoto').src = profile.profile_photo;
+        }
+        document.getElementById('cardEmpCode').textContent     = val(emp.user_id);
+        document.getElementById('cardDesignation').textContent = val(employment.designation);
+        document.getElementById('cardMobile').textContent      = val(profile.contact_number);
+        document.getElementById('cardAddress').textContent     = address || '-';
+        document.getElementById('cardBloodGroup').textContent  = val(profile.blood_group);
+
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('cardContent').classList.remove('d-none');
+    }
+
+    function printCard() {
+        const content = document.getElementById('printableArea').innerHTML;
+        const orig = document.body.innerHTML;
+        document.body.innerHTML = `
+            <html><head>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { font-family: 'Noto Sans', sans-serif; display:flex; justify-content:center; padding:20px; }
+                .id-card-wrapper { display:flex; gap:24px; justify-content:center; }
+                .id-card { width:260px; min-height:420px; border:1.5px solid #ddd; border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; align-items:center; background:#fff; font-size:11px; }
+                .card-front .logo-row { display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:4px; }
+                .card-front .logo-row img { height:42px; max-width:100px; object-fit:contain; }
+                .card-front .org-name { font-size:12px; font-weight:700; color:#CC0033; text-align:center; width:100%; margin-bottom:8px; }
+                .card-front .profile-img { width:80px; height:80px; border-radius:50%; border:2px solid #ccc; object-fit:cover; margin:4px 0 8px; }
+                .card-front .emp-name { font-size:12px; font-weight:700; text-align:center; margin-bottom:4px; }
+                .card-front .emp-details { width:100%; text-align:center; line-height:1.7; font-size:10px; }
+                .card-front .signature-row { display:flex; justify-content:space-between; align-items:flex-end; width:100%; margin-top:auto; padding-top:10px; font-size:8px; line-height:1.3; }
+                .card-front .signature-row img { height:24px; display:block; margin-bottom:2px; }
+                .card-back { text-align:center; font-size:11px; line-height:1.6; justify-content:flex-start; padding-top:18px; }
+                .card-back .back-logo { height:48px; margin-bottom:6px; object-fit:contain; }
+                .card-back .company-name { font-size:12px; font-weight:700; color:#CC0033; margin-bottom:8px; }
+                .card-back .back-text { font-size:10px; text-align:center; margin-bottom:10px; padding:0 4px; }
+                .card-back .back-label { font-size:11px; font-weight:700; color:#CC0033; margin:6px 0 2px; }
+                .card-back .back-value { font-size:10px; margin-bottom:2px; }
+            </style></head><body>
+            <div class="id-card-wrapper">${content}</div>
+            </body></html>`;
+        window.print();
+        document.body.innerHTML = orig;
+        window.location.reload();
+    }
+
+    loadEmployeeList();
+</script>
+{% endblock %}

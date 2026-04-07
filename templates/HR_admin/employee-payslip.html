@@ -1,0 +1,498 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee Payslip - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-payslip { overflow-x: auto; }
+    #printableArea {
+        width: 200mm;
+        margin: auto;
+        border: 2px solid #372f6e;
+        padding: 8px;
+        background: #fff;
+        font-size: 12px;
+    }
+    #printableArea table { font-size: 12px; }
+    @media print {
+        .d-print-none { display: none !important; }
+        #printableArea { border: 2px solid #372f6e; width: 200mm; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Employee Pay Slip</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Salary</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Pay Slip</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+
+            <!-- Search filters -->
+            <div class="card-header d-print-none">
+                <div class="row g-3">
+                    <div class="col-lg-4 col-md-4 col-sm-12">
+                        <label class="form-label">Employee</label>
+                        <select class="form-select" id="empSelect">
+                            <option value="">Select</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-12">
+                        <label class="form-label">Month</label>
+                        <select class="form-select" id="monthSelect">
+                            <option value="">Select</option>
+                            <option value="1">January</option><option value="2">February</option>
+                            <option value="3">March</option><option value="4">April</option>
+                            <option value="5">May</option><option value="6">June</option>
+                            <option value="7">July</option><option value="8">August</option>
+                            <option value="9">September</option><option value="10">October</option>
+                            <option value="11">November</option><option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-12">
+                        <label class="form-label">Year</label>
+                        <select class="form-select" id="yearSelect">
+                            <option value="">Select</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-primary btn-sm" id="searchBtn">
+                            <i class="ri-search-line"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div id="loadingState" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading payslip...</p>
+                </div>
+                <div id="errorState" class="alert alert-danger d-none"></div>
+
+                <div id="payslipContent" class="d-none">
+                    <div class="card">
+                        <div class="card-header d-print-none">
+                            <h4 class="card-title">Employee Pay Slip</h4>
+                        </div>
+                        <div class="card-body card-payslip">
+
+                            <div id="printableArea">
+                                <!-- Header -->
+                                <table class="table table-borderless mb-0" width="100%">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-center" style="padding:0; border-bottom:0;">
+                                                <img src="{% static 'images/logo/sspl.png' %}" alt="SSPL Logo" width="50">
+                                                <span style="font-weight:bold; font-size:20px;"> Sparrow Softech Pvt. Limited</span><br>
+                                                <span style="font-size:15px; font-weight:bold;" id="payslipMonthYear">Pay slip for the month of -</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <!-- Employee Info -->
+                                <table class="table table-borderless" width="100%" border="1">
+                                    <tbody>
+                                        <tr>
+                                            <td width="18%">Employee Name</td><td width="1%"><strong>:</strong></td>
+                                            <td class="fw-bold" id="psEmpName">-</td>
+                                            <td width="15%">Bank Name</td><td width="1%"><strong>:</strong></td>
+                                            <td id="psBankName">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Emp Code</td><td><strong>:</strong></td>
+                                            <td class="fw-bold" id="psEmpCode">-</td>
+                                            <td>Account No</td><td><strong>:</strong></td>
+                                            <td id="psAccountNo">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Designation</td><td><strong>:</strong></td>
+                                            <td id="psDesignation">-</td>
+                                            <td>EPF AC No</td><td><strong>:</strong></td>
+                                            <td id="psPFNo">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Department</td><td><strong>:</strong></td>
+                                            <td id="psDepartment">-</td>
+                                            <td>UAN No</td><td><strong>:</strong></td>
+                                            <td id="psUAN">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Grade</td><td><strong>:</strong></td>
+                                            <td id="psGrade">-</td>
+                                            <td>PAN No</td><td><strong>:</strong></td>
+                                            <td id="psPAN">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>DOJ</td><td><strong>:</strong></td>
+                                            <td id="psDOJ">-</td>
+                                            <td>ESIC No</td><td><strong>:</strong></td>
+                                            <td id="psESIC">-</td>
+                                        </tr>
+
+                                        <!-- Allowances / Deductions / Leave section -->
+                                        <tr>
+                                            <td colspan="7" style="padding:0;">
+                                                <table class="table table-borderless mb-0" width="100%">
+                                                    <tbody>
+                                                        <!-- Section headers -->
+                                                        <tr class="text-center">
+                                                            <td colspan="3" style="background:#eee;"><strong>Allowance Details</strong></td>
+                                                            <td colspan="3" style="background:#eee;"><strong>Deduction</strong></td>
+                                                            <td colspan="3" style="background:#eee;"><strong>Leave Balances</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <!-- Allowances -->
+                                                            <td colspan="3" style="padding:0;">
+                                                                <table class="table table-borderless" width="100%">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td width="46%" style="border-bottom:0;"><strong>Description</strong></td>
+                                                                            <td width="27%" style="border-bottom:0;" class="text-end"><strong>Entitled</strong></td>
+                                                                            <td width="27%" style="border-bottom:0;" class="text-end"><strong>Earned</strong></td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">Basic Amount</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psBasicE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psBasicA">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">HRA</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psHRAE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psHRAA">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">CA</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psCAE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psCAA">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">CCA</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psCCAE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psCCAA">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">Bonus</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psBonusE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psBonusA">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;">Mobile &amp; Internet</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psMobileE">-</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psMobileA">-</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                            <!-- Deductions -->
+                                                            <td colspan="3" style="padding:0;">
+                                                                <table class="table table-borderless" width="100%">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">TDS</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end">0.00</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">PF</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psPFDed">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">PT</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end">0.00</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">ESI</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psESIDed">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">Loan</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end">0</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">Adv. Salary</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" class="text-end">0</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                            <!-- Leave Balances -->
+                                                            <td colspan="3" style="padding:0;">
+                                                                <table class="table table-borderless" width="100%">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">CL</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;">0</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">SL</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;">0</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">EL</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;">0</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="border-bottom:0;" class="text-center">Paid Days</td>
+                                                                            <td style="border-bottom:0;"><strong>:</strong></td>
+                                                                            <td style="border-bottom:0;" id="psPaidDays">-</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- Totals row -->
+                                                        <tr>
+                                                            <td class="text-center" width="23%" style="background:#eee;"><strong>Total</strong></td>
+                                                            <td class="text-end" width="14%" style="background:#eee;"><strong id="psGrossE">-</strong></td>
+                                                            <td class="text-end" width="14%" style="background:#eee;"><strong id="psGrossA">-</strong></td>
+                                                            <td class="text-center" style="background:#eee;"><strong>Total Deduction</strong></td>
+                                                            <td style="background:#eee;"><strong>:</strong></td>
+                                                            <td class="text-end" style="background:#eee;"><strong id="psTotalDed">-</strong></td>
+                                                            <td class="text-center" style="background:#eee;"><strong>Net Salary</strong></td>
+                                                            <td style="background:#eee;"><strong>:</strong></td>
+                                                            <td class="text-start" style="background:#eee;"><strong id="psNetSalary">-</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td colspan="9">
+                                                                <strong style="font-size:12px;">Amount In Words : <span id="psAmountWords">-</span></strong>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <span>* This is Computer Generated payslip, Not required any signature.</span>
+                            </div><!-- end printableArea -->
+
+                        </div>
+                        <div class="d-print-none text-center pt-2 pb-3">
+                            <button class="btn btn-info btn-sm" onclick="printPayslip()"><strong>Print</strong></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MONTHS = ['','January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+
+    function fmt(n) { return n !== undefined && n !== null ? parseFloat(n).toFixed(2) : '0.00'; }
+
+    // Populate year dropdown (current year - 3 to current + 1)
+    (function() {
+        const yr = document.getElementById('yearSelect');
+        const cur = new Date().getFullYear();
+        for (let y = cur + 1; y >= cur - 3; y--) {
+            yr.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+    })();
+
+    // Populate employee dropdown
+    async function loadEmployees() {
+        try {
+            let all = [], url = '/api/accounts/employees/';
+            while (url) {
+                const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (Array.isArray(data)) { all = data; url = null; }
+                else { all = all.concat(data.results || []); url = data.next || null; }
+            }
+            const sel = document.getElementById('empSelect');
+            all.forEach(emp => {
+                const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
+                sel.innerHTML += `<option value="${emp.id}">${name} (${emp.user_id})</option>`;
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', async function() {
+        const empId = document.getElementById('empSelect').value;
+        const month = document.getElementById('monthSelect').value;
+        const year  = document.getElementById('yearSelect').value;
+
+        if (!empId || !month || !year) { alert('Please select Employee, Month and Year.'); return; }
+
+        document.getElementById('payslipContent').classList.add('d-none');
+        document.getElementById('errorState').classList.add('d-none');
+        document.getElementById('loadingState').classList.remove('d-none');
+
+        try {
+            // Fetch salary record
+            const res = await fetch(`/api/payroll/salaries/?employee=${empId}&month=${month}&year=${year}`, {
+                headers: { 'Authorization': 'Token ' + token }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const results = Array.isArray(data) ? data : (data.results || []);
+
+            if (!results.length) {
+                throw new Error(`No payslip found for the selected month/year. Please generate salary first.`);
+            }
+
+            // Also fetch employee details for profile info
+            const empRes = await fetch(`/api/accounts/employees/${empId}/`, {
+                headers: { 'Authorization': 'Token ' + token }
+            });
+            const emp = empRes.ok ? await empRes.json() : {};
+
+            populatePayslip(results[0], emp, parseInt(month), parseInt(year));
+        } catch(err) {
+            document.getElementById('loadingState').classList.add('d-none');
+            const el = document.getElementById('errorState');
+            el.textContent = err.message;
+            el.classList.remove('d-none');
+        }
+    });
+
+    function populatePayslip(sal, emp, month, year) {
+        const profile    = emp.employee_profile   || {};
+        const employment = emp.employment_details || {};
+        const bank       = emp.bank_details       || {};
+
+        const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
+
+        // Days in month
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        document.getElementById('payslipMonthYear').textContent =
+            `Pay slip for the month of ${MONTHS[month]} ${year}`;
+
+        // Employee info
+        document.getElementById('psEmpName').textContent    = name || '-';
+        document.getElementById('psEmpCode').textContent    = emp.user_id || '-';
+        document.getElementById('psDesignation').textContent = employment.designation || '-';
+        document.getElementById('psDepartment').textContent  = employment.department  || '-';
+        document.getElementById('psGrade').textContent       = employment.grade        || '-';
+        document.getElementById('psDOJ').textContent         = profile.date_of_joining || '-';
+        document.getElementById('psBankName').textContent    = bank.bank_name          || '-';
+        document.getElementById('psAccountNo').textContent   = bank.account_number     || '-';
+        document.getElementById('psPFNo').textContent        = profile.pf_number       || '-';
+        document.getElementById('psUAN').textContent         = profile.una_number      || '-';
+        document.getElementById('psPAN').textContent         = profile.pan_number      || '-';
+        document.getElementById('psESIC').textContent        = profile.esic_number     || '-';
+
+        // Allowances
+        // Earned = prorated values stored in salary record
+        const basic = parseFloat(sal.basic_salary || 0);
+        const hra   = parseFloat(sal.hra   || 0);
+        const ca    = parseFloat(sal.ca    || 0);
+        const cca   = parseFloat(sal.cca   || 0);
+        const bonus = parseFloat(sal.bonus || 0);
+        const mob   = parseFloat(sal.mobile || 0);
+        const gross = parseFloat(sal.gross_salary || 0);
+
+        // Entitled = full-month salary recalculated from CTC
+        const ctc       = parseFloat(sal.ctc_monthly || 0);
+        const eBasic    = ctc * 0.4695;
+        const eHRA      = eBasic * 0.40;
+        const eCA       = eBasic * 0.20;
+        const eBonus    = eBasic * 0.20;
+        const eMob      = 500;
+        const ePFEmp    = eBasic * 0.13;
+        const eESIEmp   = (eBasic + eHRA + eCA + eBonus + eMob) <= 21000 ? (eBasic + eHRA + eCA + eBonus + eMob) * 0.0325 : 0;
+        const eCCA      = ctc - (eBasic + eHRA + eCA + eBonus + eMob + ePFEmp + eESIEmp);
+        const eGross    = eBasic + eHRA + eCA + eCCA + eBonus + eMob;
+
+        // Entitled column (E)
+        document.getElementById('psBasicE').textContent  = fmt(eBasic);
+        document.getElementById('psHRAE').textContent    = fmt(eHRA);
+        document.getElementById('psCAE').textContent     = fmt(eCA);
+        document.getElementById('psCCAE').textContent    = fmt(eCCA);
+        document.getElementById('psBonusE').textContent  = fmt(eBonus);
+        document.getElementById('psMobileE').textContent = fmt(eMob);
+        document.getElementById('psGrossE').textContent  = fmt(eGross);
+
+        // Earned column (A) — prorated by pay days
+        document.getElementById('psBasicA').textContent  = fmt(basic);
+        document.getElementById('psHRAA').textContent    = fmt(hra);
+        document.getElementById('psCAA').textContent     = fmt(ca);
+        document.getElementById('psCCAA').textContent    = fmt(cca);
+        document.getElementById('psBonusA').textContent  = fmt(bonus);
+        document.getElementById('psMobileA').textContent = fmt(mob);
+        document.getElementById('psGrossA').textContent  = fmt(gross);
+
+        // Deductions
+        document.getElementById('psPFDed').textContent   = fmt(sal.pf_employee);
+        document.getElementById('psESIDed').textContent  = fmt(sal.esi_employee);
+        document.getElementById('psTotalDed').textContent = fmt(sal.total_deductions);
+        document.getElementById('psNetSalary').textContent = fmt(sal.net_salary);
+        document.getElementById('psPaidDays').textContent  = sal.paid_days > 0 ? sal.paid_days : daysInMonth;
+
+        // Amount in words
+        document.getElementById('psAmountWords').textContent = numberToWords(parseFloat(sal.net_salary || 0));
+
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('payslipContent').classList.remove('d-none');
+    }
+
+    // Simple number to words (Indian system)
+    function numberToWords(n) {
+        if (n === 0) return 'Zero Rupees Only';
+        const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+                      'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+                      'Seventeen','Eighteen','Nineteen'];
+        const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+        function words(num) {
+            if (num < 20) return ones[num];
+            if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? ' ' + ones[num%10] : '');
+            if (num < 1000) return ones[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' ' + words(num%100) : '');
+            if (num < 100000) return words(Math.floor(num/1000)) + ' Thousand' + (num%1000 ? ' ' + words(num%1000) : '');
+            if (num < 10000000) return words(Math.floor(num/100000)) + ' Lakh' + (num%100000 ? ' ' + words(num%100000) : '');
+            return words(Math.floor(num/10000000)) + ' Crore' + (num%10000000 ? ' ' + words(num%10000000) : '');
+        }
+        const rupees = Math.floor(n);
+        const paise  = Math.round((n - rupees) * 100);
+        let result = words(rupees) + ' Rupees';
+        if (paise) result += ' and ' + words(paise) + ' Paise';
+        return result + ' Only';
+    }
+
+    function printPayslip() {
+        const content = document.getElementById('printableArea').outerHTML;
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+                body { font-family: 'Noto Sans', sans-serif; padding: 20px; }
+                table { font-size: 12px; }
+                #printableArea { width: 200mm; margin: auto; border: 2px solid #372f6e; padding: 8px; }
+            </style></head><body>${content}</body></html>`);
+        w.document.close();
+        w.print();
+    }
+
+    loadEmployees();
+</script>
+{% endblock %}

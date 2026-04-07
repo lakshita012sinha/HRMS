@@ -1,0 +1,35 @@
+from django.urls import path
+from .views import (
+    ShiftListCreateView, ShiftDetailView,
+    EmployeeShiftAssignmentListCreateView, EmployeeShiftAssignmentDetailView,
+    HolidayListCreateView, HolidayDetailView,
+    CheckInView, CheckOutView, BreakStartView, BreakEndView,
+    AttendanceListView, AttendanceDetailView, MyAttendanceView,
+    AttendanceLogListView,
+    AttendanceRegularizationListCreateView, AttendanceRegularizationDetailView,
+    ApproveRegularizationView,
+    MonthlyAttendanceView, BulkMarkAttendanceView, AttendanceReportSummaryView,
+)
+
+urlpatterns = [
+    path('shifts/', ShiftListCreateView.as_view(), name='shift-list'),
+    path('shifts/<int:pk>/', ShiftDetailView.as_view(), name='shift-detail'),
+    path('shift-assignments/', EmployeeShiftAssignmentListCreateView.as_view(), name='shift-assignment-list'),
+    path('shift-assignments/<int:pk>/', EmployeeShiftAssignmentDetailView.as_view(), name='shift-assignment-detail'),
+    path('holidays/', HolidayListCreateView.as_view(), name='holiday-list'),
+    path('holidays/<int:pk>/', HolidayDetailView.as_view(), name='holiday-detail'),
+    path('check-in/', CheckInView.as_view(), name='check-in'),
+    path('check-out/', CheckOutView.as_view(), name='check-out'),
+    path('break-start/', BreakStartView.as_view(), name='break-start'),
+    path('break-end/', BreakEndView.as_view(), name='break-end'),
+    path('', AttendanceListView.as_view(), name='attendance-list'),
+    path('<int:pk>/', AttendanceDetailView.as_view(), name='attendance-detail'),
+    path('my-attendance/', MyAttendanceView.as_view(), name='my-attendance'),
+    path('logs/', AttendanceLogListView.as_view(), name='attendance-log-list'),
+    path('regularizations/', AttendanceRegularizationListCreateView.as_view(), name='regularization-list'),
+    path('regularizations/<int:pk>/', AttendanceRegularizationDetailView.as_view(), name='regularization-detail'),
+    path('regularizations/<int:pk>/approve/', ApproveRegularizationView.as_view(), name='regularization-approve'),
+    path('monthly/', MonthlyAttendanceView.as_view(), name='monthly-attendance'),
+    path('bulk-mark/', BulkMarkAttendanceView.as_view(), name='bulk-mark-attendance'),
+    path('report-summary/', AttendanceReportSummaryView.as_view(), name='attendance-report-summary'),
+]

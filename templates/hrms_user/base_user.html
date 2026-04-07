@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HRMS User{% endblock %}</title>
+    <link rel="shortcut icon" href="{% static 'images/logo/sspl_favicon.png' %}" type="image/png"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin-responsive.css' %}">
+    <style>body { font-family: 'Noto Sans', sans-serif; } .nav-item.show > a { background-color: #6861CE; color: #fff; }</style>
+    {% block extra_css %}{% endblock %}
+    <script>
+        (function() {
+            if (!localStorage.getItem('authToken')) {
+                document.documentElement.style.display = 'none';
+                window.location.replace('/login/');
+            }
+        })();
+    </script>
+</head>
+<body>
+<div class="wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar" data-background-color="white">
+        <div class="sidebar-logo">
+            <div class="logo-header" data-background-color="inky">
+                <a href="/user/dashboard/" class="logo">
+                    <img src="{% static 'images/logo/sspl_logo.png' %}" alt="logo" class="navbar-brand" height="44"/>
+                    <h4 style="color:white;padding:6px 0 0 6px;"><strong>Sparrow Softech</strong></h4>
+                </a>
+                <div class="nav-toggle">
+                    <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                    <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                </div>
+                <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+            </div>
+        </div>
+        <div class="sidebar-wrapper scrollbar scrollbar-inner">
+            <div class="sidebar-content">
+                <ul class="nav nav-secondary">
+                    <li class="nav-item">
+                        <a href="/user/dashboard/"><i class="ri-home-3-line"></i><p>Home</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#empMenu">
+                            <i class="ri-user-line"></i><p>Employee</p><span class="caret"></span>
+                        </a>
+                        <div class="collapse" id="empMenu">
+                            <ul class="nav nav-collapse">
+                                <li><a href="/user/my-profile/"><span class="sub-item">My Profile</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#leaveMenu">
+                            <i class="ri-calendar-close-line"></i><p>Leave</p><span class="caret"></span>
+                        </a>
+                        <div class="collapse" id="leaveMenu">
+                            <ul class="nav nav-collapse">
+                                <li><a href="/user/apply-leave/"><span class="sub-item">Apply Leave</span></a></li>
+                                <li><a href="/user/leave-list/"><span class="sub-item">Applied Leave List</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#attMenu">
+                            <i class="ri-calendar-2-line"></i><p>Attendance</p><span class="caret"></span>
+                        </a>
+                        <div class="collapse" id="attMenu">
+                            <ul class="nav nav-collapse">
+                                <li><a href="/user/attendance/"><span class="sub-item">Attendance Report</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#salMenu">
+                            <i class="ri-money-rupee-circle-line"></i><p>Salary</p><span class="caret"></span>
+                        </a>
+                        <div class="collapse" id="salMenu">
+                            <ul class="nav nav-collapse">
+                                <li><a href="/user/payslip/"><span class="sub-item">Payslip</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#holMenu">
+                            <i class="ri-calendar-view"></i><p>Holiday</p><span class="caret"></span>
+                        </a>
+                        <div class="collapse" id="holMenu">
+                            <ul class="nav nav-collapse">
+                                <li><a href="/user/holidays/"><span class="sub-item">Holiday List</span></a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- End Sidebar -->
+
+    <div class="main-panel">
+        <div class="main-header">
+            <div class="main-header-logo">
+                <div class="logo-header" data-background-color="inky">
+                    <a href="/user/dashboard/" class="logo">
+                        <img src="{% static 'images/logo/sspl_logo.png' %}" alt="logo" class="navbar-brand" height="20"/>
+                        <h6 style="color:white;padding:6px 0 0 8px;"><strong>Sparrow Softech</strong></h6>
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                    </div>
+                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                </div>
+            </div>
+            <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                <div class="container-fluid">
+                    <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                        <li class="nav-item topbar-icon dropdown hidden-caret">
+                            <a class="nav-link" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                                <i class="ri-gallery-view-2" style="font-size:20px;"></i>
+                            </a>
+                            <div class="dropdown-menu quick-actions animated fadeIn">
+                                <div class="quick-actions-header"><span class="title mb-1">Applications</span></div>
+                                <div class="quick-actions-scroll scrollbar-outer">
+                                    <div class="quick-actions-items">
+                                        <div class="row m-0">
+                                            <a class="col-6 p-0" href="/dashboard/">
+                                                <div class="quick-actions-item">
+                                                    <div class="avatar-item bg-secondary rounded-circle"><i class="ri-user-settings-line"></i></div>
+                                                    <span class="text">HRMS Admin</span>
+                                                </div>
+                                            </a>
+                                            <a class="col-6 p-0" href="/user/dashboard/">
+                                                <div class="quick-actions-item">
+                                                    <div class="avatar-item bg-info rounded-circle"><i class="ri-user-community-line"></i></div>
+                                                    <span class="text">HRMS User</span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="nav-item topbar-user dropdown hidden-caret">
+                            <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                                <div class="avatar-sm">
+                                    <img src="{% static 'images/profile/user.png' %}" alt="profile" class="avatar-img rounded-circle"/>
+                                </div>
+                                <span class="profile-username"><span class="fw-bold" id="navUsername">Employee</span></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                <div class="dropdown-user-scroll scrollbar-outer">
+                                    <li>
+                                        <div class="user-box">
+                                            <div class="avatar-lg"><img src="{% static 'images/profile/user.png' %}" alt="profile" class="avatar-img rounded"/></div>
+                                            <div class="u-text">
+                                                <h4 id="dropdownName">Employee</h4>
+                                                <p class="text-muted" id="dropdownUserId">-</p>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item" href="#" id="logoutBtn">Logout</a>
+                                    </li>
+                                </div>
+                            </ul>
+                        </li>
+                        <li class="nav-item topbar-icon">
+                            <a class="nav-link" href="#" id="logoutIcon"><i class="ri-logout-box-r-line" style="font-size:20px;"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="page-inner">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container-fluid d-flex justify-content-between">
+                <div class="copyright"><a href="#" target="_blank">Sparrow Softech Pvt Ltd</a></div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.scrollbar/0.2.11/jquery.scrollbar.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'js/admin.js' %}"></script>
+<script>
+    const token = localStorage.getItem('authToken');
+
+    // Validate token
+    fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } })
+        .then(res => { if (!res.ok) { localStorage.removeItem('authToken'); localStorage.removeItem('user'); window.location.replace('/login/'); } })
+        .catch(() => {});
+
+    // Populate user info
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.first_name) {
+        const name = user.first_name + ' ' + (user.last_name || '');
+        document.getElementById('navUsername').textContent = name;
+        document.getElementById('dropdownName').textContent = name;
+    }
+    if (user.user_id) document.getElementById('dropdownUserId').textContent = user.user_id;
+
+    function doLogout() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login/';
+    }
+    document.getElementById('logoutBtn').addEventListener('click', e => { e.preventDefault(); doLogout(); });
+    document.getElementById('logoutIcon').addEventListener('click', e => { e.preventDefault(); doLogout(); });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

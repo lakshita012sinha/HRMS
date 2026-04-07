@@ -1,0 +1,43 @@
+@media only screen and (max-width: 767px) {
+    :root {
+        h3 {
+            font-size: 1.4rem;
+        }
+    }
+    .box-area {
+        margin: 0 10px;
+        max-width: 420px;
+        width: 100%;
+    }
+    .auth-box .featured-outline {
+        display: none;
+    }
+    .auth-box .about-text {
+        display: none;
+    }
+    .auth-box .institution-name {
+        text-align: center;
+        margin-bottom: 0px !important;
+    }
+    .auth-box .institution-name h2{
+        font-size: 1.4rem;
+    }
+    .left-box {
+        height: 100px;
+        border-radius: 0.5rem 0.5rem 0 0;
+        overflow: hidden;
+    }
+    .right-box {
+        padding: 20px;
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+    .auth-box .featured-image img{
+        width: 92px;
+    }
+}
+
+@media only screen and (max-width: 300px) {
+    .auth-signin-note small {
+        font-size: 10px;
+    }
+}

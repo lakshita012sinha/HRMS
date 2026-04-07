@@ -1,0 +1,798 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Add New Employee - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    #empTab .nav-link {
+        color: #444;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 6px 18px;
+        font-size: 0.875rem;
+        background: #fff;
+    }
+    #empTab .nav-link.active {
+        background: #372f6e;
+        border-color: #372f6e;
+        color: #fff;
+    }
+    #empTab .nav-link:hover:not(.active) { background: #f0f0f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Employee Management</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Add New Employee</span></li>
+    </ul>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <form id="employeeForm">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="fw-bold mb-3">Employee Profile</h5>
+
+        <!-- Tab Nav -->
+        <ul class="nav mb-4" id="empTab" role="tablist" style="border-bottom:1px solid #dee2e6;padding-bottom:8px;gap:4px;">
+          <li class="nav-item"><button class="nav-link active" id="tab-basic"        data-bs-toggle="pill" data-bs-target="#pane-basic"        type="button">Basic Info</button></li>
+          <li class="nav-item"><button class="nav-link"        id="tab-professional" data-bs-toggle="pill" data-bs-target="#pane-professional" type="button">Professional</button></li>
+          <li class="nav-item"><button class="nav-link"        id="tab-accounts"     data-bs-toggle="pill" data-bs-target="#pane-accounts"     type="button">Accounts</button></li>
+          <li class="nav-item"><button class="nav-link"        id="tab-documents"    data-bs-toggle="pill" data-bs-target="#pane-documents"    type="button">Documents</button></li>
+        </ul>
+
+        <div class="tab-content" id="empTabContent">
+
+          <!-- ========== BASIC INFO ========== -->
+          <div class="tab-pane fade show active" id="pane-basic" role="tabpanel">
+
+            <!-- Photo + top 6 fields -->
+            <div class="row mb-2 align-items-start">
+              <div class="col-lg-2 col-md-3" style="min-width:150px;">
+                <img src="{% static 'images/profile/user.png' %}" id="userPhoto" alt="Profile"
+                     style="height:120px;width:120px;border:1px solid #CCCCCC;margin-top:10px;display:block;">
+                <input type="file" class="form-control my-1" id="profileImage" name="profileImage">
+              </div>
+              <div class="col">
+                <div class="row">
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="employeeName">Employee Name</label>
+                      <input type="text" id="employeeName" name="employeeName" class="form-control" placeholder="Enter Employee Name">
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="fatherName">Father's Name</label>
+                      <input type="text" id="fatherName" name="fatherName" class="form-control" placeholder="Enter Father's Name">
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="motherName">Mother's Name</label>
+                      <input type="text" id="motherName" name="motherName" class="form-control" placeholder="Enter Mother's Name">
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="dob">Date Of Birth</label>
+                      <input type="date" id="dob" name="dob" class="form-control">
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="gender">Gender</label>
+                      <select class="form-select" id="gender" name="gender">
+                        <option value="">Select</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHERS">Others</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-4 col-sm-6">
+                    <div class="form-group">
+                      <label for="doj">Date Of Joining</label>
+                      <input type="date" id="doj" name="doj" class="form-control">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Remaining basic fields -->
+            <div class="row">
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="height">Height In CM.</label>
+                  <input type="number" id="height" name="height" class="form-control" placeholder="Enter Height">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="weight">Weight In KG</label>
+                  <input type="number" id="weight" name="weight" class="form-control" placeholder="Enter Weight">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="bloodGroup">Blood Group</label>
+                  <select class="form-select" id="bloodGroup" name="bloodGroup">
+                    <option value="">Select</option>
+                    <option>A+</option><option>O+</option><option>B+</option><option>AB+</option>
+                    <option>A-</option><option>O-</option><option>B-</option><option>AB-</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="maritalStatus">Marital Status</label>
+                  <select class="form-select" id="maritalStatus" name="maritalStatus">
+                    <option value="">Select</option>
+                    <option value="MARRIED">Married</option>
+                    <option value="UNMARRIED">Unmarried</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="emailId">Email ID</label>
+                  <input type="email" id="emailId" name="emailId" class="form-control" placeholder="Enter Email ID">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="officialEmailId">Official Email</label>
+                  <input type="email" id="officialEmailId" name="officialEmailId" class="form-control" placeholder="Enter Official Email">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="panNumber">Pan Number</label>
+                  <input type="text" id="panNumber" name="panNumber" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="uidNumber">UID Number</label>
+                  <input type="text" id="uidNumber" name="uidNumber" class="form-control" maxlength="12" placeholder="12 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="unaNumber">UNA Number</label>
+                  <input type="text" id="unaNumber" name="unaNumber" class="form-control" maxlength="20" placeholder="12 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="esicNumber">ESIC Number</label>
+                  <input type="text" id="esicNumber" name="esicNumber" class="form-control" placeholder="Enter ESIC Number">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="pfNumber">PF Number</label>
+                  <input type="text" id="pfNumber" name="pfNumber" class="form-control" placeholder="Enter PF Number">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="qualification">Qualification Of Employee</label>
+                  <select class="form-select" id="qualification" name="qualification">
+                    <option value="">Select</option>
+                    <option>ILLITERATE</option><option>NON-METRIC</option><option>METRIC</option>
+                    <option>SENIOR-SECONDARY</option><option>GRADUATE</option><option>POST-GRADUATE</option>
+                    <option>TECHNICAL(PROFESSIONAL)</option><option>DOCTORATE</option>
+                    <option>DIPLOMA</option><option>MBA</option><option>OTHERS</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="contactNumber1">Contact Number</label>
+                  <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="contactNumber2">Another Contact Number</label>
+                  <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-6 col-md-6 col-sm-6">
+                <div class="form-group">
+                  <label for="presentAddress">Present Address</label>
+                  <textarea id="presentAddress" name="presentAddress" class="form-control" rows="3" placeholder="Enter Present Address" maxlength="200"></textarea>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="presentCity">Present City</label>
+                  <input type="text" id="presentCity" name="presentCity" class="form-control" placeholder="Enter Present City">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="presentState">Present State</label>
+                  <select class="form-select" id="presentState" name="presentState">
+                    <option value="">Select</option>
+                    <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
+                    <option>BIHAR</option><option>CHHATTISGARH</option><option>DELHI</option>
+                    <option>GOA</option><option>GUJARAT</option><option>HARYANA</option>
+                    <option>HIMACHAL PRADESH</option><option>JHARKHAND</option><option>KARNATAKA</option>
+                    <option>KERALA</option><option>MADHYA PRADESH</option><option>MAHARASHTRA</option>
+                    <option>MANIPUR</option><option>MEGHALAYA</option><option>MIZORAM</option>
+                    <option>NAGALAND</option><option>ODISHA</option><option>PUNJAB</option>
+                    <option>RAJASTHAN</option><option>SIKKIM</option><option>TAMIL NADU</option>
+                    <option>TELANGANA</option><option>TRIPURA</option><option>UTTAR PRADESH</option>
+                    <option>UTTARAKHAND</option><option>WEST BENGAL</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="presentPincode">Present Pincode</label>
+                  <input type="text" id="presentPincode" name="presentPincode" class="form-control" maxlength="6" placeholder="Enter Pincode">
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-group">
+                  <label style="font-size:14px;color:#495057;">
+                    Check, If Present Address is Same as Permanent Address:
+                    <input type="checkbox" id="checkAddress" class="ms-1">
+                  </label>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="relationName">Relation Ship Name</label>
+                  <input type="text" id="relationName" name="relationName" class="form-control" placeholder="Enter Relation Ship Name">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="relationType">Relation Ship Type</label>
+                  <select class="form-select" id="relationType" name="relationType">
+                    <option value="">Select</option>
+                    <option value="FATHER">Father</option>
+                    <option value="MOTHER">Mother</option>
+                    <option value="SPOUSE">Spouse</option>
+                    <option value="SIBLING">Sibling</option>
+                    <option value="OTHERS">Others</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="parentMobile1">Parent Mobile</label>
+                  <input type="text" id="parentMobile1" name="parentMobile1" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="parentMobile2">Another Mobile No.</label>
+                  <input type="text" id="parentMobile2" name="parentMobile2" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="permanentAddress">Permanent Address</label>
+                  <textarea id="permanentAddress" name="permanentAddress" class="form-control" rows="3" placeholder="Enter Permanent Address"></textarea>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="permanentCity">Permanent City</label>
+                  <input type="text" id="permanentCity" name="permanentCity" class="form-control" placeholder="Enter Permanent City">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="permanentState">Permanent State</label>
+                  <select class="form-select" id="permanentState" name="permanentState">
+                    <option value="">Select</option>
+                    <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
+                    <option>BIHAR</option><option>CHHATTISGARH</option><option>DELHI</option>
+                    <option>GOA</option><option>GUJARAT</option><option>HARYANA</option>
+                    <option>HIMACHAL PRADESH</option><option>JHARKHAND</option><option>KARNATAKA</option>
+                    <option>KERALA</option><option>MADHYA PRADESH</option><option>MAHARASHTRA</option>
+                    <option>MANIPUR</option><option>MEGHALAYA</option><option>MIZORAM</option>
+                    <option>NAGALAND</option><option>ODISHA</option><option>PUNJAB</option>
+                    <option>RAJASTHAN</option><option>SIKKIM</option><option>TAMIL NADU</option>
+                    <option>TELANGANA</option><option>TRIPURA</option><option>UTTAR PRADESH</option>
+                    <option>UTTARAKHAND</option><option>WEST BENGAL</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="permanentPincode">Permanent Pincode</label>
+                  <input type="text" id="permanentPincode" name="permanentPincode" class="form-control" maxlength="6" placeholder="Enter Permanent Pincode">
+                </div>
+              </div>
+            </div>
+
+            <!-- Password row -->
+            <div class="row mt-2">
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="empPassword">Password</label>
+                  <input type="password" id="empPassword" name="empPassword" class="form-control" placeholder="Set Password">
+                </div>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="empPassword2">Confirm Password</label>
+                  <input type="password" id="empPassword2" name="empPassword2" class="form-control" placeholder="Confirm Password">
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center pt-2 d-print-none">
+              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-professional')"><strong>Next</strong></button>
+            </div>
+          </div>
+          <!-- ========== END BASIC INFO ========== -->
+
+
+          <!-- ========== PROFESSIONAL ========== -->
+          <div class="tab-pane fade" id="pane-professional" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="designationText">Branch Department Designation</label>
+                  <input type="text" id="designationText" name="designationText" class="form-control" placeholder="Enter Designation">
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="grade">Grade</label>
+                  <select class="form-select" id="grade" name="grade">
+                    <option value="">Select Grade</option>
+                    <option>M</option><option>M1</option><option>E1</option><option>E1-Jaipur</option>
+                    <option>E2-Jaipur</option><option>F</option><option>F1</option><option>E</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="employmentType">Employement Type</label>
+                  <select class="form-select" id="employmentType" name="employmentType">
+                    <option value="">Select Employement Type</option>
+                    <option value="PROBATION">PROBATION</option>
+                    <option value="TRAINEE">TRAINEE</option>
+                    <option value="PERMANENT">PERMANENT</option>
+                    <option value="UNDER NOTICE">UNDER NOTICE</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="reportingOfficer">Reporting Officer</label>
+                  <select class="form-select" id="reportingOfficer" name="reportingOfficer">
+                    <option value="">Select Reporting Officer</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="deputedProject">Deputed Project</label>
+                  <select class="form-select" id="deputedProject" name="deputedProject">
+                    <option value="">Select Project</option>
+                    <option>NAGAR NIGAM JAIPUR HERITAGE</option>
+                    <option>UDAIPUR NAGAR NIGAM</option>
+                    <option>NAGAR NIGAM JAIPUR GREATER</option>
+                    <option>KOTA NAGAR NIGAM</option>
+                    <option>NORTH KOTA NAGAR NIGAM</option>
+                    <option>CHURU MUNICIPAL COUNCIL</option>
+                    <option>CHOMU MUNICIPAL COUNCIL</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="effectiveDate">Effective Date</label>
+                  <input type="date" id="effectiveDate" name="effectiveDate" class="form-control">
+                </div>
+              </div>
+            </div>
+            <div class="text-center pt-2 d-print-none">
+              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-accounts')"><strong>Next</strong></button>
+            </div>
+          </div>
+          <!-- ========== END PROFESSIONAL ========== -->
+
+          <!-- ========== ACCOUNTS ========== -->
+          <div class="tab-pane fade" id="pane-accounts" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="bankName">Bank Name</label>
+                  <select class="form-select" id="bankName" name="bankName">
+                    <option value="">Select Bank</option>
+                    <option>AIRTEL PAYMENT BANK</option><option>ALLAHABAD BANK</option>
+                    <option>ANDHRA BANK</option><option>AU SMALL FINANCE BANK</option>
+                    <option>AXIS BANK</option><option>BANDHAN BANK</option>
+                    <option>BANK OF BARODA</option><option>BANK OF INDIA</option>
+                    <option>BANK OF MAHARASHTRA</option><option>CANARA BANK</option>
+                    <option>CENTRAL BANK OF INDIA</option><option>DCB BANK</option>
+                    <option>FEDERAL BANK</option><option>HDFC</option>
+                    <option>ICICI BANK</option><option>IDBI</option>
+                    <option>IDFC FIRST BANK</option><option>INDIAN BANK</option>
+                    <option>INDIAN OVERSEAS BANK</option><option>INDUSIND BANK</option>
+                    <option>KOTAK MAHINDRA BANK</option><option>PNB</option>
+                    <option>PUNJAB &amp; SIND BANK</option>
+                    <option>RAJASTHAN MARUDHARA GRAMIN BANK</option>
+                    <option>SOUTH INDIAN BANK</option><option>STATE BANK OF INDIA</option>
+                    <option>SYNDICATE BANK</option><option>UCO BANK</option>
+                    <option>UNION BANK OF INDIA</option><option>UNITED BANK OF INDIA</option>
+                    <option>UTKARSH SMALL FINANCE BANK</option>
+                    <option>UTTAR BIHAR GRAMIN BANK</option>
+                    <option>VIJAYA BANK</option><option>YES BANK</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="bankBranch">Bank Branch</label>
+                  <input type="text" id="bankBranch" name="bankBranch" class="form-control" placeholder="Enter Bank Branch">
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="bankAccountNumber">Bank Account Number</label>
+                  <input type="text" id="bankAccountNumber" name="bankAccountNumber" class="form-control" placeholder="Enter Bank Account Number">
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="ifscCode">IFSC Code</label>
+                  <input type="text" id="ifscCode" name="ifscCode" class="form-control" placeholder="Enter IFSC Code">
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="form-group">
+                  <label for="isSalaryAccount">Salaried Account</label>
+                  <select class="form-select" id="isSalaryAccount" name="isSalaryAccount">
+                    <option value="">Select Project</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="text-center pt-2 d-print-none">
+              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-documents')"><strong>Next</strong></button>
+            </div>
+          </div>
+          <!-- ========== END ACCOUNTS ========== -->
+
+          <!-- ========== DOCUMENTS ========== -->
+          <div class="tab-pane fade" id="pane-documents" role="tabpanel">
+            <div id="docRows">
+              <div class="doc-row row align-items-end mb-3">
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                  <div class="form-group">
+                    <label>Document Name</label>
+                    <select class="form-select" name="docName[]">
+                      <option value="">Select Document</option>
+                      <option value="AADHAAR">Aadhar Card</option>
+                      <option value="PAN">PAN Card</option>
+                      <option value="PHOTO">Passport Size Photo</option>
+                      <option value="RESUME">Resume/CV</option>
+                      <option value="EDUCATION">Educational Certificates</option>
+                      <option value="OFFER_LETTER">Offer Letter</option>
+                      <option value="JOINING_LETTER">Joining Letter</option>
+                      <option value="BANK_PASSBOOK">Bank Passbook / Cancelled Cheque</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                  <div class="form-group">
+                    <label>Upload Image Of Document</label>
+                    <input type="file" name="docFile[]" class="form-control">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                  <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" name="docRemarks[]" class="form-control" placeholder="Enter Remarks">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6">
+                  <div class="form-group d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addDocRow()">Add</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeDocRow(this)">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="text-center pt-2 d-print-none">
+              <button type="submit" id="submitBtn" class="btn btn-success btn-sm"><strong>Save</strong></button>
+            </div>
+          </div>
+          <!-- ========== END DOCUMENTS ========== -->
+
+        </div><!-- end tab-content -->
+      </div><!-- end card-body -->
+    </div><!-- end card -->
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function goToTab(tabId) {
+        const el = document.getElementById(tabId);
+        if (el) bootstrap.Tab.getOrCreateInstance(el).show();
+    }
+
+    document.getElementById('checkAddress').addEventListener('change', function () {
+        if (this.checked) {
+            document.getElementById('permanentAddress').value = document.getElementById('presentAddress').value;
+            document.getElementById('permanentCity').value = document.getElementById('presentCity').value;
+            document.getElementById('permanentState').value = document.getElementById('presentState').value;
+            document.getElementById('permanentPincode').value = document.getElementById('presentPincode').value;
+        }
+    });
+
+    document.getElementById('profileImage').addEventListener('change', function () {
+        if (this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('userPhoto').src = e.target.result;
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    function addDocRow() {
+        const container = document.getElementById('docRows');
+        const clone = container.querySelector('.doc-row').cloneNode(true);
+        clone.querySelectorAll('input, select').forEach(el => el.value = '');
+        container.appendChild(clone);
+    }
+
+    function removeDocRow(btn) {
+        const rows = document.querySelectorAll('.doc-row');
+        if (rows.length > 1) btn.closest('.doc-row').remove();
+    }
+
+    // ===== FORM SUBMIT → API =====
+    document.getElementById('employeeForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const token = localStorage.getItem('authToken');
+        if (!token) { window.location.href = '/login/'; return; }
+
+        const g = id => (document.getElementById(id) || {}).value || '';
+        const gn = id => { const v = g(id); return v === '' ? null : v; };
+
+        // Validate required fields before sending
+        const required = [
+            ['employeeName', 'Employee Name (Basic Info)'],
+            ['fatherName', "Father's Name (Basic Info)"],
+            ['motherName', "Mother's Name (Basic Info)"],
+            ['dob', 'Date of Birth (Basic Info)'],
+            ['gender', 'Gender (Basic Info)'],
+            ['doj', 'Date of Joining (Basic Info)'],
+            ['bloodGroup', 'Blood Group (Basic Info)'],
+            ['maritalStatus', 'Marital Status (Basic Info)'],
+            ['emailId', 'Email ID (Basic Info)'],
+            ['contactNumber1', 'Contact Number (Basic Info)'],
+            ['presentAddress', 'Present Address (Basic Info)'],
+            ['presentCity', 'Present City (Basic Info)'],
+            ['presentState', 'Present State (Basic Info)'],
+            ['presentPincode', 'Present Pincode (Basic Info)'],
+            ['permanentAddress', 'Permanent Address (Basic Info)'],
+            ['permanentCity', 'Permanent City (Basic Info)'],
+            ['permanentState', 'Permanent State (Basic Info)'],
+            ['permanentPincode', 'Permanent Pincode (Basic Info)'],
+            ['relationName', 'Relationship Name (Basic Info)'],
+            ['relationType', 'Relationship Type (Basic Info)'],
+            ['parentMobile1', 'Parent Mobile (Basic Info)'],
+            ['empPassword', 'Password (Basic Info)'],
+            ['empPassword2', 'Confirm Password (Basic Info)'],
+            ['employmentType', 'Employment Type (Professional)'],
+            ['effectiveDate', 'Effective Date (Professional)'],
+        ];
+        for (const [id, label] of required) {
+            if (!g(id)) { alert(`Please fill: ${label}`); return; }
+        }
+        if (g('empPassword') !== g('empPassword2')) {
+            alert('Passwords do not match.'); return;
+        }
+        if (!employeeRoleId) {
+            alert('Could not load roles from server. Please refresh and try again.'); return;
+        }
+        // Split employee name into first/last
+        const fullName = g('employeeName').trim().split(' ');
+        const firstName = fullName[0] || '';
+        const lastName  = fullName.slice(1).join(' ') || '-';
+
+        // Build payload matching serializer field names exactly
+        const payload = {
+            first_name:               firstName,
+            last_name:                lastName,
+            email:                    g('emailId'),
+            password:                 g('empPassword'),
+            password2:                g('empPassword2'),
+            role:                     employeeRoleId,             // Employee role (fetched dynamically)
+
+            father_name:              g('fatherName'),
+            mother_name:              g('motherName'),
+            date_of_birth:            g('dob'),
+            gender:                   g('gender'),
+            date_of_joining:          g('doj'),
+            height_cm:                gn('height'),
+            weight_kg:                gn('weight'),
+            blood_group:              g('bloodGroup'),
+            marital_status:           g('maritalStatus'),
+
+            official_email:           g('officialEmailId'),
+            contact_number:           g('contactNumber1'),
+            another_contact_number:   g('contactNumber2'),
+
+            pan_number:               g('panNumber'),
+            uid_number:               g('uidNumber'),
+            una_number:               g('unaNumber'),
+            esic_number:              g('esicNumber'),
+            pf_number:                g('pfNumber'),
+            qualification:            g('qualification'),
+
+            present_address:          g('presentAddress'),
+            present_city:             g('presentCity'),
+            present_state:            g('presentState'),
+            present_pincode:          g('presentPincode'),
+            same_as_present_address:  document.getElementById('checkAddress').checked,
+            permanent_address:        g('permanentAddress'),
+            permanent_city:           g('permanentCity'),
+            permanent_state:          g('permanentState'),
+            permanent_pincode:        g('permanentPincode'),
+
+            relationship_name:        g('relationName'),
+            relationship_type:        g('relationType') || 'OTHERS',
+            parent_mobile:            g('parentMobile1'),
+            emergency_another_mobile: g('parentMobile2'),
+
+            branch:                   null,
+            department:               null,
+            designation:              null,
+            grade:                    g('grade'),
+            employment_type:          g('employmentType'),
+            reporting_officer:        gn('reportingOfficer') ? parseInt(gn('reportingOfficer')) : null,
+            deputed_project:          g('deputedProject'),
+            effective_date:           g('effectiveDate'),
+
+            bank_name:                g('bankName'),
+            bank_branch:              g('bankBranch'),
+            account_number:           g('bankAccountNumber'),
+            ifsc_code:                g('ifscCode'),
+            is_salary_account:        g('isSalaryAccount') === 'true',
+        };
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+
+        try {
+            const res = await fetch('/api/accounts/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Token ' + token,
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                const newEmpId = data.id;
+
+                // Upload profile photo if selected
+                const photoFile = document.getElementById('profileImage').files[0];
+                if (photoFile) {
+                    const photoFd = new FormData();
+                    photoFd.append('profile_photo', photoFile);
+                    await fetch(`/api/accounts/employees/${newEmpId}/photo/`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Token ' + token },
+                        body: photoFd,
+                    });
+                }
+
+                // Upload documents if any
+                const docRows = document.querySelectorAll('.doc-row');
+                for (const row of docRows) {
+                    const docType = row.querySelector('select[name="docName[]"]').value;
+                    const docFile = row.querySelector('input[name="docFile[]"]').files[0];
+                    if (!docType || !docFile) continue;
+
+                    const fd = new FormData();
+                    fd.append('document_type', docType);
+                    fd.append('document_file', docFile);
+                    await fetch(`/api/accounts/employees/${newEmpId}/documents/`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Token ' + token },
+                        body: fd,
+                    });
+                }
+
+                alert('Employee registered successfully! User ID: ' + data.user_id);
+                window.location.href = '/dashboard/';
+            } else {
+                // Format errors nicely
+                let msg = 'Validation errors:\n';
+                if (typeof data === 'object') {
+                    Object.entries(data).forEach(([field, errs]) => {
+                        const errText = Array.isArray(errs) ? errs.join(', ') : errs;
+                        msg += `• ${field}: ${errText}\n`;
+                    });
+                } else {
+                    msg = JSON.stringify(data, null, 2);
+                }
+                alert(msg);
+            }
+        } catch (err) {
+            alert('Network error: ' + err.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save';
+        }
+    });
+
+    function getCookie(name) {
+        const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? v[2] : '';
+    }
+
+    // Load Employee role ID and reporting officer dropdown on page load
+    let employeeRoleId = null;
+
+    async function loadDropdowns() {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        const headers = { 'Authorization': 'Token ' + token };
+
+        const [rolesRes, employeesRes] = await Promise.all([
+            fetch('/api/accounts/roles/', { headers }),
+            fetch('/api/accounts/users/', { headers }),   // all users for reporting officer dropdown
+        ]);
+
+        if (rolesRes.ok) {
+            const data = await rolesRes.json();
+            const results = data.results || data;
+            const empRole = results.find(r => r.name === 'EMPLOYEE');
+            if (empRole) employeeRoleId = empRole.id;
+        }
+
+        if (employeesRes.ok) {
+            const data = await employeesRes.json();
+            // Use all pages
+            let allUsers = data.results || data;
+            let nextUrl = data.next || null;
+            while (nextUrl) {
+                const r = await fetch(nextUrl, { headers });
+                const d = await r.json();
+                allUsers = allUsers.concat(d.results || d);
+                nextUrl = d.next || null;
+            }
+            const sel = document.getElementById('reportingOfficer');
+            allUsers.forEach(u => {
+                const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.user_id;
+                sel.innerHTML += `<option value="${u.id}">${name} - ${u.user_id}</option>`;
+            });
+        }
+    }
+
+    loadDropdowns();
+</script>
+{% endblock %}

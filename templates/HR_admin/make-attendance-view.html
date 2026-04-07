@@ -1,0 +1,300 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Make Attendance - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    #attendanceTable .sticky-col { position: sticky; left: 0; background: white; z-index: 2; }
+    #attendanceTable .cell-text  { font-weight: bold; font-size: 11px; }
+    .table > tbody > tr > .present          { background: #d4edda; }
+    .table > tbody > tr > .half_day_present { background: #9be9ad; }
+    .table > tbody > tr > .absent           { background: #f7c9cd; }
+    .table > tbody > tr > .holiday          { background: #fff3cd; }
+    .table > tbody > tr > .leave            { background: #c2cdf7; }
+    .table > tbody > tr > .sunday           { background: #bbbbbb; }
+    .table > tbody > tr > .not_marked       { background: #f8f9fa; }
+    .att-cell { cursor: pointer; min-width: 36px; }
+    .att-cell:hover { opacity: 0.75; }
+    .day-header.sunday-col { background: #bbbbbb !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Make Attendance</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Attendance</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Make Attendance</span></li>
+    </ul>
+</div>
+
+<div class="mb-2">
+    <small><strong class="text-danger">Note: Click any day cell to change attendance status. Changes are saved immediately.</strong></small>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-stats card-round">
+
+            <div class="card-header">
+                <div id="alertArea"></div>
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <label class="form-label">Select Month</label>
+                        <input type="month" class="form-control" id="monthPicker">
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-info btn-sm" id="showBtn"><i class="ri-search-line"></i> Show</button>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0" style="font-size:12px;">
+                        <tbody><tr class="text-center">
+                            <td style="border:0"><div style="width:18px;height:18px;background:#d4edda;border-radius:50%;margin:auto"></div>Present (P)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#9be9ad;border-radius:50%;margin:auto"></div>Half Day (HDP)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#f7c9cd;border-radius:50%;margin:auto"></div>Absent (A)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#fff3cd;border-radius:50%;margin:auto"></div>Holiday (H)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#bbbbbb;border-radius:50%;margin:auto"></div>Sunday (OFF)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#c2cdf7;border-radius:50%;margin:auto"></div>Leave (L)</td>
+                            <td style="border:0"><div style="width:18px;height:18px;background:#f8f9fa;border-radius:50%;margin:auto"></div>Not Marked</td>
+                        </tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div id="loadingState" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading attendance...</p>
+                </div>
+
+                <div id="tableWrapper" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span id="tableCaption" class="fw-bold text-muted"></span>
+                        <button class="btn btn-primary btn-sm" id="exportBtn"><i class="ri-download-2-line"></i> Export</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="attendanceTable" class="table table-bordered table-sm" style="font-size:12px; white-space:nowrap;">
+                            <thead id="attHead"></thead>
+                            <tbody id="attBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Status picker modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title" id="statusModalTitle">Mark Attendance</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <input type="hidden" id="smEmpId">
+                <input type="hidden" id="smDate">
+                <div class="d-grid gap-1">
+                    <button class="btn btn-success btn-sm"  onclick="markStatus('PRESENT')">Present (P)</button>
+                    <button class="btn btn-sm" style="background:#9be9ad" onclick="markStatus('HALF_DAY')">Half Day (HDP)</button>
+                    <button class="btn btn-danger btn-sm"   onclick="markStatus('ABSENT')">Absent (A)</button>
+                    <button class="btn btn-warning btn-sm"  onclick="markStatus('HOLIDAY')">Holiday (H)</button>
+                    <button class="btn btn-sm" style="background:#c2cdf7" onclick="markStatus('LEAVE')">Leave (L)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const STATUS_MAP = {
+    'P':'PRESENT','HDP':'HALF_DAY','A':'ABSENT','H':'HOLIDAY','L':'LEAVE','OFF':'WEEKEND',''  :''
+};
+const LABEL_MAP  = { PRESENT:'P', HALF_DAY:'HDP', ABSENT:'A', HOLIDAY:'H', LEAVE:'L', WEEKEND:'OFF' };
+const CLASS_MAP  = { P:'present', HDP:'half_day_present', A:'absent', H:'holiday', L:'leave', OFF:'sunday', '':'not_marked' };
+
+let currentData = null;
+let statusModal;
+
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2 mb-2">${msg}
+         <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+}
+
+// Set default month to current
+(function() {
+    const now = new Date();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('monthPicker').value = `${now.getFullYear()}-${m}`;
+})();
+
+document.getElementById('showBtn').addEventListener('click', loadAttendance);
+
+async function loadAttendance() {
+    const val = document.getElementById('monthPicker').value;
+    if (!val) { showAlert('Please select a month.'); return; }
+    const [year, month] = val.split('-');
+
+    document.getElementById('loadingState').classList.remove('d-none');
+    document.getElementById('tableWrapper').classList.add('d-none');
+
+    try {
+        const res = await fetch(`/api/attendance/monthly/?month=${month}&year=${year}`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        currentData = data;
+        renderTable(data);
+    } catch(e) {
+        showAlert('Error: ' + e.message);
+    } finally {
+        document.getElementById('loadingState').classList.add('d-none');
+    }
+}
+
+function renderTable(data) {
+    const { month, year, days_in_month, employees } = data;
+    const monthName = new Date(year, month-1, 1).toLocaleString('default', { month:'long' });
+
+    document.getElementById('tableCaption').textContent =
+        `Employee Attendance — ${monthName} ${year}`;
+
+    // Build header
+    const dayHeaders = Array.from({length: days_in_month}, (_, i) => {
+        const d = i + 1;
+        const dow = new Date(year, month-1, d).getDay();
+        const isSun = dow === 0;
+        return `<th class="text-center day-header${isSun?' sunday-col':''}" style="min-width:36px;">${d}<br><small>${DAY_NAMES[dow]}</small></th>`;
+    }).join('');
+
+    document.getElementById('attHead').innerHTML = `
+        <tr>
+            <th colspan="${days_in_month + 10}" class="bg-light">
+                <strong>Employee Attendance for ${monthName} ${year}</strong>
+            </th>
+        </tr>
+        <tr class="text-center">
+            <th>#</th>
+            <th class="sticky-col">Code</th>
+            <th>Name</th>
+            ${dayHeaders}
+            <th>Present</th><th>Absent</th><th>Holiday</th><th>Sunday</th><th>Leave</th><th>Pay Days</th>
+        </tr>`;
+
+    // Build body
+    document.getElementById('attBody').innerHTML = employees.map((emp, idx) => {
+        const cells = Array.from({length: days_in_month}, (_, i) => {
+            const d = i + 1;
+            const label = emp.days[d] || '';
+            const cls   = CLASS_MAP[label] || 'not_marked';
+            const dow   = new Date(year, month-1, d).getDay();
+            const isSun = dow === 0;
+            const clickable = !isSun && label !== 'H';
+            return `<td class="text-center att-cell ${cls}" 
+                        data-emp="${emp.employee_id}" data-date="${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}"
+                        ${clickable ? `onclick="openStatusModal(${emp.employee_id},'${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}',this)"` : ''}>
+                        <div class="cell-text">${label || '-'}</div>
+                    </td>`;
+        }).join('');
+
+        return `<tr class="text-center">
+            <td>${idx+1}</td>
+            <td class="sticky-col">${emp.user_id}</td>
+            <td class="text-start">${emp.name}</td>
+            ${cells}
+            <td>${emp.present}</td>
+            <td>${emp.absent}</td>
+            <td>${emp.holiday}</td>
+            <td>${emp.sunday}</td>
+            <td>${emp.leave}</td>
+            <td><strong>${emp.pay_days}</strong></td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('tableWrapper').classList.remove('d-none');
+}
+
+function openStatusModal(empId, dateStr, cell) {
+    document.getElementById('smEmpId').value = empId;
+    document.getElementById('smDate').value  = dateStr;
+    document.getElementById('statusModalTitle').textContent = `Mark — ${dateStr}`;
+    statusModal.show();
+}
+
+async function markStatus(statusVal) {
+    const empId   = document.getElementById('smEmpId').value;
+    const dateStr = document.getElementById('smDate').value;
+
+    statusModal.hide();
+
+    try {
+        const res = await fetch('/api/attendance/bulk-mark/', {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ employee_id: parseInt(empId), date: dateStr, status: statusVal })
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        // Update cell in place
+        const cell = document.querySelector(`td[data-emp="${empId}"][data-date="${dateStr}"]`);
+        if (cell) {
+            const label = LABEL_MAP[statusVal] || '';
+            const cls   = CLASS_MAP[label] || 'not_marked';
+            // Remove old status classes
+            Object.values(CLASS_MAP).forEach(c => cell.classList.remove(c));
+            cell.classList.add(cls);
+            cell.querySelector('.cell-text').textContent = label || '-';
+        }
+        showAlert('Attendance updated.', 'success');
+    } catch(e) {
+        showAlert('Error: ' + e.message);
+    }
+}
+
+// Export to CSV
+document.getElementById('exportBtn').addEventListener('click', function() {
+    if (!currentData) return;
+    const { month, year, days_in_month, employees } = currentData;
+    const monthName = new Date(year, month-1, 1).toLocaleString('default', { month:'long' });
+
+    let csv = `Employee Attendance - ${monthName} ${year}\n`;
+    const dayHeaders = Array.from({length: days_in_month}, (_, i) => i+1).join(',');
+    csv += `#,Code,Name,${dayHeaders},Present,Absent,Holiday,Sunday,Leave,Pay Days\n`;
+
+    employees.forEach((emp, idx) => {
+        const days = Array.from({length: days_in_month}, (_, i) => emp.days[i+1] || '').join(',');
+        csv += `${idx+1},${emp.user_id},"${emp.name}",${days},${emp.present},${emp.absent},${emp.holiday},${emp.sunday},${emp.leave},${emp.pay_days}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `attendance_${monthName}_${year}.csv`;
+    a.click();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+});
+</script>
+{% endblock %}

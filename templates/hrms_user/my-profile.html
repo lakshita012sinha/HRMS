@@ -1,0 +1,311 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}My Profile - HRMS User{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-photo { height:130px; width:130px; border:1px solid #ccc; object-fit:cover; }
+    .field-label { font-size:12px; color:#888; margin-bottom:2px; }
+    .field-value { font-weight:600; font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">My Profile</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>My Profile</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title" id="profileTitle">Loading...</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills nav-dark-secondary" id="pills-tab" role="tablist">
+                            <li class="nav-item"><a class="nav-link active" data-bs-toggle="pill" href="#pills-basic">Basic Info</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#pills-professional">Professional</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#pills-documents">Documents</a></li>
+                        </ul>
+
+                        <div class="tab-content mt-3" id="pills-tabContent">
+
+                            <!-- Basic Info Tab -->
+                            <div class="tab-pane fade show active" id="pills-basic">
+                                <div class="row p-2 mb-3" style="background:#f8f8ff;">
+                                    <div class="col-lg-3 col-md-3 text-center">
+                                        <img src="{% static 'images/profile/user.png' %}" class="profile-photo mt-2" id="userPhoto" alt="Profile">
+                                    </div>
+                                    <div class="col-lg-9 col-md-9">
+                                        <div class="row mt-2">
+                                            <div class="col-12 mb-1"><span class="fw-bold" id="bi-fullname">-</span></div>
+                                            <div class="col-md-4"><span class="field-label">Gender</span><div class="field-value" id="bi-gender">-</div></div>
+                                            <div class="col-md-4"><span class="field-label">Blood Group</span><div class="field-value" id="bi-blood">-</div></div>
+                                            <div class="col-md-4"><span class="field-label">Date of Birth</span><div class="field-value" id="bi-dob">-</div></div>
+                                            <div class="col-md-4"><span class="field-label">Date of Joining</span><div class="field-value" id="bi-doj">-</div></div>
+                                            <div class="col-md-4"><span class="field-label">Contact Number</span><div class="field-value" id="bi-phone">-</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Father's Name</label><p class="field-value" id="bi-father">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Mother's Name</label><p class="field-value" id="bi-mother">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Marital Status</label><p class="field-value" id="bi-marital">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Email ID</label><p class="field-value" id="bi-email">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">UAN Number</label><p class="field-value" id="bi-uan">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">PAN Number</label><p class="field-value" id="bi-pan">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Aadhaar Number</label><p class="field-value" id="bi-uid">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">ESIC Number</label><p class="field-value" id="bi-esic">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">PF Number</label><p class="field-value" id="bi-pf">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Qualification</label><p class="field-value" id="bi-qual">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Alt. Contact</label><p class="field-value" id="bi-phone2">-</p></div></div>
+                                    <div class="col-lg-6 col-md-6 col-sm-6"><div class="form-group"><label class="field-label">Present Address</label><p class="field-value" id="bi-addr-present">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Present City</label><p class="field-value" id="bi-city-present">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Present State</label><p class="field-value" id="bi-state-present">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Present Pincode</label><p class="field-value" id="bi-pin-present">-</p></div></div>
+                                    <div class="col-lg-6 col-md-6 col-sm-6"><div class="form-group"><label class="field-label">Permanent Address</label><p class="field-value" id="bi-addr-perm">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Permanent City</label><p class="field-value" id="bi-city-perm">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Permanent State</label><p class="field-value" id="bi-state-perm">-</p></div></div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6"><div class="form-group"><label class="field-label">Permanent Pincode</label><p class="field-value" id="bi-pin-perm">-</p></div></div>
+                                </div>
+                            </div>
+
+                            <!-- Professional Tab -->
+                            <div class="tab-pane fade" id="pills-professional">
+                                <div class="table-responsive mt-2">
+                                    <table class="table table-bordered table-head-bg-secondary">
+                                        <thead>
+                                            <tr class="text-center">
+                                                <th>Branch | Department | Designation</th>
+                                                <th>Grade</th>
+                                                <th>Employment Type</th>
+                                                <th>Date of Joining</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="professionalBody">
+                                            <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Documents Tab -->
+                            <div class="tab-pane fade" id="pills-documents">
+                                <div class="row">
+                                    <div class="col-lg-10">
+                                        <div class="table-responsive mt-2">
+                                            <table class="table table-bordered table-head-bg-secondary">
+                                                <thead>
+                                                    <tr class="text-center">
+                                                        <th>Document Name</th>
+                                                        <th>View</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="documentsBody">
+                                                    <tr><td colspan="3" class="text-center text-muted">Loading...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 d-flex align-items-start pt-3">
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addNewDoc">
+                                            <i class="ri-add-line"></i> Add Doc
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Document Modal -->
+<div class="modal fade" id="addNewDoc" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h6 class="modal-title">Upload Document — <span id="modalEmpName">-</span></h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="docUploadAlert"></div>
+                <div class="mb-2">
+                    <label class="form-label">Document Type</label>
+                    <select class="form-select" id="docType">
+                        <option value="">Select Document</option>
+                        <option value="AADHAAR">AADHAAR CARD</option>
+                        <option value="PAN">PAN CARD</option>
+                        <option value="VOTER">VOTER CARD</option>
+                        <option value="ACCOUNT_DOC">ACCOUNT DOC</option>
+                        <option value="JOINING_LETTER">JOINING LETTER</option>
+                        <option value="GRADUATE">GRADUATE</option>
+                        <option value="MATRIC">MATRIC DOC</option>
+                        <option value="INTERMEDIATE">INTERMEDIATE</option>
+                        <option value="CERTIFICATE">CERTIFICATE</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Upload File</label>
+                    <input type="file" class="form-control" id="docFile">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-info btn-sm" id="saveDocBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let empId = null;
+
+function val(v) { return v || '-'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'long', year:'numeric'}) : '-'; }
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Get logged-in user's profile
+        const res = await fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error('Failed to load profile');
+        const user = await res.json();
+        empId = user.id;
+
+        // Fetch full employee detail
+        const eRes = await fetch(`/api/accounts/employees/${empId}/`, { headers: { 'Authorization': 'Token ' + token } });
+        if (!eRes.ok) throw new Error('Employee detail not found');
+        const emp = await eRes.json();
+
+        populateProfile(emp);
+    } catch(e) {
+        document.getElementById('profileTitle').textContent = 'Error: ' + e.message;
+    }
+
+    // Save document
+    document.getElementById('saveDocBtn').addEventListener('click', async function() {
+        const type = document.getElementById('docType').value;
+        const file = document.getElementById('docFile').files[0];
+        if (!type || !file) {
+            document.getElementById('docUploadAlert').innerHTML = '<div class="alert alert-danger py-1">Please select document type and file.</div>';
+            return;
+        }
+        const fd = new FormData();
+        fd.append('document_type', type);
+        fd.append('document_file', file);
+
+        this.disabled = true;
+        try {
+            const res = await fetch(`/api/accounts/employees/${empId}/documents/`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Token ' + token },
+                body: fd
+            });
+            const data = await res.json();
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addNewDoc')).hide();
+                // Reload documents
+                const eRes = await fetch(`/api/accounts/employees/${empId}/`, { headers: { 'Authorization': 'Token ' + token } });
+                const emp = await eRes.json();
+                renderDocuments(emp.documents || []);
+            } else {
+                document.getElementById('docUploadAlert').innerHTML = `<div class="alert alert-danger py-1">${JSON.stringify(data)}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('docUploadAlert').innerHTML = `<div class="alert alert-danger py-1">${e.message}</div>`;
+        } finally { this.disabled = false; }
+    });
+});
+
+function populateProfile(emp) {
+    const p  = emp.employee_profile   || {};
+    const ed = emp.employment_details || {};
+
+    const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
+    const code = emp.user_id || '';
+
+    document.getElementById('profileTitle').textContent = `${name} (${code})`;
+    document.getElementById('modalEmpName').textContent = `${name} (${code})`;
+
+    // Basic info header
+    document.getElementById('bi-fullname').textContent = `${name} (${code})`;
+    document.getElementById('bi-gender').textContent   = val(p.gender);
+    document.getElementById('bi-blood').textContent    = val(p.blood_group);
+    document.getElementById('bi-dob').textContent      = fmtDate(p.date_of_birth);
+    document.getElementById('bi-doj').textContent      = fmtDate(p.date_of_joining);
+    document.getElementById('bi-phone').textContent    = val(p.contact_number);
+
+    // Basic info fields
+    document.getElementById('bi-father').textContent       = val(p.father_name);
+    document.getElementById('bi-mother').textContent       = val(p.mother_name);
+    document.getElementById('bi-marital').textContent      = val(p.marital_status);
+    document.getElementById('bi-email').textContent        = val(emp.email);
+    document.getElementById('bi-uan').textContent          = val(p.una_number);
+    document.getElementById('bi-pan').textContent          = val(p.pan_number);
+    document.getElementById('bi-uid').textContent          = val(p.uid_number);
+    document.getElementById('bi-esic').textContent         = val(p.esic_number);
+    document.getElementById('bi-pf').textContent           = val(p.pf_number);
+    document.getElementById('bi-qual').textContent         = val(p.qualification);
+    document.getElementById('bi-phone2').textContent       = val(p.another_contact_number);
+    document.getElementById('bi-addr-present').textContent = val(p.present_address);
+    document.getElementById('bi-city-present').textContent = val(p.present_city);
+    document.getElementById('bi-state-present').textContent= val(p.present_state);
+    document.getElementById('bi-pin-present').textContent  = val(p.present_pincode);
+    document.getElementById('bi-addr-perm').textContent    = val(p.permanent_address);
+    document.getElementById('bi-city-perm').textContent    = val(p.permanent_city);
+    document.getElementById('bi-state-perm').textContent   = val(p.permanent_state);
+    document.getElementById('bi-pin-perm').textContent     = val(p.permanent_pincode);
+
+    // Professional tab
+    document.getElementById('professionalBody').innerHTML = `
+        <tr class="text-center">
+            <td>${val(ed.branch)} | ${val(ed.department)} | ${val(ed.designation)}</td>
+            <td>${val(ed.grade)}</td>
+            <td>${val(ed.employment_type)}</td>
+            <td>${fmtDate(p.date_of_joining)}</td>
+        </tr>`;
+
+    // Documents tab
+    renderDocuments(emp.documents || []);
+}
+
+function renderDocuments(docs) {
+    const tbody = document.getElementById('documentsBody');
+    if (!docs.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No documents uploaded</td></tr>';
+        return;
+    }
+    tbody.innerHTML = docs.map(d => {
+        const statusBadge = d.status === 'APPROVED'
+            ? '<span class="badge bg-success">Approved</span>'
+            : d.status === 'REJECTED'
+            ? '<span class="badge bg-danger">Rejected</span>'
+            : '<span class="badge bg-warning text-dark">Pending</span>';
+        const viewBtn = d.document_file
+            ? `<a href="${d.document_file}" target="_blank"><button class="btn btn-success btn-xs"><i class="ri-file-image-line"></i></button></a>`
+            : '-';
+        return `<tr class="text-center">
+            <td>${d.document_type || '-'}</td>
+            <td>${viewBtn}</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    }).join('');
+}
+</script>
+{% endblock %}

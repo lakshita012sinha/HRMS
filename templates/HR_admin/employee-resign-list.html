@@ -1,0 +1,143 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Branch Termination / Resign List - HRMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'js/datatables/datatables.min.css' %}">
+<style>
+    .badge-approved  { background:#28a745; color:#fff; }
+    .badge-pending   { background:#ffc107; color:#000; }
+    .badge-rejected  { background:#dc3545; color:#fff; }
+    .btn-xs { padding:2px 8px; font-size:11px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Branch Termination / Resign List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Management</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Branch Termination / Resign List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+
+                <div class="d-print-none mb-3">
+                    <button class="btn btn-primary btn-sm" onclick="exportToExcel()">
+                        <i class="ri-download-2-line"></i> <strong>Export</strong>
+                    </button>
+                    <button class="btn btn-warning btn-sm ms-1" onclick="window.location.href='/hr/employee-exit-initiate/'">
+                        <strong>Employee Exit Form</strong>
+                    </button>
+                </div>
+
+                <div class="table-responsive" id="printableArea">
+                    <table id="resignTable" class="display table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th colspan="7" class="text-center bg-light"><strong>Employee Exit List</strong></th>
+                            </tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Employee Code</th>
+                                <th>Employee Name</th>
+                                <th>Designation</th>
+                                <th>Date of Joining</th>
+                                <th>Date of Last Working Day</th>
+                                <th>Exit Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resignTableBody">
+                            <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+let dtTable = null;
+
+function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+async function loadResignList() {
+    try {
+        const res = await fetch('/api/accounts/past-employees/', {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+
+        const tbody = document.getElementById('resignTableBody');
+
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No terminated/resigned employees found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = list.map((emp, i) => {
+            const employment = emp.employment_data || {};
+            const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase() || '-';
+            const statusBadge = '<span class="badge badge-approved">Approved</span>';
+
+            return `<tr>
+                <td class="text-center">${i + 1}</td>
+                <td class="text-center">${emp.user_id || '-'}</td>
+                <td class="text-center">${name}</td>
+                <td class="text-center">${employment.designation || '-'}</td>
+                <td class="text-center">${fmtDate(emp.date_of_joining)}</td>
+                <td class="text-center">${fmtDate(emp.last_working_day)}</td>
+                <td class="text-center">${statusBadge}</td>
+            </tr>`;
+        }).join('');
+
+        if (dtTable) { dtTable.destroy(); }
+        dtTable = $('#resignTable').DataTable({
+            pageLength: 25,
+            ordering: true,
+            columnDefs: [{ orderable: false, targets: 0 }],
+            language: { search: 'Search:' }
+        });
+
+    } catch(err) {
+        document.getElementById('resignTableBody').innerHTML =
+            `<tr><td colspan="7" class="text-center text-danger py-3">
+                <i class="ri-error-warning-line"></i> Error: ${err.message}
+            </td></tr>`;
+    }
+}
+
+function exportToExcel() {
+    const rows = [['#','Employee Code','Employee Name','Designation','Date of Joining','Last Working Day','Exit Status']];
+    document.querySelectorAll('#resignTableBody tr').forEach((tr, i) => {
+        const cells = [...tr.querySelectorAll('td')].map(td => td.textContent.trim());
+        if (cells.length === 7) rows.push(cells);
+    });
+    let csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'employee_exit_list.csv';
+    a.click();
+}
+
+loadResignList();
+</script>
+{% endblock %}

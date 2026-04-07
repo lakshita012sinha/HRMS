@@ -1,0 +1,96 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}Holiday List - HRMS User{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Holiday List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Holiday</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Holiday List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="alertArea"></div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Holiday List</strong>
+                    <input type="text" id="searchInput" class="form-control form-control-sm w-auto" placeholder="Search...">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-head-bg-light">
+                        <thead>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Holiday Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holidayBody">
+                            <tr><td colspan="3" class="text-center text-muted py-3">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allHolidays = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const res = await fetch('/api/attendance/holidays/', {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load holidays');
+        const data = await res.json();
+        allHolidays = Array.isArray(data) ? data : (data.results || []);
+        allHolidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+        renderTable(allHolidays);
+    } catch(e) {
+        document.getElementById('alertArea').innerHTML =
+            `<div class="alert alert-danger py-2">Error: ${e.message}</div>`;
+        document.getElementById('holidayBody').innerHTML =
+            '<tr><td colspan="3" class="text-center text-muted">Failed to load</td></tr>';
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        renderTable(allHolidays.filter(h =>
+            h.holiday_name.toLowerCase().includes(q) ||
+            h.date.includes(q)
+        ));
+    });
+});
+
+function renderTable(holidays) {
+    const tbody = document.getElementById('holidayBody');
+    if (!holidays.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No holidays found</td></tr>';
+        return;
+    }
+    tbody.innerHTML = holidays.map((h, i) => {
+        const d = new Date(h.date);
+        const dateStr = d.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+        return `<tr>
+            <td class="text-center">${i + 1}</td>
+            <td class="text-center">${dateStr}</td>
+            <td class="text-center">${h.holiday_name}</td>
+        </tr>`;
+    }).join('');
+}
+</script>
+{% endblock %}

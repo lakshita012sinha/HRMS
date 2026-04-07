@@ -1,0 +1,208 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee List - HRMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>
+    .btn-xs { padding: 2px 8px; font-size: 0.75rem; }
+    .avatar-img { width: 36px; height: 36px; object-fit: cover; }
+    #employeeTable_wrapper .dataTables_length label,
+    #employeeTable_wrapper .dataTables_filter label { font-size: 0.875rem; }
+    table.dataTable thead th { background: #f8f9fa; font-size: 0.82rem; }
+    .table td { font-size: 0.82rem; vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Employee List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Management</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+
+                <!-- Export button -->
+                <div class="d-print-none mb-3">
+                    <button class="btn btn-primary btn-sm" onclick="exportToExcel()">
+                        <i class="ri-download-2-line"></i> <strong>Export</strong>
+                    </button>
+                </div>
+
+                <div class="table-responsive" id="printableArea">
+                    <table id="employeeTable" class="display table table-hover table-bordered w-100">
+                        <thead>
+                            <tr>
+                                <th colspan="9" class="text-center bg-light"><strong>Employees List</strong></th>
+                            </tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Employee Code</th>
+                                <th>Employee Name</th>
+                                <th>Father Name</th>
+                                <th>Contact No.</th>
+                                <th>UID Number</th>
+                                <th>Reporting Officer</th>
+                                <th>Photo</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody">
+                            <tr><td colspan="9" class="text-center text-muted py-4">Loading employees...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+    let dtTable = null;
+
+    async function loadEmployees() {
+        const token = localStorage.getItem('authToken');
+        if (!token) { window.location.href = '/login/'; return; }
+
+        try {
+            let allEmployees = [];
+            let url = '/api/accounts/employees/';
+
+            // Handle pagination — fetch all pages
+            while (url) {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': 'Token ' + token }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    // No pagination
+                    allEmployees = data;
+                    url = null;
+                } else {
+                    allEmployees = allEmployees.concat(data.results || []);
+                    url = data.next || null;
+                }
+            }
+
+            renderTable(allEmployees);
+        } catch (err) {
+            document.getElementById('employeeTableBody').innerHTML =
+                `<tr><td colspan="9" class="text-center text-danger py-3">
+                    <i class="ri-error-warning-line"></i> Error loading employees: ${err.message}
+                </td></tr>`;
+        }
+    }
+
+    function renderTable(employees) {
+        const tbody = document.getElementById('employeeTableBody');
+
+        if (!employees.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No employees found. Register employees using Add New Employee.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = employees.map((emp, i) => {
+            const profile    = emp.employee_profile   || {};
+            const employment = emp.employment_details || {};
+
+            const firstName  = (emp.first_name || '').trim();
+            const lastName   = (emp.last_name  || '').trim();
+            const fullName   = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || '-';
+            const fatherName = (profile.father_name   || '-').toUpperCase();
+            const contact    = profile.contact_number || '-';
+            const uid        = profile.uid_number     || '-';
+            const reporting  = employment.reporting_officer || '-';
+
+            return `
+            <tr>
+                <td class="text-center">${i + 1}</td>
+                <td class="text-center">${emp.user_id || '-'}</td>
+                <td class="text-center">${fullName}</td>
+                <td class="text-center">${fatherName}</td>
+                <td class="text-center">${contact}</td>
+                <td class="text-center">${uid}</td>
+                <td class="text-center">${reporting}</td>
+                <td class="text-center">
+                    <div class="avatar avatar-lg">
+                        <img class="avatar-img rounded-circle"
+                             src="${profile.profile_photo || '{% static "images/profile/user.png" %}'}"
+                             alt="photo"
+                             style="width:36px;height:36px;object-fit:cover;"
+                             onerror="this.src='{% static "images/profile/user.png" %}'">
+                    </div>
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-info btn-xs mb-1" onclick="viewEmployee(${emp.id})">View</button>
+                    <button class="btn btn-success btn-xs mb-1" onclick="editEmployee(${emp.id})">Edit</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        if (dtTable) { dtTable.destroy(); }
+        dtTable = $('#employeeTable').DataTable({
+            pageLength: 50,
+            lengthMenu: [10, 25, 50, 100],
+            ordering: true,
+            columnDefs: [{ orderable: false, targets: [7, 8] }],
+            language: {
+                search: 'Search:',
+                lengthMenu: 'Show _MENU_ entries',
+                info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+                paginate: { previous: 'Previous', next: 'Next' }
+            }
+        });
+    }
+
+    function viewEmployee(id) {
+        window.location.href = `/hr/employee-profile/${id}/`;
+    }
+
+    function editEmployee(id) {
+        window.location.href = `/hr/employee-edit/${id}/`;
+    }
+
+    function exportToExcel() {
+        if (!dtTable) return;
+        // Simple CSV export
+        const rows = [['#', 'Employee Code', 'Employee Name', 'Father Name', 'Contact No.', 'UID Number', 'Reporting Officer']];
+        $('#employeeTable tbody tr').each(function(i, row) {
+            const cells = $(row).find('td');
+            if (cells.length > 1) {
+                rows.push([
+                    $(cells[0]).text().trim(),
+                    $(cells[1]).text().trim(),
+                    $(cells[2]).text().trim(),
+                    $(cells[3]).text().trim(),
+                    $(cells[4]).text().trim(),
+                    $(cells[5]).text().trim(),
+                    $(cells[6]).text().trim(),
+                ]);
+            }
+        });
+        const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'employee_list.csv';
+        a.click();
+    }
+
+    loadEmployees();
+</script>
+{% endblock %}

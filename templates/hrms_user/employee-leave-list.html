@@ -1,0 +1,211 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}Applied Leave List - HRMS User{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'js/datatables/datatables.min.css' %}">
+<style>
+    .badge-pending   { background:#ffc107; color:#000; }
+    .badge-approved  { background:#28a745; color:#fff; }
+    .badge-rejected  { background:#dc3545; color:#fff; }
+    .badge-cancelled { background:#6c757d; color:#fff; }
+    .btn-xs { padding:2px 8px; font-size:11px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Applied Leave List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Leave</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Applied Leave List</span></li>
+    </ul>
+</div>
+
+<!-- File Preview Modal -->
+<div class="modal fade" id="fileModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">File Preview</h5>
+                <button id="fullscreenBtn" class="btn btn-sm btn-outline-primary ms-2 d-none" onclick="toggleFullscreen()">
+                    <i class="ri-fullscreen-line"></i>
+                </button>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="zoomControls" class="mb-2 text-center d-none">
+                    <button class="btn btn-sm btn-info" onclick="zoomIn()"><i class="ri-add-line"></i></button>
+                    <button class="btn btn-sm btn-info" onclick="zoomOut()"><i class="ri-subtract-line"></i></button>
+                    <button class="btn btn-sm btn-secondary" onclick="resetZoom()">Reset</button>
+                </div>
+                <div id="fileContainer" style="width:100%;height:75vh;overflow:auto;text-align:center;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading leave requests...</p>
+                </div>
+
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table id="leaveTable" class="display table table-hover table-bordered table-head-bg-secondary">
+                        <thead>
+                            <tr><th colspan="9" class="text-center bg-light"><strong>APPLIED LEAVE LIST</strong></th></tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Leave Type</th>
+                                <th>Leave From</th>
+                                <th>Leave Upto</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Applied Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+let scale = 1, isFullscreen = false;
+
+function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+const statusBadge = {
+    'PENDING':   '<span class="badge badge-pending">PENDING</span>',
+    'APPROVED':  '<span class="badge badge-approved">APPROVED</span>',
+    'REJECTED':  '<span class="badge badge-rejected">REJECTED</span>',
+    'CANCELLED': '<span class="badge badge-cancelled">CANCELLED</span>'
+};
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Get logged-in user id
+        const pRes = await fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } });
+        const profile = await pRes.json();
+        const empId = profile.id;
+
+        // Fetch this employee's leave requests
+        const res = await fetch(`/api/leave/leave-requests/?employee=${empId}`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        const requests = Array.isArray(data) ? data : (data.results || []);
+
+        document.getElementById('loadingState').classList.add('d-none');
+
+        const tbody = document.getElementById('leaveTableBody');
+        if (!requests.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No leave requests found</td></tr>';
+        } else {
+            tbody.innerHTML = requests.map((r, i) => {
+                const cancelBtn = r.status === 'PENDING'
+                    ? `<button class="btn btn-danger btn-xs" onclick="cancelLeave(${r.id}, this)"><i class="ri-close-line"></i> Cancel</button>`
+                    : '-';
+                return `<tr class="text-center">
+                    <td>${i+1}</td>
+                    <td>${r.leave_type_name || '-'}</td>
+                    <td>${fmtDate(r.start_date)}</td>
+                    <td>${fmtDate(r.end_date)}</td>
+                    <td>${r.total_days}</td>
+                    <td style="max-width:180px;white-space:normal;text-align:left;">${r.reason || '-'}</td>
+                    <td>${statusBadge[r.status] || r.status}</td>
+                    <td>${fmtDate(r.created_at)}</td>
+                    <td>${cancelBtn}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('tableWrapper').classList.remove('d-none');
+        $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: 8 }] });
+
+    } catch(e) {
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('alertArea').innerHTML =
+            `<div class="alert alert-danger py-2">Error: ${e.message}</div>`;
+    }
+});
+
+async function cancelLeave(id, btn) {
+    if (!confirm('Cancel this leave request?')) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/leave/leave-requests/${id}/cancel/`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Update badge and remove button
+            const row = btn.closest('tr');
+            row.cells[6].innerHTML = statusBadge['CANCELLED'];
+            btn.closest('td').innerHTML = '-';
+        } else {
+            alert(data.error || 'Failed to cancel');
+            btn.disabled = false;
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+        btn.disabled = false;
+    }
+}
+
+// File preview
+function openModal(type, fileUrl) {
+    const container = document.getElementById('fileContainer');
+    scale = 1; container.innerHTML = '';
+    document.getElementById('zoomControls').classList.add('d-none');
+    document.getElementById('fullscreenBtn').classList.add('d-none');
+    if (type === 'image') {
+        document.getElementById('zoomControls').classList.remove('d-none');
+        document.getElementById('fullscreenBtn').classList.remove('d-none');
+        container.innerHTML = `<img id="previewImage" src="${fileUrl}" class="img-fluid" style="transform:scale(1);transition:transform .15s ease;cursor:zoom-in;">`;
+        const img = document.getElementById('previewImage');
+        img.addEventListener('wheel', e => { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); });
+        img.addEventListener('dblclick', () => { scale = scale === 1 ? 2 : 1; applyZoom(); });
+    } else {
+        container.innerHTML = `<iframe src="${fileUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+    }
+    new bootstrap.Modal(document.getElementById('fileModal')).show();
+}
+function zoomIn()    { if (scale < 4) { scale += 0.2; applyZoom(); } }
+function zoomOut()   { if (scale > 0.5) { scale -= 0.2; applyZoom(); } }
+function resetZoom() { scale = 1; applyZoom(); }
+function applyZoom() { const img = document.getElementById('previewImage'); if (img) img.style.transform = `scale(${scale})`; }
+function toggleFullscreen() {
+    const mc = document.querySelector('#fileModal .modal-content');
+    if (!document.fullscreenElement) { mc.requestFullscreen(); isFullscreen = true; }
+    else { document.exitFullscreen(); isFullscreen = false; }
+}
+document.getElementById('fileModal').addEventListener('hidden.bs.modal', () => {
+    document.getElementById('fileContainer').innerHTML = '';
+    scale = 1;
+    if (document.fullscreenElement) document.exitFullscreen();
+});
+</script>
+{% endblock %}

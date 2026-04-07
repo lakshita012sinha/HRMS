@@ -1,0 +1,155 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}Attendance Report - HRMS User{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Attendance Report</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Attendance</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Attendance Report</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+
+            <div class="card-header">
+                <div class="row g-2 align-items-end">
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <label class="form-label">Month</label>
+                        <select class="form-select" id="monthSelect">
+                            <option value="">Select</option>
+                            <option value="1">January</option><option value="2">February</option>
+                            <option value="3">March</option><option value="4">April</option>
+                            <option value="5">May</option><option value="6">June</option>
+                            <option value="7">July</option><option value="8">August</option>
+                            <option value="9">September</option><option value="10">October</option>
+                            <option value="11">November</option><option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <label class="form-label">Year</label>
+                        <select class="form-select" id="yearSelect"></select>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary btn-sm" id="searchBtn">
+                            <i class="ri-search-line"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <div id="loadingState" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading...</p>
+                </div>
+
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table class="table table-hover table-bordered table-head-bg-light">
+                        <thead>
+                            <tr><th colspan="10" class="text-center"><strong id="tableTitle">Attendance Report</strong></th></tr>
+                            <tr class="text-center">
+                                <th>Emp Code</th>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Working Days</th>
+                                <th>Days Present</th>
+                                <th>Days Absent</th>
+                                <th>Holiday</th>
+                                <th>Sundays</th>
+                                <th>Leave</th>
+                                <th>Pay Days</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const MONTHS = ['','January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+// Populate year dropdown
+(function() {
+    const sel = document.getElementById('yearSelect');
+    const cur = new Date().getFullYear();
+    for (let y = cur; y >= cur - 3; y--) {
+        sel.innerHTML += `<option value="${y}">${y}</option>`;
+    }
+    // Default month to current
+    document.getElementById('monthSelect').value = String(new Date().getMonth() + 1);
+})();
+
+document.getElementById('searchBtn').addEventListener('click', async function() {
+    const month = document.getElementById('monthSelect').value;
+    const year  = document.getElementById('yearSelect').value;
+    if (!month || !year) { alert('Please select month and year.'); return; }
+
+    document.getElementById('loadingState').classList.remove('d-none');
+    document.getElementById('tableWrapper').classList.add('d-none');
+    document.getElementById('alertArea').innerHTML = '';
+
+    try {
+        // Get logged-in user
+        const pRes = await fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } });
+        const profile = await pRes.json();
+        const empId = profile.id;
+
+        // Fetch attendance for this month
+        const res = await fetch(`/api/attendance/monthly/?month=${month}&year=${year}`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        const text = await res.text();
+        let data; try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        // Find this employee's row
+        const empRow = (data.employees || []).find(e => e.employee_id === empId);
+
+        document.getElementById('tableTitle').textContent =
+            `Attendance for ${MONTHS[parseInt(month)]} ${year}`;
+
+        const tbody = document.getElementById('attBody');
+        if (!empRow) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No attendance data found for this month.</td></tr>';
+        } else {
+            const workingDays = empRow.days_in_month - empRow.sunday - empRow.holiday;
+            tbody.innerHTML = `<tr class="text-center">
+                <td>${empRow.user_id}</td>
+                <td>${year}</td>
+                <td>${MONTHS[parseInt(month)]}</td>
+                <td>${workingDays}</td>
+                <td>${empRow.present}</td>
+                <td>${empRow.absent}</td>
+                <td>${empRow.holiday}</td>
+                <td>${empRow.sunday}</td>
+                <td>${empRow.leave}</td>
+                <td><strong>${empRow.pay_days}</strong></td>
+            </tr>`;
+        }
+
+        document.getElementById('tableWrapper').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('alertArea').innerHTML =
+            `<div class="alert alert-danger py-2">Error: ${e.message}</div>`;
+    } finally {
+        document.getElementById('loadingState').classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}

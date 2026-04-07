@@ -1,0 +1,185 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Attendance Report - HRMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'js/datatables/datatables.min.css' %}">
+<style>
+    .badge-submitted { background: #0d6efd; color: #fff; }
+    .btn-xs { padding: 2px 8px; font-size: 11px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Attendance Report</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Attendance</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Attendance Report</span></li>
+    </ul>
+</div>
+
+<!-- Payroll result modal -->
+<div class="modal fade" id="payrollModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h6 class="modal-title">Payroll Generation Result</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="payrollModalBody"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading report...</p>
+                </div>
+
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table id="reportTable" class="display table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th colspan="7" class="text-center bg-light"><strong>Attendance Report</strong></th>
+                            </tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Total Records</th>
+                                <th>Status</th>
+                                <th>Submitted Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="text-center py-5 d-none">
+                    <i class="ri-calendar-2-line" style="font-size:48px; color:#ccc;"></i>
+                    <p class="text-muted mt-2">No attendance records found. Start by marking attendance from <a href="/hr/make-attendance/">Make Attendance</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const res  = await fetch('/api/attendance/report-summary/', {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,300)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        document.getElementById('loadingState').classList.add('d-none');
+
+        if (!data.length) {
+            document.getElementById('emptyState').classList.remove('d-none');
+            return;
+        }
+
+        const tbody = document.getElementById('reportBody');
+        tbody.innerHTML = data.map(r => `
+            <tr class="text-center">
+                <td>${r.index}</td>
+                <td>${r.year}</td>
+                <td>${r.month_name}</td>
+                <td>${r.total_records}</td>
+                <td><span class="badge badge-submitted">Submitted</span></td>
+                <td>${r.submitted_date}</td>
+                <td>
+                    <a href="/hr/make-attendance/?month=${r.year}-${String(r.month).padStart(2,'0')}">
+                        <button class="btn btn-success btn-xs mb-1"><i class="ri-edit-box-line"></i> View/Edit</button>
+                    </a>
+                    <button class="btn btn-primary btn-xs mb-1" onclick="generatePayroll(${r.month}, ${r.year}, this)">
+                        <i class="ri-money-rupee-circle-line"></i> Generate Payroll
+                    </button>
+                </td>
+            </tr>`
+        ).join('');
+
+        document.getElementById('tableWrapper').classList.remove('d-none');
+        $('#reportTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: 6 }] });
+
+    } catch(e) {
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('alertArea').innerHTML =
+            `<div class="alert alert-danger py-2">Error loading report: ${e.message}</div>`;
+    }
+});
+
+async function generatePayroll(month, year, btn) {
+    if (!confirm(`Generate payroll for all employees for ${month}/${year}?\nThis will create prorated payslips based on attendance pay days.`)) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
+
+    try {
+        const res = await fetch('/api/payroll/generate-monthly-payroll/', {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year })
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,300)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        // Show result modal
+        const generated = data.generated || [];
+        const skipped   = data.skipped   || [];
+
+        let html = `<p class="text-success fw-bold">${data.message}</p>`;
+
+        if (generated.length) {
+            html += `<p class="mb-1"><strong>Generated (${generated.length}):</strong></p>
+                     <table class="table table-sm table-bordered mb-3">
+                       <thead><tr><th>Emp Code</th><th>Name</th><th>Pay Days</th><th>Net Salary</th></tr></thead>
+                       <tbody>${generated.map(g =>
+                           `<tr><td>${g.employee}</td><td>${g.name}</td><td>${g.pay_days}</td><td>₹${parseFloat(g.net_salary).toFixed(2)}</td></tr>`
+                       ).join('')}</tbody>
+                     </table>`;
+        }
+
+        if (skipped.length) {
+            html += `<p class="mb-1"><strong>Skipped (${skipped.length}):</strong></p>
+                     <table class="table table-sm table-bordered">
+                       <thead><tr><th>Emp Code</th><th>Reason</th></tr></thead>
+                       <tbody>${skipped.map(s =>
+                           `<tr><td>${s.employee}</td><td class="text-muted">${s.reason}</td></tr>`
+                       ).join('')}</tbody>
+                     </table>`;
+        }
+
+        document.getElementById('payrollModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('payrollModal')).show();
+
+    } catch(e) {
+        document.getElementById('alertArea').innerHTML =
+            `<div class="alert alert-danger py-2 mt-2">Payroll error: ${e.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-money-rupee-circle-line"></i> Generate Payroll';
+    }
+}
+</script>
+{% endblock %}

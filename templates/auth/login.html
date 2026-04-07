@@ -1,0 +1,233 @@
+{% extends 'auth/base.html' %}
+{% load static %}
+
+{% block title %}
+{{block.super}} HRMS Login
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    <div class="container auth-box">
+        <div class="row border rounded-3 bg-weight shadow box-area">
+            <div class="col-12 col-sm-12 col-md-6 col-lg-6 d-flex justify-content-center align-items-center flex-column left-box">
+                <div class="featured-outline">
+                    <img src="{% static 'images/featured_image/HRM_image.png' %}" class="img-fluid" alt="HRM">
+                </div>
+                <div class="institution-name mb-3">
+                    <h2><strong>SPARROW</strong></h2>
+                </div>
+                <small class="about-text text-wrap ps-4">SSPL is an ISO 9001:2015(QMS), 27001:2013, 20000-1:2011 certified company.</small>
+            </div>
+            <div class="col-12 col-sm-12 col-md-6 col-lg-6 right-box">
+                <div class="row align-items-center">
+                    <div class="header-text mb-3">
+                        <div class="featured-image mb-2 text-center">
+                            <img src="{% static 'images/logo/sspl_logo.png' %}" class="img-fluid" alt="Company Logo">
+                        </div>
+                        <h3 class="text-center"><strong>Sign In</strong></h3>
+                    </div>
+
+                    <!-- Alert Messages -->
+                    <div id="alertContainer"></div>
+
+                    <form id="loginForm">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control form-control-lg bg-light fs-6" name="user_id" id="user_id" placeholder="Employee ID (e.g., EMP0001)" required>
+                            <span class="input-group-text">
+                                <i class="ri-shield-user-line"></i>
+                            </span>
+                        </div>
+                        <div class="input-group mb-1">
+                            <input type="password" class="form-control form-control-lg bg-light fs-6" name="password" id="password" placeholder="Password" required>
+                            <span class="input-group-text">
+                                <i class="ri-lock-password-line"></i>
+                            </span>
+                        </div>
+                        <div class="input-group mb-4 d-flex justify-content-between">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                                <label for="rememberMe" class="form-check-label text-secondary"><small>Remember Me</small></label>
+                            </div>
+                            <div class="forgot">
+                                <small><a href="/forgot-password/">Forgot Password?</a></small>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <button type="submit" class="btn btn-md primary-button w-100 fs-6" id="loginBtn">
+                                <span id="btnText">Login</span>
+                                <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="auth-signin-note mb-1">
+                        <small><strong>Note :</strong> For any issue related query please feel free to write us on <strong>eoffice.support@sparrowsoftech.com</strong></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // API Configuration - use relative URL so it works on any host/port
+    const API_BASE_URL = '/api/accounts';
+    
+    // Handle Login Form Submission
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const user_id = document.getElementById('user_id').value.trim();
+        const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
+        
+        // Validation
+        if (!user_id || !password) {
+            showAlert('Please fill in all fields', 'warning');
+            return;
+        }
+        
+        // Show loading state
+        const loginBtn = document.getElementById('loginBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        
+        loginBtn.disabled = true;
+        btnText.textContent = 'Logging in...';
+        btnSpinner.style.display = 'inline-block';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/login/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    user_id: user_id,
+                    password: password
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Store token
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Store remember me preference
+                if (rememberMe) {
+                    localStorage.setItem('rememberMe', 'true');
+                    localStorage.setItem('savedUserId', user_id);
+                } else {
+                    localStorage.removeItem('rememberMe');
+                    localStorage.removeItem('savedUserId');
+                }
+                
+                showAlert('Login successful! Redirecting...', 'success');
+
+                // Role-based redirect
+                setTimeout(() => {
+                    const role = data.user.role_name;
+                    if (role === 'HR' || role === 'ADMIN') {
+                        window.location.href = '/dashboard/';
+                    } else {
+                        window.location.href = '/user/dashboard/';
+                    }
+                }, 500);
+            } else {
+                // Handle error response
+                const errorMsg = data.error || data.detail || 'Login failed. Please try again.';
+                showAlert(errorMsg, 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Network error. Please check your connection and try again.', 'danger');
+        } finally {
+            // Reset button state
+            loginBtn.disabled = false;
+            btnText.textContent = 'Login';
+            btnSpinner.style.display = 'none';
+        }
+    });
+    
+    // Show Alert Function
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertId = 'alert-' + Date.now();
+        
+        const alertHTML = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        alertContainer.innerHTML = alertHTML;
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+    
+    // Load saved user ID if remember me was checked
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('rememberMe') === 'true') {
+            const savedUserId = localStorage.getItem('savedUserId');
+            if (savedUserId) {
+                document.getElementById('user_id').value = savedUserId;
+                document.getElementById('rememberMe').checked = true;
+                document.getElementById('password').focus();
+            }
+        }
+    });
+    
+    // Check if already logged in — validate token against API first
+    window.addEventListener('load', async function() {
+        const token = localStorage.getItem('authToken');
+        if (!token) return; // no token, show login form
+
+        try {
+            const res = await fetch('/api/accounts/profile/', {
+                headers: { 'Authorization': 'Token ' + token }
+            });
+            if (res.ok) {
+                // Token is valid — redirect to dashboard
+                window.location.href = '/dashboard/';
+            } else {
+                // Token expired or invalid — clear it and show login form
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+            }
+        } catch(e) {
+            // Network error — clear token and show login form
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+        }
+    });
+</script>
+
+{% endblock %}

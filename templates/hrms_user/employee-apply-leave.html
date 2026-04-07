@@ -1,0 +1,276 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}Apply Leave - HRMS User{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    .fc-toolbar-title { font-weight:600; font-size:20px; }
+    .fc-event { cursor:pointer; border:none; padding:4px 6px; font-size:12px; border-radius:6px; transition:0.2s; }
+    .fc-event:hover { transform:scale(1.05); opacity:.9; }
+    .fc-day-today { background:#e8f4ff !important; border:2px solid #0d6efd; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h4 class="fw-bold mb-3">Apply Leave</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Leave</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Apply Leave</span></li>
+    </ul>
+</div>
+
+<div>
+    <small>
+        <strong class="text-danger">* On leave doesn't switch off your phone.</strong>
+        <ol>
+            <li class="text-danger">Employees are eligible to take <strong>Sick Leave (SL)</strong> with a valid <strong>Medical Certificate/Receipt.</strong></li>
+            <li class="text-danger">Once the <strong>Sick Leave (SL)</strong> limit is exhausted, any additional leave requested will be considered as <strong>unpaid leave.</strong></li>
+        </ol>
+    </small>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+
+                <!-- Calendar -->
+                <div id="calendar"></div>
+                <br>
+
+                <!-- Leave Summary -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-head-bg-secondary">
+                        <thead>
+                            <tr><th colspan="4" class="text-center bg-light"><strong>Leave Summary</strong></th></tr>
+                            <tr class="text-center">
+                                <th>LEAVE TYPE</th><th>TOTAL LEAVE</th><th>TAKEN LEAVE</th><th>LEFT LEAVE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveSummaryBody">
+                            <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Leave Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h6 class="modal-title">Apply Leave — <span id="modalEmpName">-</span></h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalAlert"></div>
+                <form id="leaveForm">
+                    <div class="mb-2">
+                        <label class="form-label">Leave Session</label><br>
+                        <div class="selectgroup selectgroup-secondary selectgroup-pills">
+                            <label class="selectgroup-item">
+                                <input type="radio" name="leaveSession" value="Full Day" class="selectgroup-input" checked>
+                                <span class="selectgroup-button mb-1">Full Day</span>
+                            </label>
+                            <label class="selectgroup-item">
+                                <input type="radio" name="leaveSession" value="Morning Half Day" class="selectgroup-input">
+                                <span class="selectgroup-button mb-1">Morning Half Day</span>
+                            </label>
+                            <label class="selectgroup-item">
+                                <input type="radio" name="leaveSession" value="Afternoon Half Day" class="selectgroup-input">
+                                <span class="selectgroup-button mb-1">Afternoon Half Day</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Leave Type</label>
+                        <select id="leaveType" class="form-select">
+                            <option value="">Select Leave Type</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Leave From</label>
+                        <input type="date" id="leaveStart" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Leave Upto</label>
+                        <input type="date" id="leaveEnd" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Upload Medical File <small class="text-muted">(optional)</small></label>
+                        <input type="file" id="leaveFile" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Leave Reason</label>
+                        <textarea id="leaveReason" class="form-control" rows="3" placeholder="Enter leave reason"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" id="submitLeaveBtn">
+                        <i class="ri-send-plane-line"></i> Submit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+const leaveColors = {
+    'Casual Leave':'#1CB0E6', 'Sick Leave':'#E6B989',
+    'Paid Leave':'#E58BCF',   'Unpaid Leave':'#10E6B7'
+};
+
+let calendar, leaveTypes = [], empId = null, bsModal;
+
+function showAlert(container, msg, type='danger') {
+    document.getElementById(container).innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    bsModal = new bootstrap.Modal(document.getElementById('eventModal'));
+
+    // Get logged-in user info
+    try {
+        const res = await fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } });
+        const u = await res.json();
+        empId = u.id;
+        const name = [(u.first_name||''),(u.last_name||'')].join(' ').trim().toUpperCase();
+        document.getElementById('modalEmpName').textContent = `${name} (${u.user_id})`;
+    } catch(e) { console.error(e); }
+
+    // Load leave types
+    try {
+        const res = await fetch('/api/leave/leave-types/', { headers: { 'Authorization': 'Token ' + token } });
+        const data = await res.json();
+        leaveTypes = Array.isArray(data) ? data : (data.results || []);
+        const sel = document.getElementById('leaveType');
+        sel.innerHTML = '<option value="">Select Leave Type</option>';
+        leaveTypes.forEach(lt => sel.innerHTML += `<option value="${lt.id}">${lt.name}</option>`);
+    } catch(e) { console.error(e); }
+
+    // Load leave balance
+    await loadLeaveData();
+
+    // Calendar
+    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        selectable: true,
+        height: 'auto',
+        headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay' },
+        dateClick: function(info) {
+            document.getElementById('leaveStart').value = info.dateStr;
+            document.getElementById('leaveEnd').value   = info.dateStr;
+            document.getElementById('modalAlert').innerHTML = '';
+            bsModal.show();
+        },
+        dayCellDidMount: function(info) {
+            if (info.date.getDay() === 0) info.el.style.backgroundColor = '#fff2f2';
+        },
+        eventDidMount: function(info) {
+            const e = info.event.extendedProps;
+            info.el.title = `${info.event.title}\nFrom: ${info.event.startStr}\nReason: ${e.reason||''}`;
+        }
+    });
+    calendar.render();
+
+    // Submit
+    document.getElementById('submitLeaveBtn').addEventListener('click', async function() {
+        const leaveTypeId = document.getElementById('leaveType').value;
+        const start       = document.getElementById('leaveStart').value;
+        const end         = document.getElementById('leaveEnd').value;
+        const reason      = document.getElementById('leaveReason').value.trim();
+
+        if (!leaveTypeId || !start || !end || !reason) {
+            showAlert('modalAlert', 'Please fill all required fields.');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = 'Submitting...';
+
+        try {
+            const res = await fetch('/api/leave/apply-leave/', {
+                method: 'POST',
+                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leave_type: parseInt(leaveTypeId), start_date: start, end_date: end, reason })
+            });
+            const text = await res.text();
+            let data; try { data = JSON.parse(text); } catch(_) { data = { error: text }; }
+
+            if (res.ok) {
+                bsModal.hide();
+                document.getElementById('leaveForm').reset();
+                showAlert('alertArea', 'Leave applied successfully.', 'success');
+                await loadLeaveData();
+            } else {
+                showAlert('modalAlert', data.error || (data.non_field_errors && data.non_field_errors[0]) || JSON.stringify(data));
+            }
+        } catch(e) {
+            showAlert('modalAlert', 'Error: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="ri-send-plane-line"></i> Submit';
+        }
+    });
+});
+
+async function loadLeaveData() {
+    if (!empId) return;
+    const year = new Date().getFullYear();
+
+    // Leave balance
+    try {
+        const res = await fetch(`/api/leave/leave-balances/?employee=${empId}&year=${year}`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        const balances = res.ok ? (await res.json()) : [];
+        const list = Array.isArray(balances) ? balances : (balances.results || []);
+        const tbody = document.getElementById('leaveSummaryBody');
+        tbody.innerHTML = list.length
+            ? list.map(b => `<tr class="text-center">
+                <td class="fw-bold">${b.leave_type_name}</td>
+                <td>${b.total_allocated}</td>
+                <td>${b.used}</td>
+                <td>${b.available}</td>
+              </tr>`).join('')
+            : '<tr><td colspan="4" class="text-center text-muted">No leave balance found</td></tr>';
+    } catch(e) { console.error(e); }
+
+    // Leave requests → calendar
+    try {
+        const res = await fetch(`/api/leave/leave-requests/?employee=${empId}`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        const requests = res.ok ? (await res.json()) : [];
+        const list = Array.isArray(requests) ? requests : (requests.results || []);
+        if (calendar) {
+            calendar.removeAllEvents();
+            list.forEach(r => {
+                const color = leaveColors[r.leave_type_name] || '#6861CE';
+                calendar.addEvent({
+                    title: r.leave_type_name + (r.status !== 'APPROVED' ? ` (${r.status})` : ''),
+                    start: r.start_date, end: r.end_date,
+                    backgroundColor: color, borderColor: color,
+                    extendedProps: { reason: r.reason }
+                });
+            });
+        }
+    } catch(e) { console.error(e); }
+}
+</script>
+{% endblock %}

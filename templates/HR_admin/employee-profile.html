@@ -1,0 +1,398 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee Profile - HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header-info label { display: block; margin-bottom: 2px; font-size: 0.9rem; }
+    .profile-header-info label strong { font-size: 0.95rem; }
+    .form-group label { font-size: 0.82rem; color: #6c757d; margin-bottom: 2px; }
+    .form-group p.fw-bold { font-size: 0.9rem; margin-bottom: 0; }
+    .table-head-bg-secondary thead tr th { background-color: #6861CE; color: #fff; }
+    #userPhoto { height: 130px; width: 130px; border: 1px solid #ccc; margin-top: 10px; object-fit: cover; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Employee Profile</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Management</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Profile</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+
+            <!-- Search bar -->
+            <div class="card-header d-print-none">
+                <div class="row align-items-end">
+                    <div class="col-lg-4 col-md-5 col-sm-8">
+                        <div class="form-group mb-0">
+                            <label for="empSelect">Employee Name</label>
+                            <select class="form-select" id="empSelect">
+                                <option value="">Select</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-4 mt-2">
+                        <button class="btn btn-primary btn-md" id="searchBtn">
+                            <i class="ri-search-line"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                <!-- Loading / Error -->
+                <div id="loadingState" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading employee data...</p>
+                </div>
+                <div id="errorState" class="alert alert-danger d-none"></div>
+
+                <!-- Profile content -->
+                <div id="profileContent" class="d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Employee Profile</h4>
+                        </div>
+                        <div class="card-body">
+
+                            <ul class="nav nav-pills nav-dark-secondary" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <a class="nav-link active" id="pills-basic-tab" data-bs-toggle="pill" href="#pills-basic" role="tab">Basic Info</a>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <a class="nav-link" id="pills-professional-tab" data-bs-toggle="pill" href="#pills-professional" role="tab" tabindex="-1">Professional</a>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <a class="nav-link" id="pills-accounts-tab" data-bs-toggle="pill" href="#pills-accounts" role="tab" tabindex="-1">Accounts</a>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <a class="nav-link" id="pills-documents-tab" data-bs-toggle="pill" href="#pills-documents" role="tab" tabindex="-1">Documents</a>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content mt-2 mb-3" id="pills-tabContent">
+
+                                <!-- ===== BASIC INFO ===== -->
+                                <div class="tab-pane fade show active" id="pills-basic" role="tabpanel">
+                                    <div class="row p-2" style="background:#f8f8ff;">
+                                        <div class="col-lg-3 col-md-3 col-sm-4 col-6">
+                                            <img src="{% static 'images/profile/user.png' %}" id="userPhoto" alt="Profile image">
+                                        </div>
+                                        <div class="col-lg-9 col-md-9 col-sm-8 col-6 profile-header-info" style="padding-left:0;">
+                                            <div class="form-group mt-1">
+                                                <label><strong id="empNameHeader">-</strong></label>
+                                                <label>Gender: <strong id="empGender">-</strong></label>
+                                                <label>Blood Group: <strong id="empBloodGroup">-</strong></label>
+                                                <label>Date Of Birth: <strong id="empDOB">-</strong></label>
+                                                <label>Date Of Joining: <strong id="empDOJ">-</strong></label>
+                                                <label>Contact Number: <strong id="empContact">-</strong></label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row col-12 mt-2">
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Father's Name</label><p class="fw-bold" id="empFatherName">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Mother's Name</label><p class="fw-bold" id="empMotherName">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Height In CM.</label><p class="fw-bold" id="empHeight">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Weight In KG</label><p class="fw-bold" id="empWeight">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Marital Status</label><p class="fw-bold" id="empMarital">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Email ID</label><p class="fw-bold" id="empEmail">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>UAN Number</label><p class="fw-bold" id="empUAN">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Pan Number</label><p class="fw-bold" id="empPAN">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>UID Number</label><p class="fw-bold" id="empUID">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>ESIC Number</label><p class="fw-bold" id="empESIC">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>PF Number</label><p class="fw-bold" id="empPF">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Qualification Of Employee</label><p class="fw-bold" id="empQualification">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Another Contact Number</label><p class="fw-bold" id="empContact2">-</p></div>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <div class="form-group"><label>Present Address</label><p class="fw-bold" id="empPresentAddr">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Present City</label><p class="fw-bold" id="empPresentCity">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Present State</label><p class="fw-bold" id="empPresentState">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Present Pincode</label><p class="fw-bold" id="empPresentPin">-</p></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row col-12">
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <div class="form-group"><label>Permanent Address</label><p class="fw-bold" id="empPermAddr">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Permanent City</label><p class="fw-bold" id="empPermCity">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Permanent State</label><p class="fw-bold" id="empPermState">-</p></div>
+                                        </div>
+                                        <div class="col-lg-3 col-md-4 col-sm-6">
+                                            <div class="form-group"><label>Permanent Pincode</label><p class="fw-bold" id="empPermPin">-</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- ===== END BASIC INFO ===== -->
+
+                                <!-- ===== PROFESSIONAL ===== -->
+                                <div class="tab-pane fade" id="pills-professional" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table class="display table table-bordered my-3 table-head-bg-secondary" width="100%">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>Branch | Department | Designation</th>
+                                                    <th>Grade</th>
+                                                    <th>Employment Type</th>
+                                                    <th>Reporting Officer</th>
+                                                    <th>Effective Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="professionalTableBody">
+                                                <tr><td colspan="5" class="text-center text-muted">-</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- ===== ACCOUNTS ===== -->
+                                <div class="tab-pane fade" id="pills-accounts" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table class="display table table-bordered my-3 table-head-bg-secondary" width="100%">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>Bank Name</th>
+                                                    <th>Bank Branch</th>
+                                                    <th>Bank Account Number</th>
+                                                    <th>IFSC Code</th>
+                                                    <th>Salaried Account</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="accountsTableBody">
+                                                <tr><td colspan="5" class="text-center text-muted">-</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- ===== DOCUMENTS ===== -->
+                                <div class="tab-pane fade" id="pills-documents" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table class="display table table-bordered my-3 table-head-bg-secondary" width="100%">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>Document Name</th>
+                                                    <th>Upload Image Of Document</th>
+                                                    <th>Document Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="documentsTableBody">
+                                                <tr><td colspan="3" class="text-center text-muted">No documents uploaded.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div><!-- end tab-content -->
+                        </div><!-- end card-body -->
+                    </div><!-- end inner card -->
+                </div><!-- end profileContent -->
+
+            </div><!-- end card-body -->
+        </div><!-- end outer card -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // token is already declared in base_bar.html — reuse it
+    function val(v) { return v || '-'; }
+
+    function formatDate(d) {
+        if (!d) return '-';
+        const dt = new Date(d);
+        if (isNaN(dt)) return d;
+        return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // Populate employee dropdown
+    async function loadEmployeeList() {
+        try {
+            let allEmployees = [];
+            let url = '/api/accounts/employees/';
+            while (url) {
+                const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
+                if (!res.ok) {
+                    console.error('Failed to fetch employees:', res.status, res.statusText);
+                    break;
+                }
+                const data = await res.json();
+                if (Array.isArray(data)) { allEmployees = data; url = null; }
+                else { allEmployees = allEmployees.concat(data.results || []); url = data.next || null; }
+            }
+            const sel = document.getElementById('empSelect');
+            if (!allEmployees.length) {
+                sel.innerHTML = '<option value="">No employees found</option>';
+                return;
+            }
+            allEmployees.forEach(emp => {
+                const firstName = (emp.first_name || '').trim();
+                const lastName  = (emp.last_name  || '').trim();
+                const name = [firstName, lastName].filter(Boolean).join(' ').toUpperCase();
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${name} (${emp.user_id})`;
+                sel.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Failed to load employee list:', err);
+            document.getElementById('empSelect').innerHTML = '<option value="">Error loading employees</option>';
+        }
+    }
+
+    // Search button
+    document.getElementById('searchBtn').addEventListener('click', async function () {
+        const empId = document.getElementById('empSelect').value;
+        if (!empId) { alert('Please select an employee.'); return; }
+
+        document.getElementById('profileContent').classList.add('d-none');
+        document.getElementById('errorState').classList.add('d-none');
+        document.getElementById('loadingState').classList.remove('d-none');
+
+        try {
+            const res = await fetch(`/api/accounts/employees/${empId}/`, {
+                headers: { 'Authorization': 'Token ' + token }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const emp = await res.json();
+            populateProfile(emp);
+        } catch (err) {
+            document.getElementById('loadingState').classList.add('d-none');
+            const errEl = document.getElementById('errorState');
+            errEl.textContent = 'Error loading employee: ' + err.message;
+            errEl.classList.remove('d-none');
+        }
+    });
+
+    function populateProfile(emp) {
+        const profile    = emp.employee_profile   || {};
+        const employment = emp.employment_details || {};
+        const bank       = emp.bank_details       || {};
+
+        const firstName = (emp.first_name || '').trim().toUpperCase();
+        const lastName  = (emp.last_name  || '').trim().toUpperCase();
+        const fullName  = [firstName, lastName].filter(Boolean).join(' ');
+
+        document.getElementById('empNameHeader').textContent   = `${fullName} (${emp.user_id || '-'})`;
+        document.getElementById('empGender').textContent       = val(profile.gender);
+        document.getElementById('empBloodGroup').textContent   = val(profile.blood_group);
+        document.getElementById('empDOB').textContent          = formatDate(profile.date_of_birth);
+        document.getElementById('empDOJ').textContent          = formatDate(profile.date_of_joining);
+        document.getElementById('empContact').textContent      = val(profile.contact_number);
+
+        document.getElementById('empFatherName').textContent    = val(profile.father_name);
+        document.getElementById('empMotherName').textContent    = val(profile.mother_name);
+        document.getElementById('empHeight').textContent        = val(profile.height_cm);
+        document.getElementById('empWeight').textContent        = val(profile.weight_kg);
+        document.getElementById('empMarital').textContent       = val(profile.marital_status);
+        document.getElementById('empEmail').textContent         = val(emp.email);
+        document.getElementById('empUAN').textContent           = val(profile.una_number);
+        document.getElementById('empPAN').textContent           = val(profile.pan_number);
+        document.getElementById('empUID').textContent           = val(profile.uid_number);
+        document.getElementById('empESIC').textContent          = val(profile.esic_number);
+        document.getElementById('empPF').textContent            = val(profile.pf_number);
+        document.getElementById('empQualification').textContent = val(profile.qualification);
+        document.getElementById('empContact2').textContent      = val(profile.another_contact_number);
+        document.getElementById('empPresentAddr').textContent   = val(profile.present_address);
+        document.getElementById('empPresentCity').textContent   = val(profile.present_city);
+        document.getElementById('empPresentState').textContent  = val(profile.present_state);
+        document.getElementById('empPresentPin').textContent    = val(profile.present_pincode);
+        document.getElementById('empPermAddr').textContent      = val(profile.permanent_address);
+        document.getElementById('empPermCity').textContent      = val(profile.permanent_city);
+        document.getElementById('empPermState').textContent     = val(profile.permanent_state);
+        document.getElementById('empPermPin').textContent       = val(profile.permanent_pincode);
+
+        // Professional tab
+        const bdd = `${val(employment.branch)} | ${val(employment.department)} | ${val(employment.designation)}`;
+        document.getElementById('professionalTableBody').innerHTML = `
+            <tr class="text-center">
+                <td>${bdd}</td>
+                <td>${val(employment.grade)}</td>
+                <td>${val(employment.employment_type)}</td>
+                <td>${val(employment.reporting_officer)}</td>
+                <td>${formatDate(employment.effective_date)}</td>
+            </tr>`;
+
+        // Accounts tab
+        document.getElementById('accountsTableBody').innerHTML = `
+            <tr class="text-center">
+                <td>${val(bank.bank_name)}</td>
+                <td>${val(bank.bank_branch)}</td>
+                <td>${val(bank.account_number)}</td>
+                <td>${val(bank.ifsc_code)}</td>
+                <td>${bank.is_salary_account ? 'YES' : 'NO'}</td>
+            </tr>`;
+
+        // Documents tab
+        const docs = emp.documents || [];
+        document.getElementById('documentsTableBody').innerHTML = docs.length
+            ? docs.map(doc => `
+                <tr class="text-center">
+                    <td>${doc.document_type || '-'}</td>
+                    <td>${doc.document_file
+                        ? `<a href="${doc.document_file}" target="_blank"><button class="btn btn-success btn-xs my-1"><i class="ri-file-image-line" style="font-size:16px;"></i></button></a>`
+                        : `<button class="btn btn-secondary btn-xs my-1" disabled><i class="ri-file-image-line" style="font-size:16px;"></i></button>`}
+                    </td>
+                    <td>${doc.status || '-'}</td>
+                </tr>`).join('')
+            : `<tr><td colspan="3" class="text-center text-muted">No documents uploaded.</td></tr>`;
+
+        // Reset to Basic Info tab
+        const basicTab = document.getElementById('pills-basic-tab');
+        bootstrap.Tab.getOrCreateInstance(basicTab).show();
+
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('profileContent').classList.remove('d-none');
+    }
+
+    loadEmployeeList();
+</script>
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee Exit Form - HRMS{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Employee Exit Form</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Management</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/hr/employee-resign-list/">Branch Termination / Resign List</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee Exit Form</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <form id="exitForm">
+
+                    <!-- Employee Details -->
+                    <div class="row">
+                        <div class="col-12 mb-2"><h5><strong>Employee Details</strong></h5></div>
+
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Select Employee</label>
+                                <select class="form-select" id="empSelect" name="empSelect">
+                                    <option value="">-- Select Employee --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Employee Code</label>
+                                <input type="text" class="form-control" id="employeeCode" readonly placeholder="Auto-filled">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Department</label>
+                                <input type="text" class="form-control" id="employeeDepartment" readonly placeholder="Auto-filled">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Deputed Project</label>
+                                <select class="form-select" id="deputedProject" name="deputedProject">
+                                    <option value="">Select Project</option>
+                                    <option>NAGAR NIGAM JAIPUR HERITAGE</option>
+                                    <option>UDAIPUR NAGAR NIGAM</option>
+                                    <option>NAGAR NIGAM JAIPUR GREATER</option>
+                                    <option>KOTA NAGAR NIGAM</option>
+                                    <option>NORTH KOTA NAGAR NIGAM</option>
+                                    <option>CHURU MUNICIPAL COUNCIL</option>
+                                    <option>CHOMU MUNICIPAL COUNCIL</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Designation</label>
+                                <input type="text" class="form-control" id="employeeDesignation" readonly placeholder="Auto-filled">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Date of Joining</label>
+                                <input type="date" class="form-control" id="doj" readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Contact Number</label>
+                                <input type="text" class="form-control" id="contactNumber1" readonly placeholder="Auto-filled">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Email ID</label>
+                                <input type="email" class="form-control" id="emailId" readonly placeholder="Auto-filled">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exit Details -->
+                    <div class="row mt-2">
+                        <div class="col-12 mb-2"><h5><strong>Exit Details</strong></h5></div>
+
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Exit Type</label>
+                                <select class="form-select" id="empExitType" name="empExitType">
+                                    <option value="">Select Exit Type</option>
+                                    <option value="Resignation">Resignation</option>
+                                    <option value="Termination">Termination</option>
+                                    <option value="Retirement">Retirement</option>
+                                    <option value="End of Contract">End of Contract</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Date of Last Working Day</label>
+                                <input type="date" class="form-control" id="lwd" name="lwd">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Reason for Exit</label>
+                                <select class="form-select" id="empExitReason" name="empExitReason">
+                                    <option value="">Select Exit Reason</option>
+                                    <option>Performance issues</option>
+                                    <option>Personal reasons</option>
+                                    <option>Misconduct</option>
+                                    <option>Better opportunity</option>
+                                    <option>Higher Education</option>
+                                    <option>Relocation</option>
+                                    <option>Work-Life Balance</option>
+                                    <option>Health Issues</option>
+                                    <option>Career Change</option>
+                                    <option>Others</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Remark <small class="text-muted">(Optional)</small></label>
+                                <textarea id="othersRemark" name="othersRemark" class="form-control" rows="3" placeholder="Enter Remark"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notice Details -->
+                    <div class="row mt-2">
+                        <div class="col-12 mb-2"><h5><strong>Notice Details</strong></h5></div>
+
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Notice Period Start</label>
+                                <input type="date" class="form-control" id="noticeStart" name="noticeStart">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Notice Period End</label>
+                                <input type="date" class="form-control" id="noticeEnd" name="noticeEnd">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Notice Period Served</label>
+                                <select class="form-select" id="noticePeriodServed" name="noticePeriodServed">
+                                    <option value="">Select</option>
+                                    <option value="Full">Full</option>
+                                    <option value="Partial">Partial</option>
+                                    <option value="Not Served">Not Served</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Upload Notice <small class="text-muted">(optional)</small></label>
+                                <input type="file" class="form-control" id="uploadNotice" name="uploadNotice">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exit Formalities -->
+                    <div class="row mt-2">
+                        <div class="col-12 mb-2"><h5><strong>Exit Formalities</strong></h5></div>
+
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Company Asset Return</label>
+                                <textarea id="AssetReturn" name="AssetReturn" class="form-control" rows="3" placeholder="Ex: Laptop, ID card, Phone"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Eligible for Rehire</label>
+                                <select class="form-select" id="EligibleRehire" name="EligibleRehire">
+                                    <option value="">Select</option>
+                                    <option value="YES">YES</option>
+                                    <option value="NO">NO</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Exit Document <small class="text-muted">(if applicable)</small></label>
+                                <input type="file" class="form-control" id="exitDoc" name="exitDoc">
+                            </div>
+                        </div>
+
+                        <div class="col-12 py-3 text-center">
+                            <button type="button" class="btn btn-success btn-sm" id="submitBtn">
+                                <i class="ri-send-plane-line"></i> Submit
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+    window.scrollTo(0, 0);
+}
+
+// Load employees into dropdown
+async function loadEmployees() {
+    try {
+        let all = [], url = '/api/accounts/employees/';
+        while (url) {
+            const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
+            if (!res.ok) break;
+            const data = await res.json();
+            if (Array.isArray(data)) { all = data; url = null; }
+            else { all = all.concat(data.results || []); url = data.next || null; }
+        }
+        const sel = document.getElementById('empSelect');
+        all.forEach(emp => {
+            const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
+            sel.innerHTML += `<option value="${emp.id}" data-emp='${JSON.stringify(emp)}'>${name} (${emp.user_id})</option>`;
+        });
+    } catch(e) { console.error(e); }
+}
+
+// Auto-fill fields on employee select
+document.getElementById('empSelect').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (!opt.value) {
+        ['employeeCode','employeeDepartment','employeeDesignation','doj','contactNumber1','emailId']
+            .forEach(id => document.getElementById(id).value = '');
+        return;
+    }
+    try {
+        const emp = JSON.parse(opt.dataset.emp);
+        const profile    = emp.employee_profile   || {};
+        const employment = emp.employment_details || {};
+        document.getElementById('employeeCode').value        = emp.user_id || '';
+        document.getElementById('employeeDepartment').value  = employment.department || '';
+        document.getElementById('employeeDesignation').value = employment.designation || '';
+        document.getElementById('doj').value                 = profile.date_of_joining || '';
+        document.getElementById('contactNumber1').value      = profile.contact_number || '';
+        document.getElementById('emailId').value             = emp.email || '';
+    } catch(e) { console.error(e); }
+});
+
+// Submit — calls the delete/soft-delete API
+document.getElementById('submitBtn').addEventListener('click', async function() {
+    const empId = document.getElementById('empSelect').value;
+    const lwd   = document.getElementById('lwd').value;
+    const reason = document.getElementById('empExitReason').value;
+    const remark = document.getElementById('othersRemark').value.trim();
+
+    if (!empId) { showAlert('Please select an employee.'); return; }
+    if (!lwd)   { showAlert('Please enter the Last Working Day.'); return; }
+    if (!reason){ showAlert('Please select a Reason for Exit.'); return; }
+
+    if (!confirm('Are you sure you want to initiate exit for this employee? This action cannot be undone.')) return;
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+    try {
+        const res = await fetch(`/api/accounts/employees/${empId}/exit/`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                deletion_reason: `${reason}${remark ? ' - ' + remark : ''}`,
+                last_working_day: lwd
+            })
+        });
+
+        if (res.ok || res.status === 204) {
+            showAlert('Employee exit initiated successfully.', 'success');
+            document.getElementById('exitForm').reset();
+            setTimeout(() => window.location.href = '/hr/employee-resign-list/', 1500);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showAlert(data.error || data.detail || 'Failed to initiate exit. Please try again.');
+        }
+    } catch(e) {
+        showAlert('Network error: ' + e.message);
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="ri-send-plane-line"></i> Submit';
+    }
+});
+
+document.addEventListener('DOMContentLoaded', loadEmployees);
+</script>
+{% endblock %}
