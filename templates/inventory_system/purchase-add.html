@@ -1,0 +1,122 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+{% block title %}Add / Edit Purchase - Inventory System{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Add New Purchase Entry</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/inventory/purchases/">Purchase Entry</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add New Purchase Entry</span></li>
+    </ul>
+</div>
+<div class="row"><div class="col-md-12"><div class="card"><div class="card-body">
+    <div id="alertArea"></div>
+    <div class="row">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Purchase Number</label>
+            <input type="text" class="form-control" id="purchaseNumber" placeholder="e.g. PUR2026001"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Supplier</label>
+            <input type="text" class="form-control" id="supplier" placeholder="Enter Supplier Name"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Office</label>
+            <select class="form-select" id="office"><option value="">Select</option></select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Purchase Date</label>
+            <input type="date" class="form-control" id="purchaseDate"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Item</label>
+            <select class="form-select" id="item"><option value="">Select</option></select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="qty" placeholder="Enter Item Quantity" min="1"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Price Per Unit</label>
+            <input type="number" class="form-control" id="pricePerUnit" placeholder="0.00" min="0" step="0.01"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Remark <small class="text-muted">(optional)</small></label>
+            <textarea id="remark" class="form-control" rows="3" placeholder="Enter text here.."></textarea></div>
+        </div>
+    </div>
+    <div class="pt-3">
+        <button type="button" class="btn btn-success btn-sm" id="submitBtn"><strong>Submit</strong></button>
+        <a href="/inventory/purchases/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+    </div>
+</div></div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const urlParams=new URLSearchParams(window.location.search);
+const editId=urlParams.get('id');
+function showAlert(msg,type){type=type||'danger';document.getElementById('alertArea').innerHTML='<div class="alert alert-'+type+' alert-dismissible fade show py-2">'+msg+'<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';window.scrollTo(0,0);}
+async function loadDropdowns(){
+    try{
+        const [oRes,iRes]=await Promise.all([
+            fetch('/api/assets/zones/',{headers:{'Authorization':'Token '+token}}),
+            fetch('/api/assets/assets/',{headers:{'Authorization':'Token '+token}})
+        ]);
+        const offices=await oRes.json();const items=await iRes.json();
+        const oSel=document.getElementById('office');
+        (Array.isArray(offices)?offices:(offices.results||[])).forEach(function(o){oSel.innerHTML+='<option value="'+o.id+'">'+o.name+'</option>';});
+        const iSel=document.getElementById('item');
+        (Array.isArray(items)?items:(items.results||[])).forEach(function(i){iSel.innerHTML+='<option value="'+i.id+'">'+i.name+' ('+i.asset_code+')</option>';});
+    }catch(e){console.error(e);}
+}
+async function loadPurchase(id){
+    try{
+        const res=await fetch('/api/assets/purchases/'+id+'/',{headers:{'Authorization':'Token '+token}});
+        if(!res.ok)throw new Error('Not found');
+        const p=await res.json();
+        document.getElementById('pageTitle').textContent='Edit Purchase Entry';
+        document.getElementById('breadcrumbLabel').textContent='Edit Purchase Entry';
+        document.getElementById('purchaseNumber').value=p.purchase_number||'';
+        document.getElementById('supplier').value=p.supplier||'';
+        document.getElementById('office').value=p.office||'';
+        document.getElementById('purchaseDate').value=p.purchase_date||'';
+        document.getElementById('item').value=p.item||'';
+        document.getElementById('qty').value=p.quantity||'';
+        document.getElementById('pricePerUnit').value=p.price_per_unit||'';
+        document.getElementById('remark').value=p.remark||'';
+    }catch(e){showAlert('Failed to load: '+e.message);}
+}
+document.addEventListener('DOMContentLoaded',function(){
+    loadDropdowns();
+    if(editId)loadPurchase(editId);
+    document.getElementById('submitBtn').addEventListener('click',async function(){
+        const purchaseNumber=document.getElementById('purchaseNumber').value.trim();
+        const supplier=document.getElementById('supplier').value.trim();
+        const office=document.getElementById('office').value;
+        const purchaseDate=document.getElementById('purchaseDate').value;
+        const item=document.getElementById('item').value;
+        const qty=document.getElementById('qty').value;
+        const price=document.getElementById('pricePerUnit').value;
+        const remark=document.getElementById('remark').value.trim();
+        if(!item){showAlert('Please select an Item.');return;}
+        if(!qty||parseInt(qty)<1){showAlert('Quantity must be at least 1.');return;}
+        if(!purchaseDate){showAlert('Purchase Date is required.');return;}
+        const payload={purchase_number:purchaseNumber,supplier:supplier,purchase_date:purchaseDate,item:parseInt(item),quantity:parseInt(qty),price_per_unit:price||0,remark:remark};
+        if(office)payload.office=parseInt(office);
+        const url=editId?'/api/assets/purchases/'+editId+'/':'/api/assets/purchases/';
+        const method=editId?'PUT':'POST';
+        this.disabled=true;this.innerHTML='<strong>Saving...</strong>';
+        try{
+            const res=await fetch(url,{method:method,headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const text=await res.text();var data;try{data=JSON.parse(text);}catch(e){data={error:text};}
+            if(res.ok){showAlert(editId?'Purchase updated.':'Purchase added.','success');setTimeout(function(){window.location.href='/inventory/purchases/';},1000);}
+            else{showAlert(data.item&&data.item[0]?data.item[0]:(data.detail||JSON.stringify(data)));}
+        }catch(e){showAlert('Error: '+e.message);}
+        finally{this.disabled=false;this.innerHTML='<strong>Submit</strong>';}
+    });
+});
+</script>
+{% endblock %}

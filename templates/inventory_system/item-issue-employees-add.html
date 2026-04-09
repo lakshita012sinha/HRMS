@@ -1,0 +1,149 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+{% block title %}Add Item Issue To Employees - Inventory System{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Add Item Issue To Employees</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/inventory/issues/employees/">Item Consumption</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add Item Issue To Employees</span></li>
+    </ul>
+</div>
+<div class="row"><div class="col-md-12"><div class="card"><div class="card-body">
+    <div id="alertArea"></div>
+    <div class="row">
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Office</label>
+            <select class="form-select" id="office"><option value="">Select</option></select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Employee</label>
+            <select class="form-select" id="employee"><option value="">Select</option></select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Item Type</label>
+            <select class="form-select" id="itemType" onchange="filterItems()">
+                <option value="">All</option>
+                <option value="ASSET">Asset</option>
+                <option value="CONSUMABLE">Consumable</option>
+            </select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Item</label>
+            <select class="form-select" id="item"><option value="">Select</option></select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="qty" placeholder="Enter Item Quantity" min="1"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Issue Date</label>
+            <input type="date" class="form-control" id="issueDate"></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Returnable Item</label>
+            <select class="form-select" id="returnable">
+                <option value="">Select</option>
+                <option value="true">YES</option>
+                <option value="false">NO</option>
+            </select></div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group"><label class="form-label">Remark <small class="text-muted">(optional)</small></label>
+            <textarea id="remark" class="form-control" rows="3" placeholder="Enter text here.."></textarea></div>
+        </div>
+    </div>
+    <div class="pt-3">
+        <button type="button" class="btn btn-success btn-sm" id="submitBtn"><strong>Submit</strong></button>
+        <a href="/inventory/issues/employees/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+    </div>
+</div></div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const urlParams=new URLSearchParams(window.location.search);
+const editId=urlParams.get('id');
+let allItems=[];
+function showAlert(msg,type){type=type||'danger';document.getElementById('alertArea').innerHTML='<div class="alert alert-'+type+' alert-dismissible fade show py-2">'+msg+'<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';window.scrollTo(0,0);}
+
+async function loadDropdowns(){
+    try{
+        const [oRes,eRes,iRes]=await Promise.all([
+            fetch('/api/assets/zones/',{headers:{'Authorization':'Token '+token}}),
+            fetch('/api/accounts/employees/',{headers:{'Authorization':'Token '+token}}),
+            fetch('/api/assets/assets/',{headers:{'Authorization':'Token '+token}})
+        ]);
+        const offices=await oRes.json(); const emps=await eRes.json(); const items=await iRes.json();
+        const oSel=document.getElementById('office');
+        (Array.isArray(offices)?offices:(offices.results||[])).forEach(function(o){oSel.innerHTML+='<option value="'+o.id+'">'+o.name+'</option>';});
+        const eSel=document.getElementById('employee');
+        (Array.isArray(emps)?emps:(emps.results||[])).forEach(function(e){
+            const name=((e.first_name||'')+(e.last_name?' '+e.last_name:'')).trim()||e.user_id;
+            eSel.innerHTML+='<option value="'+e.id+'">'+name.toUpperCase()+' ('+e.user_id+')</option>';
+        });
+        allItems=Array.isArray(items)?items:(items.results||[]);
+        filterItems();
+    }catch(e){console.error(e);}
+}
+
+function filterItems(){
+    const type=document.getElementById('itemType').value;
+    const iSel=document.getElementById('item');
+    const current=iSel.value;
+    iSel.innerHTML='<option value="">Select</option>';
+    allItems.filter(function(i){return !type||i.item_type===type;}).forEach(function(i){
+        iSel.innerHTML+='<option value="'+i.id+'">'+i.name+' ('+i.asset_code+')</option>';
+    });
+    if(current)iSel.value=current;
+}
+
+async function loadIssue(id){
+    try{
+        const res=await fetch('/api/assets/issues/'+id+'/',{headers:{'Authorization':'Token '+token}});
+        if(!res.ok)throw new Error('Not found');
+        const r=await res.json();
+        document.getElementById('pageTitle').textContent='Edit Item Issue';
+        document.getElementById('breadcrumbLabel').textContent='Edit Item Issue';
+        document.getElementById('office').value=r.office||'';
+        document.getElementById('employee').value=r.employee||'';
+        document.getElementById('item').value=r.item||'';
+        document.getElementById('qty').value=r.quantity||'';
+        document.getElementById('issueDate').value=r.issue_date||'';
+        document.getElementById('returnable').value=r.returnable?'true':'false';
+        document.getElementById('remark').value=r.remark||'';
+    }catch(e){showAlert('Failed to load: '+e.message);}
+}
+
+document.addEventListener('DOMContentLoaded',async function(){
+    await loadDropdowns();
+    if(editId)loadIssue(editId);
+    document.getElementById('submitBtn').addEventListener('click',async function(){
+        const office=document.getElementById('office').value;
+        const employee=document.getElementById('employee').value;
+        const item=document.getElementById('item').value;
+        const qty=document.getElementById('qty').value;
+        const issueDate=document.getElementById('issueDate').value;
+        const returnable=document.getElementById('returnable').value;
+        if(!item){showAlert('Please select an Item.');return;}
+        if(!qty||parseInt(qty)<1){showAlert('Quantity must be at least 1.');return;}
+        if(!issueDate){showAlert('Issue Date is required.');return;}
+        const payload={item:parseInt(item),quantity:parseInt(qty),issue_date:issueDate,returnable:returnable==='true',remark:document.getElementById('remark').value.trim()};
+        if(office)payload.office=parseInt(office);
+        if(employee)payload.employee=parseInt(employee);
+        const url=editId?'/api/assets/issues/'+editId+'/':'/api/assets/issues/';
+        const method=editId?'PUT':'POST';
+        this.disabled=true;this.innerHTML='<strong>Saving...</strong>';
+        try{
+            const res=await fetch(url,{method:method,headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const text=await res.text();var data;try{data=JSON.parse(text);}catch(e){data={error:text};}
+            if(res.ok){showAlert(editId?'Updated.':'Added.','success');setTimeout(function(){window.location.href='/inventory/issues/employees/';},1000);}
+            else{showAlert(data.item&&data.item[0]?data.item[0]:(data.detail||JSON.stringify(data)));}
+        }catch(e){showAlert('Error: '+e.message);}
+        finally{this.disabled=false;this.innerHTML='<strong>Submit</strong>';}
+    });
+});
+</script>
+{% endblock %}

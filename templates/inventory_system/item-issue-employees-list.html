@@ -1,0 +1,137 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+{% block title %}Issue To Employees - Inventory System{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'js/datatables/datatables.min.css' %}">
+<style>.btn-xs{padding:2px 8px;font-size:11px;}</style>
+{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Issue To Employees</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Item Consumption</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Issue To Employees</span></li>
+    </ul>
+</div>
+
+<div class="row"><div class="col-md-12"><div class="card">
+    <div class="card-body">
+        <div id="alertArea"></div>
+
+        <!-- Add New button -->
+        <div class="text-center mb-3">
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='/inventory/issues/employees/add/'">
+                <i class="ri-add-line"></i> <strong>Add New</strong>
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="row g-3 mb-3">
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <label class="form-label">Office</label>
+                <select class="form-select" id="filterOffice">
+                    <option value="">Select</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <label class="form-label">Employee</label>
+                <select class="form-select" id="filterEmployee">
+                    <option value="">Select</option>
+                </select>
+            </div>
+            <div class="col-12 text-center">
+                <button class="btn btn-success btn-sm" id="searchBtn">
+                    <i class="ri-search-line"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div id="loadingState" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Loading...</p>
+        </div>
+        <div class="table-responsive">
+            <table id="issueTable" class="display table table-hover table-bordered">
+                <thead>
+                    <tr><th colspan="9" class="text-center bg-light"><strong>Item Issue To Employees</strong></th></tr>
+                    <tr class="text-center">
+                        <th>#</th><th>Office</th><th>Employee</th><th>Item</th>
+                        <th>Type</th><th>Quantity</th><th>Issue Date</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="issueTableBody">
+                    <tr><td colspan="9" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div></div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+let dtInstance = null;
+function fmtDate(d){return d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'-';}
+function showAlert(msg,type){type=type||'danger';document.getElementById('alertArea').innerHTML='<div class="alert alert-'+type+' alert-dismissible fade show py-2">'+msg+'<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';}
+
+async function loadDropdowns(){
+    try{
+        const [oRes,eRes]=await Promise.all([
+            fetch('/api/assets/zones/',{headers:{'Authorization':'Token '+token}}),
+            fetch('/api/accounts/employees/',{headers:{'Authorization':'Token '+token}})
+        ]);
+        const offices=await oRes.json(); const emps=await eRes.json();
+        const oSel=document.getElementById('filterOffice');
+        (Array.isArray(offices)?offices:(offices.results||[])).forEach(function(o){oSel.innerHTML+='<option value="'+o.id+'">'+o.name+'</option>';});
+        const eSel=document.getElementById('filterEmployee');
+        (Array.isArray(emps)?emps:(emps.results||[])).forEach(function(e){
+            const name=((e.first_name||'')+(e.last_name?' '+e.last_name:'')).trim().toUpperCase()||e.user_id;
+            eSel.innerHTML+='<option value="'+e.id+'">'+name+' ('+e.user_id+')</option>';
+        });
+    }catch(e){console.error(e);}
+}
+
+async function loadIssues(office,employee){
+    document.getElementById('loadingState').classList.remove('d-none');
+    try{
+        let url='/api/assets/issues/?';
+        if(office)url+='office='+office+'&';
+        if(employee)url+='employee='+employee+'&';
+        const res=await fetch(url,{headers:{'Authorization':'Token '+token}});
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        const data=await res.json();
+        const list=Array.isArray(data)?data:(data.results||[]);
+        document.getElementById('loadingState').classList.add('d-none');
+        const tbody=document.getElementById('issueTableBody');
+        if(!list.length){tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-3">No records found.</td></tr>';}
+        else{tbody.innerHTML=list.map(function(r,i){
+            return '<tr class="text-center"><td>'+(i+1)+'</td>'+
+                '<td>'+(r.office_name||'-')+'</td>'+
+                '<td>'+(r.employee_name||'-')+'</td>'+
+                '<td>'+(r.item_name||'-')+'</td>'+
+                '<td>'+(r.item_type||'-')+'</td>'+
+                '<td>'+r.quantity+'</td>'+
+                '<td>'+fmtDate(r.issue_date)+'</td>'+
+                '<td><span class="badge bg-success">Approved</span></td>'+
+                '<td><button class="btn btn-warning btn-xs" onclick="window.location.href=\'/inventory/issues/employees/add/?id='+r.id+'\'">' +
+                'Edit</button></td></tr>';
+        }).join('');}
+        if(dtInstance){dtInstance.destroy();dtInstance=null;}
+        dtInstance=$('#issueTable').DataTable({pageLength:50,destroy:true,columnDefs:[{orderable:false,targets:8}]});
+    }catch(e){document.getElementById('loadingState').classList.add('d-none');showAlert('Error: '+e.message);}
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+    loadDropdowns();
+    loadIssues('','');
+    document.getElementById('searchBtn').addEventListener('click',function(){
+        loadIssues(document.getElementById('filterOffice').value,document.getElementById('filterEmployee').value);
+    });
+});
+</script>
+{% endblock %}

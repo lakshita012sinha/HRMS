@@ -1,0 +1,144 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Item List - Inventory System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-xs { padding:2px 8px; font-size:11px; }
+    .item-thumb { width:40px; height:40px; object-fit:cover; border-radius:4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Item List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Items</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Item List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-print-none text-center">
+                <div id="alertArea"></div>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='/inventory/items/add/'">
+                    <i class="ri-add-line"></i> <strong>Add New</strong>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading items...</p>
+                </div>
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr><th colspan="10" class="text-center bg-light"><strong>Items List</strong></th></tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Units</th>
+                                <th>Image</th>
+                                <th>Item Type</th>
+                                <th>Status</th>
+                                <th>Added On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const DEFAULT_IMG = "{% static 'images/profile/user.png' %}";
+
+function fmtDate(d) {
+    return d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+}
+
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' +
+        msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+async function loadItems() {
+    try {
+        const res = await fetch('/api/assets/assets/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const items = Array.isArray(data) ? data : (data.results || []);
+
+        document.getElementById('loadingState').classList.add('d-none');
+        const tbody = document.getElementById('itemTableBody');
+
+        if (!items.length) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">No items found.</td></tr>';
+        } else {
+            tbody.innerHTML = items.map(function(item, i) {
+                const img = item.item_image_url
+                    ? '<img src="' + item.item_image_url + '" class="item-thumb" onerror="this.src=\''+DEFAULT_IMG+'\'">'
+                    : '<img src="' + DEFAULT_IMG + '" class="item-thumb">';
+                const statusBadge = item.is_active
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>';
+                return '<tr class="text-center">' +
+                    '<td>' + (i+1) + '</td>' +
+                    '<td>' + item.asset_code + '</td>' +
+                    '<td class="text-start">' + item.name + '</td>' +
+                    '<td>' + (item.category_name || '-') + '</td>' +
+                    '<td>' + item.unit + '</td>' +
+                    '<td>' + img + '</td>' +
+                    '<td>' + (item.item_type || '-') + '</td>' +
+                    '<td>' + statusBadge + '</td>' +
+                    '<td>' + fmtDate(item.created_at) + '</td>' +
+                    '<td>' +
+                        '<button class="btn btn-success btn-xs mb-1" onclick="window.location.href=\'/inventory/items/add/?id=' + item.id + '\'">' +
+                            '<i class="ri-edit-line"></i> Edit</button> ' +
+                        '<button class="btn btn-danger btn-xs mb-1" onclick="deleteItem(' + item.id + ', this)">' +
+                            '<i class="ri-delete-bin-line"></i></button>' +
+                    '</td></tr>';
+            }).join('');
+        }
+        document.getElementById('tableWrapper').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('loadingState').classList.add('d-none');
+        showAlert('Error loading items: ' + e.message);
+    }
+}
+
+async function deleteItem(id, btn) {
+    if (!confirm('Delete this item?')) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/assets/assets/' + id + '/', {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (res.ok || res.status === 204) {
+            showAlert('Item deleted.', 'warning');
+            loadItems();
+        } else {
+            showAlert('Failed to delete.');
+            btn.disabled = false;
+        }
+    } catch(e) { showAlert('Error: ' + e.message); btn.disabled = false; }
+}
+
+document.addEventListener('DOMContentLoaded', loadItems);
+</script>
+{% endblock %}

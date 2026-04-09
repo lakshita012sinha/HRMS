@@ -161,8 +161,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             const d = new Date(dob);
             const m = d.getMonth() + 1, day = d.getDate();
             const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim() || emp.user_id;
+            const photo = emp.employee_profile?.profile_photo || "{% static 'images/profile/user.png' %}";
             const item = `<div class="item-list">
-                <div class="avatar"><img src="{% static 'images/profile/user.png' %}" class="avatar-img rounded-circle" style="width:36px;height:36px;"></div>
+                <div class="avatar"><img src="${photo}" class="avatar-img rounded-circle" style="width:36px;height:36px;object-fit:cover;" onerror="this.src='{% static 'images/profile/user.png' %}'"></div>
                 <div class="info-user ms-3">
                     <div class="username">${name}</div>
                     <div class="status">DOB: ${String(day).padStart(2,'0')} ${d.toLocaleString('default',{month:'long'})}</div>

@@ -153,3 +153,64 @@ class AssetDashboardView(APIView):
             'zone_summary': zone_summary,
             'recent_movements': recent_movements,
         })
+
+
+# ── Purchases ──────────────────────────────────────────────────────────────────
+
+class PurchaseListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import PurchaseSerializer
+        return PurchaseSerializer
+
+    def get_queryset(self):
+        from .models import Purchase
+        return Purchase.objects.select_related('item', 'office').order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import PurchaseSerializer
+        return PurchaseSerializer
+
+    def get_queryset(self):
+        from .models import Purchase
+        return Purchase.objects.all()
+
+
+class ItemIssueListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemIssueSerializer
+        return ItemIssueSerializer
+
+    def get_queryset(self):
+        from .models import ItemIssue
+        qs = ItemIssue.objects.select_related('item', 'office', 'employee')
+        office = self.request.query_params.get('office')
+        employee = self.request.query_params.get('employee')
+        if office: qs = qs.filter(office_id=office)
+        if employee: qs = qs.filter(employee_id=employee)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ItemIssueDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemIssueSerializer
+        return ItemIssueSerializer
+
+    def get_queryset(self):
+        from .models import ItemIssue
+        return ItemIssue.objects.all()

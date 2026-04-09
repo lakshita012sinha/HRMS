@@ -322,6 +322,14 @@
         const fullName  = [firstName, lastName].filter(Boolean).join(' ');
 
         document.getElementById('empNameHeader').textContent   = `${fullName} (${emp.user_id || '-'})`;
+
+        // Profile photo
+        if (profile.profile_photo) {
+            document.getElementById('userPhoto').src = profile.profile_photo;
+        } else {
+            document.getElementById('userPhoto').src = "{% static 'images/profile/user.png' %}";
+        }
+
         document.getElementById('empGender').textContent       = val(profile.gender);
         document.getElementById('empBloodGroup').textContent   = val(profile.blood_group);
         document.getElementById('empDOB').textContent          = formatDate(profile.date_of_birth);

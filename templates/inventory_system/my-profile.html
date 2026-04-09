@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Profile</title>
+    <link rel="shortcut icon" href="../assets/images/logo/sspl_favicon.png" type="image/png"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" integrity="sha512-XcIsjKMcuVe0Ucj/xgIXQnytNwBttJbNjltBV18IOnru2lDPe9KRRyvCXw6Y5H415vbBLRm8+q6fmLUU7DfO6Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="static/css/admin.css">
+    <link rel="stylesheet" href="static/css/responsive.css">
+
+    <style>
+      body { font-family: 'Noto sans', sans-serif; }
+      .nav-item.show > a {
+        background-color: #6861CE;
+        color: #fff;
+      }
+      .nav-item > a.active {
+        font-weight: 600;
+      }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+      <!-- Sidebar -->
+      <div class="sidebar" data-background-color="white">
+        <div class="sidebar-logo">
+          <!-- Logo Header -->
+          <div class="logo-header" data-background-color="inky">
+            <a href="index.html" class="logo">
+              <img src="../assets/images/logo/sspl_logo.png" alt="navbar brand" class="navbar-brand" height="44"/>
+              <h4 style="color: white; padding: 6px 0 0 6px;"><strong>Sparrow Softech</strong></h4>
+            </a>
+            <div class="nav-toggle">
+              <button class="btn btn-toggle toggle-sidebar">
+                <i class="gg-menu-right"></i>
+              </button>
+              <button class="btn btn-toggle sidenav-toggler">
+                <i class="gg-menu-left"></i>
+              </button>
+            </div>
+            <button class="topbar-toggler more">
+              <i class="gg-more-vertical-alt"></i>
+            </button>
+          </div>
+          <!-- End Logo Header -->
+        </div>
+        <div class="sidebar-wrapper scrollbar scrollbar-inner">
+          <div class="sidebar-content">
+            <ul class="nav nav-secondary">
+              <li class="nav-item">
+                <a href="index.html">
+                  <i class="ri-home-3-line"></i>
+                  <p>Home</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#offices">
+                  <i class="ri-government-line"></i>
+                  <p>Offices</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="offices">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="office-list.html">
+                        <span class="sub-item">Offices List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="office-add.html">
+                        <span class="sub-item">Add New Office</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#categories">
+                  <i class="ri-kanban-view-2"></i>
+                  <p>Categories</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="categories">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="category-list.html">
+                        <span class="sub-item">Category List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="category-add.html">
+                        <span class="sub-item">Add New Category</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#items">
+                  <i class="ri-box-1-line"></i>
+                  <p>Items</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="items">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="item-list.html">
+                        <span class="sub-item">Items List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="item-add.html">
+                        <span class="sub-item">Add New Items</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#purchase">
+                  <i class="ri-shopping-cart-line"></i>
+                  <p>Purchase Entry</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="purchase">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="purchase-list.html">
+                        <span class="sub-item">Purchase List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="purchase-add.html">
+                        <span class="sub-item">Add New Purchase Entry</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#itemConsumption">
+                  <i class="ri-hourglass-fill"></i>
+                  <p>Item Consumption</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="itemConsumption">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="item-issue-employees-list.html">
+                        <span class="sub-item">Issue To Employees</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="item-issue-department-list.html">
+                        <span class="sub-item">Issue To Department</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#defunctitems">
+                  <i class="ri-delete-bin-2-line"></i>
+                  <p>Damaged & Lost Items</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="defunctitems">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="item-adjustment-list.html">
+                        <span class="sub-item">Adjustment List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="item-adjustment-add.html">
+                        <span class="sub-item">Add Adjustment</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>              
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#transfers">
+                  <i class="ri-share-box-line"></i>
+                  <p>Transfer Items</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="transfers">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="item-transfer-list.html">
+                        <span class="sub-item">Transfers List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="item-transfer-add.html">
+                        <span class="sub-item">Add New Transfer</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#returned">
+                  <i class="ri-arrow-left-down-box-line"></i>
+                  <p>Returned Items</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="returned">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="item-returned-list.html">
+                        <span class="sub-item">Returned List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="item-returned-add.html">
+                        <span class="sub-item">Add Returned Item</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#users">
+                  <i class="ri-user-line"></i>
+                  <p>Users</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="users">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="my-profile.html">
+                        <span class="sub-item">Profile</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#vendors">
+                  <i class="ri-truck-line"></i>
+                  <p>Vendors</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="vendors">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="supplier-list.html">
+                        <span class="sub-item">Suppliers List</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="supplier-add.html">
+                        <span class="sub-item">Add New Supplier</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a data-bs-toggle="collapse" href="#reports">
+                  <i class="ri-bar-chart-box-line"></i>
+                  <p>Reports</p>
+                  <span class="caret"></span>
+                </a>
+                <div class="collapse" id="reports">
+                  <ul class="nav nav-collapse">
+                    <li>
+                      <a href="#">
+                        <span class="sub-item">Inventory Report</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#">
+                        <span class="sub-item">Transfer Report</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#">
+                        <span class="sub-item">Purchase Report</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#">
+                        <span class="sub-item">Office Wise Items</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- End Sidebar -->
+
+      <div class="main-panel">
+        <div class="main-header">
+          <div class="main-header-logo">
+            <!-- Logo Header -->
+            <div class="logo-header" data-background-color="inky">
+              <a href="index.html" class="logo">
+                <img src="../assets/images/logo/sspl_logo.png" alt="navbar brand" class="navbar-brand" height="20"/>
+                <h6 style="color: white; padding: 6px 0 0 8px;"><strong>Sparrow Softech</strong></h6>
+              </a>
+              <div class="nav-toggle">
+                <button class="btn btn-toggle toggle-sidebar">
+                  <i class="gg-menu-right"></i>
+                </button>
+                <button class="btn btn-toggle sidenav-toggler">
+                  <i class="gg-menu-left"></i>
+                </button>
+              </div>
+              <button class="topbar-toggler more">
+                <i class="gg-more-vertical-alt"></i>
+              </button>
+            </div>
+            <!-- End Logo Header -->
+          </div>
+          <!-- Navbar Header -->
+          <nav
+            class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
+          >
+            <div class="container-fluid">
+              <nav
+                class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-xl-flex"
+              >
+
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button type="submit" class="btn btn-search pe-1">
+                      <i class="ri-search-line"></i>
+                    </button>
+                  </div>
+                  <input type="text" placeholder="Search ..." class="form-control" />
+                </div>
+              </nav>
+
+              <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                <li class="nav-item topbar-icon dropdown hidden-caret d-flex d-lg-none" >
+                  <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false" aria-haspopup="true" >
+                    <i class="ri-search-line"></i>
+                  </a>
+                  <ul class="dropdown-menu dropdown-search animated fadeIn">
+                    <form class="navbar-left navbar-form nav-search">
+                      <div class="input-group">
+                        <input type="text" placeholder="Search ..." class="form-control" />
+                      </div>
+                    </form>
+                  </ul>
+                </li>
+                <li class="nav-item topbar-icon dropdown hidden-caret">
+                  <a class="nav-link" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                    <i class="ri-gallery-view-2" style="font-size: 20px;"></i>
+                  </a>
+                  <div class="dropdown-menu quick-actions animated fadeIn">
+                    <div class="quick-actions-header">
+                      <span class="title mb-1">Applications</span>
+                    </div>
+                    <div class="quick-actions-scroll scrollbar-outer">
+                      <div class="quick-actions-items">
+                        <div class="row m-0">
+                          <a class="col-6 col-md-4 col-sm-6 col-12 p-0" href="index.html">
+                            <div class="quick-actions-item">
+                              <div class="avatar-item bg-secondary rounded-circle">
+                                <i class="ri-user-settings-line"></i>
+                              </div>
+                              <span class="text">HRMS Admin</span>
+                            </div>
+                          </a>
+                          <a class="col-6 col-md-4 col-sm-6 col-12 p-0" href="#">
+                            <div class="quick-actions-item">
+                              <div class="avatar-item bg-info rounded-circle">
+                                <i class="ri-user-community-line"></i>
+                              </div>
+                              <span class="text">HRMS User</span>
+                            </div>
+                          </a>
+                          <a class="col-6 col-md-4 col-sm-6 col-12 p-0" href="#">
+                            <div class="quick-actions-item">
+                              <div class="avatar-item bg-success rounded-circle">
+                                <i class="ri-box-3-line"></i>
+                              </div>
+                              <span class="text">Inventory System</span>
+                            </div>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                <li class="nav-item topbar-user dropdown hidden-caret">
+                  <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false" >
+                    <div class="avatar-sm">
+                      <img src="images/profile/user.png" alt="profile" class="avatar-img rounded-circle" />
+                    </div>
+                    <span class="profile-username">
+                      <span class="op-7"></span>
+                      <span class="fw-bold">Employee Name</span>
+                    </span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-user animated fadeIn">
+                    <div class="dropdown-user-scroll scrollbar-outer">
+                      <li>
+                        <div class="user-box">
+                          <div class="avatar-lg">
+                            <img src="images/profile/user.png" alt="image profile" class="avatar-img rounded" />
+                          </div>
+                          <div class="u-text">
+                            <h4>Employee Name</h4>
+                            <p class="text-muted">Employee designation</p>
+                            <p class="text-muted">Employee id</p>
+                          </div>
+                        </div>
+                      </li>
+                      <li>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="my-profile.html">My Profile</a>
+                        <a class="dropdown-item" href="change-password.html">Change Password</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Logout</a>
+                      </li>
+                    </div>
+                  </ul>
+                </li>
+                <li class="nav-item topbar-icon dropdown hidden-caret">
+                  <a class="nav-link" href="#">
+                    <i class="ri-logout-box-r-line" style="font-size: 20px;"></i>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </nav>
+          <!-- End Navbar -->
+        </div>
+
+        <div class="container">
+          <div class="page-inner">
+            <div class="page-header d-print-none">
+              <h4 class="fw-bold mb-3">My Profile</h4>
+            </div>
+            <div class="row">
+              <div class="col-sm-12 col-md-12">
+                
+                <div class="card card-stats card-round">
+                  
+                  <div class="card-body">
+            
+                      <div class="row">
+                        <div class="col-sm-12 col-md-12">
+                          <div class="card">
+                            <div class="card-header">
+                              <h4 class="card-title">VIMAL KUMAR SHARMA (SSPL-12345)</h4>
+                            </div>
+                            <div class="card-body">
+                              <ul class="nav nav-pills nav-dark-secondary" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                  <a class="nav-link active" id="pills-basic-tab" data-bs-toggle="pill" href="#pills-basic" role="tab" aria-controls="pills-basic" aria-selected="true">Basic Info</a>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                  <a class="nav-link" id="pills-professional-tab" data-bs-toggle="pill" href="#pills-professional" role="tab" aria-controls="pills-professional" aria-selected="false" tabindex="-1">Professional</a>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                  <a class="nav-link" id="pills-documents-tab" data-bs-toggle="pill" href="#pills-documents" role="tab" aria-controls="pills-documents" aria-selected="false" tabindex="-1">Documents</a>
+                                </li>
+                              </ul>
+                              <div class="tab-content mt-2 mb-3" id="pills-tabContent">
+                                <div class="tab-pane fade show active" id="pills-basic" role="tabpanel" aria-labelledby="pills-basic-tab">
+                                  <div class="row p-2" style="background: #f8f8ff;">
+                                    <div class="col-lg-3 col-md-3">
+                                      <div class="form-group">
+                                        <img src="images/profile/user.png" style="height:130px; margin:auto; width:130px; border:#CCCCCC solid 1px; margin-top:10px;" id="userPhoto" alt="Profile image"> 
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-9 col-md-9 col-sm-6" style="padding-left:0px; padding-right:0px;">
+                                      <div class="form-group mt-1">
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="employeeName"><strong>VIMAL KUMAR SHARMA (SSPL-12345)</strong></label>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="gender">Gender: <strong>Male</strong></label>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="gender">Blood Group: <strong>O+</strong></label>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="dob">Date Of Birth: <strong>March 01, 1990</strong></label>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="doj">Date Of Joining: <strong>June 01, 2024</strong></label>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6 col-sm-6">
+                                            <label for="doj">Contact Number: <strong>9876543210</strong></label>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="row col-lg-12 col-md-12 col-sm-12 col-12">
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="fatherName">Father's Name</label>
+                                        <p class="fw-bold">HANSRAJ SHARMA</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="motherName">Mother's Name</label>
+                                        <p class="fw-bold">HANSA SHARMA</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="height">Height In CM.</label>
+                                        <p class="fw-bold">0.00</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="weight">Weight In KG</label>
+                                        <p class="fw-bold">0.00</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="maritalStatus">Marital Status</label>
+                                        <p class="fw-bold">Unmarried</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="emailId">Email ID</label>
+                                        <p class="fw-bold">vimalks@gmail.com</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="uanNumber">UAN Number</label>
+                                        <p class="fw-bold">123123123</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="panNumber">Pan Number</label>
+                                        <p class="fw-bold">123XYZ123</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="uidNumber">UID Number</label>
+                                        <p class="fw-bold">123123456789</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="esicNumber">ESIC Number</label>
+                                        <p class="fw-bold">11123123</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="pfNumber">PF Number</label>
+                                        <p class="fw-bold">JHR1231123</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="maritalStatus">Qualification Of Employee</label>
+                                        <p class="fw-bold">GRADUATE</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="contactNumber2">Another Contact Number</label>
+                                        <p class="fw-bold">9876543211</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="presentAddress">Present Address</label>
+                                        <p class="fw-bold">89, PRADHAN MARG, CALGIRI MARG, BLOCK-B, SECTOR 4, MALVIYA NAGAR</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="presentCity">Present City</label>
+                                        <p class="fw-bold">JAIPUR</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="presentState">Present State</label>
+                                        <p class="fw-bold">RAJASTHAN</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="presentPincode">Present Pincode</label>
+                                        <p class="fw-bold">302017</p>
+                                      </div>
+                                    </div>
+
+                                    <div class="row col-lg-12 col-12">
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="permanentAddress">Permanent Address</label>
+                                        <p class="fw-bold">89, PRADHAN MARG, CALGIRI MARG, BLOCK-B, SECTOR 4, MALVIYA NAGAR</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="permanentCity">Permanent City</label>
+                                        <p class="fw-bold">JAIPUR</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="permanentState">Permanent State</label>
+                                        <p class="fw-bold">RAJASTHAN</p>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                      <div class="form-group">
+                                        <label for="permanentPincode">Permanent Pincode</label>
+                                        <p class="fw-bold">302017</p>
+                                      </div>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="tab-pane fade" id="pills-professional" role="tabpanel" aria-labelledby="pills-professional-tab">
+                                  <div class="col-lg-12 col-md-12 col-sm-12 col-12">
+                                    <div class="table-responsive">
+                                      <table class="display table table-bordered my-3 table-head-bg-secondary" width="100%">
+                                        <thead>
+                                          <tr class="text-center">
+                                            <th>Branch Department Designation</th>
+                                            <th>Grade</th>
+                                            <th>Employement Type</th>
+                                            <th>Reporting Officer</th>
+                                            <th>Effective Date</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr class="text-center">
+                                            <td>Rajasthan | Rajsthan ULB | PROJECT MANAGER</td>
+                                            <td>E2-Jaipur</td>
+                                            <td>PERMANENT</td>
+                                            <td>None | None</td>
+                                            <td>01-05-2025</td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div class="tab-pane fade" id="pills-documents" role="tabpanel" aria-labelledby="pills-documents-tab">
+                                  <div class="row">
+                                    <div class="col-lg-10 col-md-10 col-sm-10 col-12">
+                                      <div class="table-responsive">
+                                        <table class="display table table-bordered my-3 table-head-bg-secondary" width="100%">
+                                          <thead>
+                                            <tr class="text-center">
+                                              <th>Document Name</th>
+                                              <th>Upload Image Of Document</th>
+                                              <th>Document Status</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr class="text-center">
+                                              <td>AADHAR CARD</td>
+                                              <td><button class="btn btn-success btn-xs my-1"><i class="ri-file-image-line" style="font-size: 16px;"></i></button></td>
+                                              <td>Approved</td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-2 col-sm-2">
+                                      <div class="row">
+                                        <div class="col-lg-2 col-md-2 col-sm-12 mx-3">
+                                          <button type="submit" class="btn btn-primary btn-xs my-2" name="submit" data-bs-toggle="modal" data-bs-target="#addNewDoc"><strong>Add</strong></button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="modal fade" id="addNewDoc" tabindex="-1" aria-labelledby="addNewDocLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header bg-secondary">
+                <h4 class="modal-title" id="addNewDocLabel" style="font-size: 12px;">Document Upload <strong class="ms-2">VIMAL KUMAR SHARMA (SSPL-12345)</strong></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row">
+                  <div class="col-lg-12 col-md-12 col-sm-6">
+                    <div class="form-group">
+                      <label for="documentName">Document Name</label>
+                      <select class="form-select" id="documentName" name="documentName" required>
+                        <option value="">Select Document</option>
+                        <option value="">VOTER CARD</option>
+                        <option value="">AADHAR CARD</option>
+                        <option value="">ACCOUNT DOC</option>
+                        <option value="">JOINING LETTER</option>
+                        <option value="">TERMINATION LETTER</option>
+                        <option value="">PERMOTION LETTER</option>
+                        <option value="">REJOINING LETTER</option>
+                        <option value="">POST GRADUATE</option>
+                        <option value="">PHD</option>
+                        <option value="">ASSOCIATE DEGREE</option>
+                        <option value="">BACHELOR'S DEGREE</option>
+                        <option value="">GRADUATE</option>
+                        <option value="">MATRIC DOC</option>
+                        <option value="">INTERMEDIATE</option>
+                        <option value="">CERTIFICATE</option>
+                        <option value="">PAN CARD</option>
+                      </select>    
+                    </div>
+                  </div>
+                  <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-group">
+                      <label for="docImage">Upload Image Of Document</label>
+                      <input type="file" id="docImage" name="docImage" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-group">
+                      <label for="remarks">Remarks</label>
+                      <input type="text" id="remarks" name="remarks" class="form-control" placeholder="Enter Remarks">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="modal-footer">
+                <button type="button" class="btn btn-info btn-sm">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- footer start -->
+        <footer class="footer">
+          <div class="container-fluid d-flex justify-content-between">
+            <div class="copyright">
+              <a href="#" target="_blank">Sparrow Softech Pvt Ltd</a>
+            </div>
+          </div>
+        </footer>
+        <!-- footer end -->
+      </div>
+    </div>
+
+    
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.scrollbar/0.2.11/jquery.scrollbar.min.js" integrity="sha512-5AcaBUUUU/lxSEeEcruOIghqABnXF8TWqdIDXBZ2SNEtrTGvD408W/ShtKZf0JNjQUfOiRBJP+yHk6Ab2eFw3Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="static/js/admin.js"></script>
+</body>
+</html>

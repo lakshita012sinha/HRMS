@@ -1,0 +1,105 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Add / Edit Category - Inventory System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Add New Category</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/inventory/categories/">Categories</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add New Category</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <div class="col-lg-4 col-md-6 col-sm-8">
+                    <div class="form-group">
+                        <label class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="categoryName" placeholder="Enter Category Name">
+                    </div>
+                </div>
+                <div class="pt-3">
+                    <button type="button" class="btn btn-success btn-sm" id="submitBtn">
+                        <strong>Submit</strong>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const editId = urlParams.get('id');
+
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+    window.scrollTo(0, 0);
+}
+
+async function loadCategory(id) {
+    try {
+        const res = await fetch(`/api/assets/categories/${id}/`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (!res.ok) throw new Error('Category not found');
+        const c = await res.json();
+        document.getElementById('pageTitle').textContent = 'Edit Category';
+        document.getElementById('breadcrumbLabel').textContent = 'Edit Category';
+        document.getElementById('categoryName').value = c.name || '';
+    } catch(e) {
+        showAlert('Failed to load category: ' + e.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (editId) loadCategory(editId);
+
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+        const name = document.getElementById('categoryName').value.trim();
+        if (!name) { showAlert('Category Name is required.'); return; }
+
+        const url    = editId ? `/api/assets/categories/${editId}/` : '/api/assets/categories/';
+        const method = editId ? 'PUT' : 'POST';
+
+        this.disabled = true;
+        this.innerHTML = '<strong>Saving...</strong>';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const text = await res.text();
+            let data; try { data = JSON.parse(text); } catch(_) { data = { error: text }; }
+
+            if (res.ok) {
+                showAlert(editId ? 'Category updated.' : 'Category added.', 'success');
+                setTimeout(() => window.location.href = '/inventory/categories/', 1000);
+            } else {
+                showAlert(data.name?.[0] || data.detail || JSON.stringify(data));
+            }
+        } catch(e) {
+            showAlert('Error: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<strong>Submit</strong>';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -147,7 +147,9 @@
                 // Role-based redirect
                 setTimeout(() => {
                     const role = data.user.role_name;
-                    if (role === 'HR' || role === 'ADMIN') {
+                    if (role === 'ADMIN') {
+                        window.location.href = '/inventory/dashboard/';
+                    } else if (role === 'HR') {
                         window.location.href = '/dashboard/';
                     } else {
                         window.location.href = '/user/dashboard/';

@@ -1,0 +1,204 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Add / Edit Item - Inventory System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Add New Item</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/inventory/items/">Items</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add New Item</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <div class="row">
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Item Name</label>
+                            <input type="text" class="form-control" id="itemName" placeholder="Enter Item Name">
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Item Code</label>
+                            <input type="text" class="form-control" id="itemCode" placeholder="Enter Item Code">
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="itemCategory">
+                                <option value="">Select</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Units</label>
+                            <select class="form-select" id="itemUnit">
+                                <option value="">Select</option>
+                                <option value="PCS">Pcs</option>
+                                <option value="NOS">Nos</option>
+                                <option value="SET">Set</option>
+                                <option value="KG">Kg</option>
+                                <option value="LTR">Ltr</option>
+                                <option value="MTR">Mtr</option>
+                                <option value="BOX">Box</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-3">
+                        <div class="form-group">
+                            <label class="form-label">Upload Item Image</label>
+                            <input type="file" class="form-control" id="itemImage" accept="image/*">
+                            <img src="{% static 'images/profile/user.png' %}" style="height:80px;width:80px;border:1px solid #ccc;margin-top:8px;object-fit:cover;" id="itemPreview" alt="Item image">
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Item Type</label>
+                            <select class="form-select" id="itemType">
+                                <option value="">Select</option>
+                                <option value="CONSUMABLE">Consumable</option>
+                                <option value="ASSET">Asset</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="form-group">
+                            <label class="form-label">Minimum Stock Level (For Alert)</label>
+                            <input type="number" class="form-control" id="minStock" placeholder="Enter Minimum Stock Level Alert" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3">
+                    <button type="button" class="btn btn-success btn-sm" id="submitBtn">
+                        <strong>Submit</strong>
+                    </button>
+                    <a href="/inventory/items/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const editId = urlParams.get('id');
+
+function showAlert(msg, type) {
+    type = type || 'danger';
+    document.getElementById('alertArea').innerHTML =
+        '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' +
+        msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    window.scrollTo(0, 0);
+}
+
+// Image preview
+document.getElementById('itemImage').addEventListener('change', function() {
+    if (this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) { document.getElementById('itemPreview').src = e.target.result; };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// Load categories
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/assets/categories/', { headers: { 'Authorization': 'Token ' + token } });
+        const data = await res.json();
+        const cats = Array.isArray(data) ? data : (data.results || []);
+        const sel = document.getElementById('itemCategory');
+        cats.forEach(function(c) {
+            sel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+        });
+    } catch(e) { console.error(e); }
+}
+
+// Load item for edit
+async function loadItem(id) {
+    try {
+        const res = await fetch('/api/assets/assets/' + id + '/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error('Item not found');
+        const item = await res.json();
+        document.getElementById('pageTitle').textContent = 'Edit Item';
+        document.getElementById('breadcrumbLabel').textContent = 'Edit Item';
+        document.getElementById('itemName').value  = item.name || '';
+        document.getElementById('itemCode').value  = item.asset_code || '';
+        document.getElementById('itemCategory').value = item.category || '';
+        document.getElementById('itemUnit').value  = item.unit || '';
+        document.getElementById('itemType').value  = item.item_type || '';
+        document.getElementById('minStock').value  = item.min_stock_level || 0;
+        if (item.item_image_url) document.getElementById('itemPreview').src = item.item_image_url;
+    } catch(e) { showAlert('Failed to load item: ' + e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+    if (editId) loadItem(editId);
+
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+        const name     = document.getElementById('itemName').value.trim();
+        const code     = document.getElementById('itemCode').value.trim();
+        const category = document.getElementById('itemCategory').value;
+        const unit     = document.getElementById('itemUnit').value;
+        const type     = document.getElementById('itemType').value;
+        const minStock = document.getElementById('minStock').value;
+        const imgFile  = document.getElementById('itemImage').files[0];
+
+        if (!name) { showAlert('Item Name is required.'); return; }
+        if (!unit)  { showAlert('Please select Units.'); return; }
+
+        const fd = new FormData();
+        fd.append('name', name);
+        if (!editId && code) fd.append('asset_code', code);
+        if (category) fd.append('category', category);
+        fd.append('unit', unit);
+        if (type) fd.append('item_type', type);
+        fd.append('min_stock_level', minStock || 0);
+        if (imgFile) fd.append('item_image', imgFile);
+
+        const url    = editId ? '/api/assets/assets/' + editId + '/' : '/api/assets/assets/';
+        const method = editId ? 'PATCH' : 'POST';
+
+        this.disabled = true;
+        this.innerHTML = '<strong>Saving...</strong>';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': 'Token ' + token },
+                body: fd
+            });
+            const text = await res.text();
+            var data;
+            try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
+
+            if (res.ok) {
+                showAlert(editId ? 'Item updated.' : 'Item added.', 'success');
+                setTimeout(function() { window.location.href = '/inventory/items/'; }, 1000);
+            } else {
+                showAlert(data.name && data.name[0] ? data.name[0] : (data.detail || JSON.stringify(data)));
+            }
+        } catch(e) {
+            showAlert('Error: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<strong>Submit</strong>';
+        }
+    });
+});
+</script>
+{% endblock %}

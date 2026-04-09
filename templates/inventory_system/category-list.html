@@ -1,0 +1,125 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Category List - Inventory System{% endblock %}
+
+{% block extra_css %}
+<style>.btn-xs { padding:2px 8px; font-size:11px; }</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Category List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Categories</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Category List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-print-none text-center">
+                <div id="alertArea"></div>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='/inventory/categories/add/'">
+                    <i class="ri-add-line"></i> <strong>Add New</strong>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading categories...</p>
+                </div>
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr><th colspan="4" class="text-center bg-light"><strong>Category List</strong></th></tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Category Name</th>
+                                <th>Added On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fmtDate(d) {
+    return d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+}
+
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+}
+
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/assets/categories/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const cats = Array.isArray(data) ? data : (data.results || []);
+
+        document.getElementById('loadingState').classList.add('d-none');
+        const tbody = document.getElementById('categoryTableBody');
+
+        if (!cats.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No categories found.</td></tr>';
+        } else {
+            tbody.innerHTML = cats.map((c, i) => `
+                <tr class="text-center">
+                    <td>${i + 1}</td>
+                    <td class="text-start">${c.name}</td>
+                    <td>${fmtDate(c.created_at)}</td>
+                    <td>
+                        <button class="btn btn-success btn-xs mb-1" onclick="window.location.href='/inventory/categories/add/?id=${c.id}'">
+                            <i class="ri-edit-line"></i> Edit
+                        </button>
+                        <button class="btn btn-danger btn-xs mb-1" onclick="deleteCategory(${c.id}, this)">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>`
+            ).join('');
+        }
+        document.getElementById('tableWrapper').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('loadingState').classList.add('d-none');
+        showAlert('Error loading categories: ' + e.message);
+    }
+}
+
+async function deleteCategory(id, btn) {
+    if (!confirm('Delete this category?')) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/assets/categories/${id}/`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (res.ok || res.status === 204) {
+            showAlert('Category deleted.', 'warning');
+            loadCategories();
+        } else {
+            showAlert('Failed to delete.');
+            btn.disabled = false;
+        }
+    } catch(e) { showAlert('Error: ' + e.message); btn.disabled = false; }
+}
+
+document.addEventListener('DOMContentLoaded', loadCategories);
+</script>
+{% endblock %}

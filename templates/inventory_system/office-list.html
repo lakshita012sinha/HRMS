@@ -1,0 +1,259 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Office List - Inventory System{% endblock %}
+
+{% block extra_css %}
+<style>.btn-xs { padding:2px 8px; font-size:11px; }</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Office List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Offices</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Office List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-print-none">
+                <div id="alertArea"></div>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='/inventory/offices/add/'">
+                    <i class="ri-add-line"></i> <strong>Add New</strong>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loadingState" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Loading offices...</p>
+                </div>
+                <div id="tableWrapper" class="table-responsive d-none">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr><th colspan="7" class="text-center bg-light"><strong>Office List</strong></th></tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Office Name</th>
+                                <th>City</th>
+                                <th>State</th>
+                                <th>Added On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="officeTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Office Modal -->
+<div class="modal fade" id="addOfficeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title" id="officeModalTitle">Add New Office</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="officeModalAlert"></div>
+                <input type="hidden" id="editOfficeId">
+                <div class="mb-2">
+                    <label class="form-label">Office Name</label>
+                    <input type="text" class="form-control" id="officeName" placeholder="e.g. Nagar Nigam Jaipur">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Code</label>
+                    <input type="text" class="form-control" id="officeCode" placeholder="e.g. NNJ">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="officeType">
+                        <option value="ZONE">Zone</option>
+                        <option value="CENTRAL">Central Unit</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" id="officeAddress" rows="2" placeholder="Office address"></textarea>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" class="form-control" id="officeContact" placeholder="Contact person name">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Contact Number</label>
+                    <input type="text" class="form-control" id="officePhone" placeholder="10-digit number">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-sm" id="saveOfficeBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let bsModal;
+
+function showAlert(container, msg, type='danger') {
+    document.getElementById(container).innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+}
+
+function fmtDate(d) {
+    return d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+}
+
+async function loadOffices() {
+    try {
+        const res = await fetch('/api/assets/zones/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const zones = Array.isArray(data) ? data : (data.results || []);
+
+        document.getElementById('loadingState').classList.add('d-none');
+
+        const tbody = document.getElementById('officeTableBody');
+        if (!zones.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No offices found. Add one using the button above.</td></tr>';
+        } else {
+            tbody.innerHTML = zones.map((z, i) => `
+                <tr class="text-center">
+                    <td>${i + 1}</td>
+                    <td class="text-start">${z.name}</td>
+                    <td>${z.city || '-'}</td>
+                    <td>${z.state || '-'}</td>
+                    <td>${fmtDate(z.created_at)}</td>
+                    <td>
+                        <select class="form-select-sm" onchange="toggleStatus(${z.id}, this.value)">
+                            <option value="true" ${z.is_active ? 'selected' : ''}>Active</option>
+                            <option value="false" ${!z.is_active ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn btn-success btn-xs mb-1" onclick="window.location.href='/inventory/offices/add/?id=${z.id}'">
+                            <i class="ri-edit-line"></i> Edit
+                        </button>
+                    </td>
+                </tr>`
+            ).join('');
+        }
+        document.getElementById('tableWrapper').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('loadingState').classList.add('d-none');
+        showAlert('alertArea', 'Error loading offices: ' + e.message);
+    }
+}
+
+function editOffice(id, name, code, type, address, contact, phone) {
+    document.getElementById('editOfficeId').value = id;
+    document.getElementById('officeName').value    = name;
+    document.getElementById('officeCode').value    = code;
+    document.getElementById('officeType').value    = type;
+    document.getElementById('officeAddress').value = address;
+    document.getElementById('officeContact').value = contact;
+    document.getElementById('officePhone').value   = phone;
+    document.getElementById('officeModalTitle').textContent = 'Edit Office';
+    document.getElementById('officeModalAlert').innerHTML = '';
+    bsModal.show();
+}
+
+async function toggleStatus(id, val) {
+    try {
+        await fetch(`/api/assets/zones/${id}/`, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: val === 'true' })
+        });
+    } catch(e) { console.error(e); }
+}
+
+async function deleteOffice(id, btn) {
+    if (!confirm('Delete this office?')) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/assets/zones/${id}/`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (res.ok || res.status === 204) {
+            showAlert('alertArea', 'Office deleted.', 'warning');
+            loadOffices();
+        } else {
+            showAlert('alertArea', 'Failed to delete.');
+            btn.disabled = false;
+        }
+    } catch(e) { showAlert('alertArea', 'Error: ' + e.message); btn.disabled = false; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    bsModal = new bootstrap.Modal(document.getElementById('addOfficeModal'));
+
+    // Reset modal on open for Add
+    document.getElementById('addOfficeModal').addEventListener('show.bs.modal', function(e) {
+        if (!e.relatedTarget) return; // triggered by editOffice — don't reset
+        document.getElementById('editOfficeId').value = '';
+        document.getElementById('officeName').value = '';
+        document.getElementById('officeCode').value = '';
+        document.getElementById('officeType').value = 'ZONE';
+        document.getElementById('officeAddress').value = '';
+        document.getElementById('officeContact').value = '';
+        document.getElementById('officePhone').value = '';
+        document.getElementById('officeModalTitle').textContent = 'Add New Office';
+        document.getElementById('officeModalAlert').innerHTML = '';
+    });
+
+    document.getElementById('saveOfficeBtn').addEventListener('click', async function() {
+        const id      = document.getElementById('editOfficeId').value;
+        const name    = document.getElementById('officeName').value.trim();
+        const code    = document.getElementById('officeCode').value.trim();
+        const type    = document.getElementById('officeType').value;
+        const address = document.getElementById('officeAddress').value.trim();
+        const contact = document.getElementById('officeContact').value.trim();
+        const phone   = document.getElementById('officePhone').value.trim();
+
+        if (!name || !code) { showAlert('officeModalAlert', 'Office Name and Code are required.'); return; }
+
+        const payload = { name, code, zone_type: type, address, contact_person: contact, contact_number: phone };
+        const url    = id ? `/api/assets/zones/${id}/` : '/api/assets/zones/';
+        const method = id ? 'PUT' : 'POST';
+
+        this.disabled = true;
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            let data; try { data = JSON.parse(text); } catch(_) { data = { error: text }; }
+
+            if (res.ok) {
+                bsModal.hide();
+                showAlert('alertArea', id ? 'Office updated.' : 'Office added.', 'success');
+                loadOffices();
+            } else {
+                showAlert('officeModalAlert', data.name?.[0] || data.code?.[0] || data.detail || JSON.stringify(data));
+            }
+        } catch(e) {
+            showAlert('officeModalAlert', 'Error: ' + e.message);
+        } finally { this.disabled = false; }
+    });
+
+    loadOffices();
+});
+</script>
+{% endblock %}

@@ -243,6 +243,9 @@ function populateProfile(emp) {
     document.getElementById('profileTitle').textContent = `${name} (${code})`;
     document.getElementById('modalEmpName').textContent = `${name} (${code})`;
 
+    // Profile photo
+    document.getElementById('userPhoto').src = p.profile_photo || "{% static 'images/profile/user.png' %}";
+
     // Basic info header
     document.getElementById('bi-fullname').textContent = `${name} (${code})`;
     document.getElementById('bi-gender').textContent   = val(p.gender);

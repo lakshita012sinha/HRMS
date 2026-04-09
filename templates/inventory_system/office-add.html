@@ -1,0 +1,151 @@
+{% extends 'inventory_system/base_inventory.html' %}
+{% load static %}
+
+{% block title %}Add / Edit Office - Inventory System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Add New Office</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/inventory/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/inventory/offices/">Offices</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add New Office</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <form id="officeForm">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Office Name</label>
+                                <input type="text" class="form-control" id="officeName" placeholder="Enter Office Name">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Contact No.</label>
+                                <input type="text" class="form-control" id="officePhone" maxlength="10" placeholder="10 digits only">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>Address</label>
+                                <input type="text" class="form-control" id="officeAddress" placeholder="Enter Address">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" class="form-control" id="officeCity" placeholder="Enter City">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" class="form-control" id="officeState" placeholder="Enter State">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-print-none pt-2">
+                        <button type="button" class="btn btn-success btn-sm" id="submitBtn">
+                            <strong>Submit</strong>
+                        </button>
+                        <a href="/inventory/offices/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const editId = urlParams.get('id');
+
+function showAlert(msg, type='danger') {
+    document.getElementById('alertArea').innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show py-2">
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+    window.scrollTo(0, 0);
+}
+
+// If editing, load existing data
+async function loadOffice(id) {
+    try {
+        const res = await fetch(`/api/assets/zones/${id}/`, {
+            headers: { 'Authorization': 'Token ' + token }
+        });
+        if (!res.ok) throw new Error('Office not found');
+        const z = await res.json();
+
+        document.getElementById('pageTitle').textContent = 'Edit Office';
+        document.getElementById('breadcrumbLabel').textContent = 'Edit Office';
+        document.getElementById('officeName').value    = z.name || '';
+        document.getElementById('officePhone').value   = z.contact_number || '';
+        document.getElementById('officeAddress').value = z.address || '';
+        document.getElementById('officeCity').value    = z.city || '';
+        document.getElementById('officeState').value   = z.state || '';
+    } catch(e) {
+        showAlert('Failed to load office data: ' + e.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (editId) loadOffice(editId);
+
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+        const name    = document.getElementById('officeName').value.trim();
+        const phone   = document.getElementById('officePhone').value.trim();
+        const address = document.getElementById('officeAddress').value.trim();
+        const city    = document.getElementById('officeCity').value.trim();
+        const state   = document.getElementById('officeState').value.trim();
+
+        if (!name) { showAlert('Office Name is required.'); return; }
+
+        // Auto-generate code from name if adding new
+        const code = editId ? undefined : name.replace(/\s+/g, '').substring(0, 10).toUpperCase();
+
+        const payload = { name, contact_number: phone, address, city, state };
+        if (!editId) { payload.code = code; payload.zone_type = 'ZONE'; }
+
+        const url    = editId ? `/api/assets/zones/${editId}/` : '/api/assets/zones/';
+        const method = editId ? 'PUT' : 'POST';
+
+        this.disabled = true;
+        this.textContent = 'Saving...';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            let data; try { data = JSON.parse(text); } catch(_) { data = { error: text }; }
+
+            if (res.ok) {
+                showAlert(editId ? 'Office updated successfully.' : 'Office added successfully.', 'success');
+                setTimeout(() => window.location.href = '/inventory/offices/', 1000);
+            } else {
+                showAlert(data.name?.[0] || data.code?.[0] || data.detail || JSON.stringify(data));
+            }
+        } catch(e) {
+            showAlert('Error: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.textContent = 'Submit';
+        }
+    });
+});
+</script>
+{% endblock %}

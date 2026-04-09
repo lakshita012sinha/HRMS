@@ -6,7 +6,8 @@ from .models import Zone, AssetCategory, Asset, ZoneStock, StockMovement
 class ZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zone
-        fields = ['id', 'name', 'code', 'zone_type', 'address', 'contact_person', 'contact_number', 'is_active', 'created_at']
+        fields = ['id', 'name', 'code', 'zone_type', 'address', 'city', 'state',
+                  'contact_person', 'contact_number', 'is_active', 'created_at']
 
 
 class AssetCategorySerializer(serializers.ModelSerializer):
@@ -17,12 +18,22 @@ class AssetCategorySerializer(serializers.ModelSerializer):
 
 class AssetSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    item_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Asset
         fields = ['id', 'name', 'asset_code', 'category', 'category_name', 'description',
-                  'unit', 'total_quantity', 'central_stock', 'is_active', 'created_at']
+                  'unit', 'item_type', 'min_stock_level', 'item_image', 'item_image_url',
+                  'total_quantity', 'central_stock', 'is_active', 'created_at']
         read_only_fields = ['asset_code', 'created_at']
+
+    def get_item_image_url(self, obj):
+        if obj.item_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.item_image.url)
+            return obj.item_image.url
+        return None
 
     def create(self, validated_data):
         # Auto-generate asset_code
@@ -139,3 +150,55 @@ class StockMovementSerializer(serializers.ModelSerializer):
             to_stock.save()
 
         return movement
+
+
+class PurchaseSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_code = serializers.CharField(source='item.asset_code', read_only=True)
+    office_name = serializers.CharField(source='office.name', read_only=True)
+
+    class Meta:
+        model = None  # set below
+        fields = ['id', 'purchase_number', 'supplier', 'office', 'office_name',
+                  'item', 'item_name', 'item_code', 'quantity', 'price_per_unit',
+                  'purchase_date', 'remark', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import Purchase
+        self.Meta.model = Purchase
+        super().__init__(*args, **kwargs)
+
+    def create(self, validated_data):
+        from .models import Purchase
+        # Update item central stock
+        item = validated_data['item']
+        item.central_stock += validated_data['quantity']
+        item.total_quantity += validated_data['quantity']
+        item.save()
+        return Purchase.objects.create(**validated_data)
+
+
+class ItemIssueSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_code = serializers.CharField(source='item.asset_code', read_only=True)
+    item_type = serializers.CharField(source='item.item_type', read_only=True)
+    office_name = serializers.CharField(source='office.name', read_only=True)
+    employee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = None
+        fields = ['id', 'office', 'office_name', 'employee', 'employee_name',
+                  'item', 'item_name', 'item_code', 'item_type', 'quantity', 'issue_date',
+                  'returnable', 'remark', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import ItemIssue
+        self.Meta.model = ItemIssue
+        super().__init__(*args, **kwargs)
+
+    def get_employee_name(self, obj):
+        if obj.employee:
+            return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.user_id
+        return '-'
