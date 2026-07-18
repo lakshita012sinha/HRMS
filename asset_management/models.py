@@ -177,3 +177,59 @@ class ItemIssue(models.Model):
 
     def __str__(self):
         return f"{self.item.name} → {self.employee} x{self.quantity}"
+
+
+class ItemIssueDepartment(models.Model):
+    """Issue of items to a department"""
+    office = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, blank=True, related_name='dept_issues')
+    department = models.CharField(max_length=100, blank=True)
+    item = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='dept_issues')
+    quantity = models.PositiveIntegerField()
+    issue_date = models.DateField()
+    returnable = models.BooleanField(default=False)
+    remark = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_dept_issues')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'asset_item_dept_issues'
+        ordering = ['-created_at']
+
+
+class ItemAdjustment(models.Model):
+    """Damaged, lost or expired item adjustments"""
+    ADJUSTMENT_TYPE_CHOICES = [
+        ('DAMAGED', 'Damaged'),
+        ('LOST', 'Lost'),
+        ('EXPIRED', 'Expired'),
+    ]
+    adjustment_type = models.CharField(max_length=10, choices=ADJUSTMENT_TYPE_CHOICES)
+    office = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, blank=True, related_name='adjustments')
+    item = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='adjustments')
+    quantity = models.PositiveIntegerField()
+    adjustment_date = models.DateField()
+    remark = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_adjustments')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'asset_adjustments'
+        ordering = ['-created_at']
+
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=200)
+    gst_number = models.CharField(max_length=20, blank=True)
+    contact_number = models.CharField(max_length=15, blank=True)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'asset_suppliers'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name

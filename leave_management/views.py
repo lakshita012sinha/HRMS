@@ -202,6 +202,20 @@ class ApplyLeaveView(APIView):
             status='PENDING'
         )
 
+        # Notify reporting manager if exists
+        try:
+            from accounts.models_extended import EmploymentDetails
+            emp_details = EmploymentDetails.objects.get(employee__user=employee)
+            if emp_details.reporting_officer:
+                from .models import LeaveNotification
+                LeaveNotification.objects.create(
+                    recipient=emp_details.reporting_officer,
+                    leave_request=leave_request,
+                    message=f"{employee.get_full_name()} ({employee.user_id}) has applied for {leave_type.name} from {start_date} to {end_date}."
+                )
+        except Exception as e:
+            pass  # Notification failure shouldn't block leave creation
+
         return Response({
             'message': 'Leave request submitted successfully',
             'leave_request': LeaveRequestSerializer(leave_request).data
@@ -318,3 +332,31 @@ class LeavePolicyDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LeavePolicy.objects.all()
     serializer_class = LeavePolicySerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class NotificationListView(APIView):
+    """Get notifications for the logged-in user"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models import LeaveNotification
+        notifications = LeaveNotification.objects.filter(
+            recipient=request.user
+        ).select_related('leave_request__employee', 'leave_request__leave_type').order_by('-created_at')[:20]
+
+        data = [{
+            'id': n.id,
+            'message': n.message,
+            'is_read': n.is_read,
+            'created_at': n.created_at.strftime('%d %b %Y %H:%M'),
+            'leave_request_id': n.leave_request_id,
+        } for n in notifications]
+
+        unread_count = LeaveNotification.objects.filter(recipient=request.user, is_read=False).count()
+        return Response({'notifications': data, 'unread_count': unread_count})
+
+    def patch(self, request):
+        """Mark all as read"""
+        from .models import LeaveNotification
+        LeaveNotification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({'message': 'All notifications marked as read'})

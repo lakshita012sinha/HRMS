@@ -214,3 +214,86 @@ class ItemIssueDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         from .models import ItemIssue
         return ItemIssue.objects.all()
+
+
+class ItemIssueDeptListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemIssueDeptSerializer
+        return ItemIssueDeptSerializer
+
+    def get_queryset(self):
+        from .models import ItemIssueDepartment
+        qs = ItemIssueDepartment.objects.select_related('item', 'office')
+        office = self.request.query_params.get('office')
+        dept = self.request.query_params.get('department')
+        if office: qs = qs.filter(office_id=office)
+        if dept: qs = qs.filter(department__icontains=dept)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ItemIssueDeptDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemIssueDeptSerializer
+        return ItemIssueDeptSerializer
+
+    def get_queryset(self):
+        from .models import ItemIssueDepartment
+        return ItemIssueDepartment.objects.all()
+
+
+class ItemAdjustmentListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemAdjustmentSerializer
+        return ItemAdjustmentSerializer
+
+    def get_queryset(self):
+        from .models import ItemAdjustment
+        return ItemAdjustment.objects.select_related('item', 'office', 'item__category')
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class ItemAdjustmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import ItemAdjustmentSerializer
+        return ItemAdjustmentSerializer
+
+    def get_queryset(self):
+        from .models import ItemAdjustment
+        return ItemAdjustment.objects.all()
+
+
+class SupplierListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import SupplierSerializer
+        return SupplierSerializer
+
+    def get_queryset(self):
+        from .models import Supplier
+        return Supplier.objects.all()
+
+
+class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsHROrAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import SupplierSerializer
+        return SupplierSerializer
+
+    def get_queryset(self):
+        from .models import Supplier
+        return Supplier.objects.all()

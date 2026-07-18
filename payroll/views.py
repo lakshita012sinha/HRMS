@@ -50,7 +50,9 @@ class CreateCTCSalaryStructureView(APIView):
             ctc_monthly=ctc_monthly,
             mobile=mobile,
             other_deductions=other_deductions,
-            effective_from=effective_from
+            effective_from=effective_from,
+            grade=serializer.validated_data.get('grade', ''),
+            designation=serializer.validated_data.get('designation', ''),
         )
         
         return Response({
@@ -491,3 +493,27 @@ class GenerateMonthlyPayrollView(APIView):
             'generated': generated,
             'skipped': skipped,
         }, status=status.HTTP_201_CREATED)
+
+
+class SalaryGradeListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import SalaryGradeSerializer
+        return SalaryGradeSerializer
+
+    def get_queryset(self):
+        from .models import SalaryGrade
+        return SalaryGrade.objects.all()
+
+
+class SalaryGradeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import SalaryGradeSerializer
+        return SalaryGradeSerializer
+
+    def get_queryset(self):
+        from .models import SalaryGrade
+        return SalaryGrade.objects.all()

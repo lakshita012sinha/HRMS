@@ -103,3 +103,16 @@ class LeavePolicy(models.Model):
     class Meta:
         db_table = 'leave_policies'
         verbose_name_plural = 'Leave Policies'
+
+
+class LeaveNotification(models.Model):
+    """In-app notification for leave requests"""
+    recipient = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='leave_notifications')
+    leave_request = models.ForeignKey(LeaveRequest, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'leave_notifications'
+        ordering = ['-created_at']

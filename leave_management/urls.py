@@ -4,7 +4,7 @@ from .views import (
     LeaveBalanceListView, LeaveBalanceCreateView, MyLeaveBalanceView,
     LeaveRequestListView, LeaveRequestDetailView,
     ApplyLeaveView, ApproveLeaveView, CancelLeaveView,
-    LeavePolicyListCreateView, LeavePolicyDetailView
+    LeavePolicyListCreateView, LeavePolicyDetailView,NotificationListView
 )
 
 urlpatterns = [
@@ -27,4 +27,5 @@ urlpatterns = [
     # Leave Policies
     path('leave-policies/', LeavePolicyListCreateView.as_view(), name='leave-policy-list-create'),
     path('leave-policies/<int:pk>/', LeavePolicyDetailView.as_view(), name='leave-policy-detail'),
+    path('notifications/', NotificationListView.as_view(), name='notifications'),
 ]

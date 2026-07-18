@@ -8,6 +8,9 @@ from .views import (
     AssetDashboardView,
     PurchaseListCreateView, PurchaseDetailView,
     ItemIssueListCreateView, ItemIssueDetailView,
+    ItemIssueDeptListCreateView, ItemIssueDeptDetailView,
+    ItemAdjustmentListCreateView, ItemAdjustmentDetailView,
+    SupplierListCreateView, SupplierDetailView,
 )
 
 urlpatterns = [
@@ -25,4 +28,10 @@ urlpatterns = [
     path('purchases/<int:pk>/', PurchaseDetailView.as_view(), name='purchase-detail'),
     path('issues/', ItemIssueListCreateView.as_view(), name='issue-list'),
     path('issues/<int:pk>/', ItemIssueDetailView.as_view(), name='issue-detail'),
+    path('dept-issues/', ItemIssueDeptListCreateView.as_view(), name='dept-issue-list'),
+    path('dept-issues/<int:pk>/', ItemIssueDeptDetailView.as_view(), name='dept-issue-detail'),
+    path('adjustments/', ItemAdjustmentListCreateView.as_view(), name='adjustment-list'),
+    path('adjustments/<int:pk>/', ItemAdjustmentDetailView.as_view(), name='adjustment-detail'),
+    path('suppliers/', SupplierListCreateView.as_view(), name='supplier-list'),
+    path('suppliers/<int:pk>/', SupplierDetailView.as_view(), name='supplier-detail'),
 ]

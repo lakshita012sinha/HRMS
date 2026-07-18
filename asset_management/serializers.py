@@ -202,3 +202,50 @@ class ItemIssueSerializer(serializers.ModelSerializer):
         if obj.employee:
             return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.user_id
         return '-'
+
+
+class ItemIssueDeptSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_type = serializers.CharField(source='item.item_type', read_only=True)
+    office_name = serializers.CharField(source='office.name', read_only=True)
+
+    class Meta:
+        model = None
+        fields = ['id', 'office', 'office_name', 'department', 'item', 'item_name',
+                  'item_type', 'quantity', 'issue_date', 'returnable', 'remark', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import ItemIssueDepartment
+        self.Meta.model = ItemIssueDepartment
+        super().__init__(*args, **kwargs)
+
+
+class ItemAdjustmentSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_code = serializers.CharField(source='item.asset_code', read_only=True)
+    office_name = serializers.CharField(source='office.name', read_only=True)
+    category_name = serializers.CharField(source='item.category.name', read_only=True)
+
+    class Meta:
+        model = None
+        fields = ['id', 'adjustment_type', 'office', 'office_name', 'item', 'item_name',
+                  'item_code', 'category_name', 'quantity', 'adjustment_date', 'remark', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import ItemAdjustment
+        self.Meta.model = ItemAdjustment
+        super().__init__(*args, **kwargs)
+
+
+class SupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ['id', 'name', 'gst_number', 'contact_number', 'address', 'city', 'state', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import Supplier
+        self.Meta.model = Supplier
+        super().__init__(*args, **kwargs)

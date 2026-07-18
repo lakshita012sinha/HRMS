@@ -1,0 +1,224 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+{% block title %}Employee Salary Grade - HRMS{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3" id="pageTitle">Employee Salary Grade</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><a href="/hr/salary-grade-list/">Salary</a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span id="breadcrumbLabel">Add Grade Pay</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+
+                <!-- Grade Pay Structure -->
+                <div class="mb-4">
+                    <h5 class="border-start border-primary border-3 ps-2 mb-3"><strong>Grade Pay Structure</strong></h5>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label">Employee Name</label>
+                                <select class="form-select" id="employeeSelect">
+                                    <option value="">Select Employee</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label">Employee Designation</label>
+                                <select class="form-select" id="designation">
+                                    <option value="">Select Designation</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label">Grade</label>
+                                <select class="form-select" id="grade">
+                                    <option value="">Select Grade</option>
+                                    <option value="M">M</option>
+                                    <option value="M1">M1</option>
+                                    <option value="E1">E1</option>
+                                    <option value="E1-Jaipur">E1-Jaipur</option>
+                                    <option value="E2-Jaipur">E2-Jaipur</option>
+                                    <option value="F">F</option>
+                                    <option value="F1">F1</option>
+                                    <option value="E">E</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entitled Salary -->
+                <div class="mb-4">
+                    <h5 class="border-start border-primary border-3 ps-2 mb-3"><strong>Entitled Salary</strong></h5>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label">Yearly CTC</label>
+                                <input type="number" class="form-control" id="yearlyCTC" placeholder="Enter Yearly CTC" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label">Monthly CTC</label>
+                                <input type="number" class="form-control" id="monthlyCTC" placeholder="Enter Monthly CTC" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2" id="breakdownSection" style="display:none!important;">
+                        <div class="col-12"><small class="text-muted">All salary components (Basic, HRA, CA, CCA, Bonus, PF, ESI) will be auto-calculated from Monthly CTC when generating payslip.</small></div>
+                    </div>
+                </div>
+
+                <div class="text-center pt-2">
+                    <button type="button" class="btn btn-success btn-sm" id="submitBtn">
+                        <strong>Submit</strong>
+                    </button>
+                    <a href="/hr/salary-grade-list/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const editId = urlParams.get('id');  // salary structure id
+
+function showAlert(msg, type) {
+    type = type || 'danger';
+    document.getElementById('alertArea').innerHTML =
+        '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' +
+        msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    window.scrollTo(0, 0);
+}
+
+async function loadDropdowns() {
+    try {
+        const [eRes, dRes] = await Promise.all([
+            fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + token } }),
+            fetch('/api/accounts/designations/', { headers: { 'Authorization': 'Token ' + token } })
+        ]);
+        const emps = await eRes.json();
+        const eSel = document.getElementById('employeeSelect');
+        (Array.isArray(emps) ? emps : (emps.results || [])).forEach(function(e) {
+            const name = ((e.first_name || '') + (e.last_name ? ' ' + e.last_name : '')).trim().toUpperCase() || e.user_id;
+            eSel.innerHTML += '<option value="' + e.id + '">' + name + ' (' + e.user_id + ')</option>';
+        });
+        if (dRes.ok) {
+            const depts = await dRes.json();
+            const dSel = document.getElementById('designation');
+            (Array.isArray(depts) ? depts : (depts.results || [])).forEach(function(d) {
+                dSel.innerHTML += '<option value="' + d.name + '">' + d.name + '</option>';
+            });
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function loadRecord(id) {
+    try {
+        const res = await fetch('/api/payroll/salary-structures/' + id + '/', { headers: { 'Authorization': 'Token ' + token } });
+        if (!res.ok) throw new Error('Not found');
+        const s = await res.json();
+        document.getElementById('pageTitle').textContent = 'Edit Employee Salary Grade';
+        document.getElementById('breadcrumbLabel').textContent = 'Edit Grade Pay';
+        document.getElementById('employeeSelect').value = s.employee || '';
+        document.getElementById('monthlyCTC').value = s.ctc_monthly || '';
+        document.getElementById('yearlyCTC').value = parseFloat(s.ctc_monthly || 0) * 12;
+        document.getElementById('breakdownSection').style.display = 'block';
+    } catch(e) { showAlert('Failed to load: ' + e.message); }
+}
+
+// Auto-calculate monthly from yearly
+document.getElementById('yearlyCTC').addEventListener('input', function() {
+    const yearly = parseFloat(this.value) || 0;
+    if (yearly > 0) document.getElementById('monthlyCTC').value = (yearly / 12).toFixed(2);
+});
+
+// Auto-calculate yearly from monthly
+document.getElementById('monthlyCTC').addEventListener('input', function() {
+    const monthly = parseFloat(this.value) || 0;
+    if (monthly > 0) document.getElementById('yearlyCTC').value = (monthly * 12).toFixed(2);
+    document.getElementById('breakdownSection').style.removeProperty('display');
+});
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadDropdowns();
+    if (editId) loadRecord(editId);
+
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+        const empId = document.getElementById('employeeSelect').value;
+        const monthly = document.getElementById('monthlyCTC').value;
+
+        if (!empId) { showAlert('Please select an Employee.'); return; }
+        if (!monthly || parseFloat(monthly) <= 0) { showAlert('Monthly CTC is required.'); return; }
+
+        const today = new Date().toISOString().split('T')[0];
+        const payload = {
+            employee: parseInt(empId),
+            ctc_monthly: parseFloat(monthly),
+            effective_from: today,
+            grade: document.getElementById('grade').value,
+            designation: document.getElementById('designation').value
+        };
+
+        // Check if employee already has a salary structure
+        let url, method;
+        if (editId) {
+            url = '/api/payroll/salary-structures/' + editId + '/';
+            method = 'PATCH';
+        } else {
+            // Check for existing structure
+            const checkRes = await fetch('/api/payroll/salary-structures/?employee=' + empId, { headers: { 'Authorization': 'Token ' + token } });
+            const checkData = await checkRes.json();
+            const existing = Array.isArray(checkData) ? checkData : (checkData.results || []);
+            if (existing.length > 0) {
+                // Update existing
+                url = '/api/payroll/salary-structures/' + existing[0].id + '/';
+                method = 'PATCH';
+            } else {
+                url = '/api/payroll/create-ctc-structure/';
+                method = 'POST';
+            }
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<strong>Saving...</strong>';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            var data; try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
+
+            if (res.ok) {
+                showAlert(editId ? 'Salary structure updated.' : 'Salary structure created. All components will be auto-calculated when generating payslip.', 'success');
+                setTimeout(function() { window.location.href = '/hr/salary-grade-list/'; }, 1500);
+            } else {
+                showAlert(data.error || data.employee && data.employee[0] ? (data.error || data.employee[0]) : (data.detail || JSON.stringify(data)));
+            }
+        } catch(e) {
+            showAlert('Error: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<strong>Submit</strong>';
+        }
+    });
+});
+</script>
+{% endblock %}

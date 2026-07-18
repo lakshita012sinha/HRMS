@@ -1,0 +1,186 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+{% block title %}Salary Grade List - HRMS{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>.btn-xs{padding:2px 8px;font-size:11px;}</style>
+{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">Salary Grade List</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Salary</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Salary Grade List</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <div class="d-print-none mb-3">
+                    <button class="btn btn-primary btn-sm" onclick="exportToCSV()">
+                        <i class="ri-download-2-line"></i> <strong>Export</strong>
+                    </button>
+                    <button class="btn btn-warning btn-sm ms-1" onclick="window.location.href='/hr/salary-grade-add/'">
+                        <strong>Add New Grade Pay</strong>
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="gradeTable" class="display table table-hover table-bordered">
+                        <thead>
+                            <tr><th colspan="9" class="text-center bg-light"><strong>Employee Salary Grade List</strong></th></tr>
+                            <tr class="text-center">
+                                <th>#</th><th>Employee Name</th><th>Grade</th><th>Designation</th><th>YEarly CTC</th>
+                                <th>Monthly CTC</th><th>Status</th><th>Added On</th><th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gradeBody"><tr><td colspan="9" class="text-center text-muted py-3">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="gradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h6 class="modal-title" id="gradeModalTitle">Add New Grade Pay</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gradeModalAlert"></div>
+                <input type="hidden" id="editGradeId">
+                <div class="mb-2">
+                    <label class="form-label">Grade</label>
+                    <input type="text" class="form-control" id="gradeName" placeholder="e.g. E2-Jaipur">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Designation</label>
+                    <input type="text" class="form-control" id="gradeDesignation" placeholder="e.g. Project Manager">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Basic Amount</label>
+                    <input type="number" class="form-control" id="gradeBasic" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Total Amount</label>
+                    <input type="number" class="form-control" id="gradeTotal" placeholder="0.00" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success btn-sm" id="saveGradeBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+let dtInst=null, gradeData=[];
+function fmtDate(d){return d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';}
+function showAlert(c,msg,type){type=type||'danger';document.getElementById(c).innerHTML='<div class="alert alert-'+type+' alert-dismissible fade show py-2">'+msg+'<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';}
+
+function openAddModal(){
+    document.getElementById('editGradeId').value='';
+    document.getElementById('gradeName').value='';
+    document.getElementById('gradeDesignation').value='';
+    document.getElementById('gradeBasic').value='';
+    document.getElementById('gradeTotal').value='';
+    document.getElementById('gradeModalTitle').textContent='Add New Grade Pay';
+    document.getElementById('gradeModalAlert').innerHTML='';
+}
+
+async function toggleGradeStatus(id,val){
+    try{await fetch('/api/payroll/salary-grades/'+id+'/',{method:'PATCH',headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify({is_active:val==='true'})});}
+    catch(e){console.error(e);}
+}
+
+async function loadGrades(){
+    try{
+        let all=[], url='/api/payroll/salary-structures/';
+        while(url){
+            const res=await fetch(url,{headers:{'Authorization':'Token '+token}});
+            if(!res.ok)throw new Error('HTTP '+res.status);
+            const data=await res.json();
+            if(Array.isArray(data)){all=data;url=null;}
+            else{all=all.concat(data.results||[]);url=data.next||null;}
+        }
+        gradeData=all;
+        const tbody=document.getElementById('gradeBody');
+        if(!gradeData.length){tbody.innerHTML='<tr><td colspan="9" class="text-center text-muted py-3">No salary structures found. Use Add New Grade Pay to assign salary to employees.</td></tr>';}
+        else{tbody.innerHTML=gradeData.map(function(g,i){
+            const monthly=parseFloat(g.ctc_monthly||0);
+            const yearly=(monthly*12).toFixed(2);
+            return '<tr class="text-center"><td>'+(i+1)+'</td>'+
+                '<td class="text-start">'+(g.employee_name||'-').toUpperCase()+'</td>'+
+                '<td>'+(g.grade||'-')+'</td>'+
+                '<td>'+(g.designation||'-')+'</td>'+
+                '<td>'+yearly+'</td>'+
+                '<td>'+monthly.toFixed(2)+'</td>'+
+                '<td><span class="badge '+(g.is_active?'bg-success':'bg-secondary')+'">'+(g.is_active?'Active':'Inactive')+'</span></td>'+
+                '<td>'+fmtDate(g.created_at)+'</td>'+
+                '<td><a href="/hr/salary-grade-add/?id='+g.id+'"><button class="btn btn-success btn-xs">Edit</button></a></td></tr>';
+        }).join('');}
+        if(dtInst){dtInst.destroy();dtInst=null;}
+        dtInst=$('#gradeTable').DataTable({pageLength:25,destroy:true,columnDefs:[{orderable:false,targets:[5,7]}]});
+    }catch(e){showAlert('alertArea','Error loading salary structures: '+e.message);}
+}
+
+function editGrade(id){
+    const g=gradeData.find(function(x){return x.id===id;});
+    if(!g)return;
+    document.getElementById('editGradeId').value=g.id;
+    document.getElementById('gradeName').value=g.grade;
+    document.getElementById('gradeDesignation').value=g.designation||'';
+    document.getElementById('gradeBasic').value=g.basic_amount;
+    document.getElementById('gradeTotal').value=g.total_amount;
+    document.getElementById('gradeModalTitle').textContent='Edit Grade Pay';
+    document.getElementById('gradeModalAlert').innerHTML='';
+    new bootstrap.Modal(document.getElementById('gradeModal')).show();
+}
+
+function exportToCSV(){
+    let csv='#,Grade,Designation,Basic Amount,Total Amount,Status,Added On\n';
+    gradeData.forEach(function(g,i){csv+=(i+1)+','+g.grade+','+(g.designation||'')+','+g.basic_amount+','+g.total_amount+','+(g.is_active?'Active':'Inactive')+','+fmtDate(g.created_at)+'\n';});
+    const a=document.createElement('a');
+    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download='salary_grades.csv'; a.click();
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+    loadGrades();
+    document.getElementById('saveGradeBtn').addEventListener('click',async function(){
+        const id=document.getElementById('editGradeId').value;
+        const grade=document.getElementById('gradeName').value.trim();
+        const desig=document.getElementById('gradeDesignation').value.trim();
+        const basic=document.getElementById('gradeBasic').value;
+        const total=document.getElementById('gradeTotal').value;
+        if(!grade){showAlert('gradeModalAlert','Grade name is required.');return;}
+        const payload={grade:grade,designation:desig,basic_amount:basic||0,total_amount:total||0};
+        const url=id?'/api/payroll/salary-grades/'+id+'/':'/api/payroll/salary-grades/';
+        const method=id?'PUT':'POST';
+        this.disabled=true;
+        try{
+            const res=await fetch(url,{method:method,headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const data=await res.json();
+            if(res.ok){
+                bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+                showAlert('alertArea',id?'Grade updated.':'Grade added.','success');
+                loadGrades();
+            }else{showAlert('gradeModalAlert',data.grade&&data.grade[0]?data.grade[0]:(data.detail||JSON.stringify(data)));}
+        }catch(e){showAlert('gradeModalAlert','Error: '+e.message);}
+        finally{this.disabled=false;}
+    });
+});
+</script>
+{% endblock %}

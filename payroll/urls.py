@@ -3,7 +3,8 @@ from .views import (
     SalaryStructureListCreateView, SalaryStructureDetailView, MySalaryStructureView,
     SalaryListView, SalaryDetailView,
     GenerateSalaryView, MarkSalaryPaidView, CancelSalaryView, MySalaryView,
-    CreateCTCSalaryStructureView, GenerateMonthlyPayrollView
+    CreateCTCSalaryStructureView, GenerateMonthlyPayrollView,
+    SalaryGradeListCreateView, SalaryGradeDetailView,
 )
 
 urlpatterns = [
@@ -21,4 +22,6 @@ urlpatterns = [
     path('salaries/<int:pk>/cancel/', CancelSalaryView.as_view(), name='cancel-salary'),
     path('my-salaries/', MySalaryView.as_view(), name='my-salaries'),
     path('generate-monthly-payroll/', GenerateMonthlyPayrollView.as_view(), name='generate-monthly-payroll'),
+    path('salary-grades/', SalaryGradeListCreateView.as_view(), name='salary-grade-list'),
+    path('salary-grades/<int:pk>/', SalaryGradeDetailView.as_view(), name='salary-grade-detail'),
 ]

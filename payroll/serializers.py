@@ -16,6 +16,7 @@ class SalaryStructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalaryStructure
         fields = ['id', 'employee', 'employee_id', 'employee_name', 'ctc_monthly',
+                  'grade', 'designation',
                   'basic_salary', 'hra', 'ca', 'cca', 'bonus', 'mobile',
                   'pf_employee', 'pf_employer', 'esi_employee', 'esi_employer',
                   'other_deductions', 'gross_salary', 'employee_deductions',
@@ -23,8 +24,7 @@ class SalaryStructureSerializer(serializers.ModelSerializer):
                   'effective_from', 'created_at', 'updated_at']
         read_only_fields = ['basic_salary', 'hra', 'ca', 'cca', 'bonus',
                            'pf_employee', 'pf_employer', 'esi_employee', 'esi_employer',
-                           'created_at', 'updated_at']
-    
+                           'created_at', 'updated_at']    
     def get_gross_salary(self, obj):
         return float(obj.calculate_gross_salary())
     
@@ -114,6 +114,8 @@ class CTCSalaryStructureSerializer(serializers.Serializer):
     mobile = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     other_deductions = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     effective_from = serializers.DateField(required=True)
+    grade = serializers.CharField(required=False, allow_blank=True, default='')
+    designation = serializers.CharField(required=False, allow_blank=True, default='')
     
     def validate_employee(self, value):
         """Check if employee exists"""
@@ -171,3 +173,15 @@ class MarkSalaryPaidSerializer(serializers.Serializer):
     """Serializer for marking salary as paid"""
     payment_date = serializers.DateField(required=True)
     remarks = serializers.CharField(required=False, allow_blank=True)
+
+
+class SalaryGradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = None
+        fields = ['id', 'grade', 'designation', 'basic_amount', 'total_amount', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import SalaryGrade
+        self.Meta.model = SalaryGrade
+        super().__init__(*args, **kwargs)
