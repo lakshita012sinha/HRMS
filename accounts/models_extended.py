@@ -217,3 +217,27 @@ class Promotion(models.Model):
     def __str__(self):
         return f"{self.employee.user.user_id} - {self.promoted_designation}"
 
+
+class Increment(models.Model):
+    """Employee increment history records"""
+    employee = models.ForeignKey(EmployeeProfile, on_delete=models.CASCADE, related_name='increments')
+    increment_date = models.DateField()
+    increment_type = models.CharField(max_length=50)
+    pay_level = models.CharField(max_length=50)
+    previous_basic_pay = models.CharField(max_length=50)
+    increment_amount = models.CharField(max_length=50)
+    new_basic_pay = models.CharField(max_length=50)
+    effective_date_from = models.DateField()
+    approved_by = models.CharField(max_length=100)
+    remark = models.TextField(blank=True, null=True)
+    document = models.FileField(upload_to='increment_documents/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'employee_increments'
+
+    def __str__(self):
+        return f"{self.employee.user.user_id} - {self.increment_type} - {self.new_basic_pay}"
+
+

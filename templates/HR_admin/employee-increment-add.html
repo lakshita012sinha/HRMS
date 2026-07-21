@@ -150,7 +150,7 @@
         </div>
         <div class="mt-2">
           <div class="col-12 py-3 px-3 text-center">
-            <button type="submit" class="btn btn-success btn-sm" name="submit" id="submit"> Submit</button>
+            <button type="button" class="btn btn-success btn-sm" name="submit" id="submit"> Submit</button>
           </div>
         </div>
 
@@ -243,6 +243,69 @@
 
   $(document).ready(function() {
     loadEmployeeForForm();
+
+    $('#submit').on('click', async function(e) {
+      e.preventDefault();
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required. Please login again.');
+        return;
+      }
+
+      const employee_code = $('#employeeCode').val();
+      const increment_date = $('#incrementDate').val();
+      const increment_type = $('#incrementType').val();
+      const pay_level = $('#payLevel').val();
+      const previous_basic_pay = $('#previousBasicPay').val();
+      const increment_amount = $('#incrementAmount').val();
+      const new_basic_pay = $('#basicPay').val();
+      const effective_date_from = $('#effDate').val();
+      const approved_by = $('#approvedBy').val();
+      const remark = $('#othersRemark').val();
+      const fileInput = document.getElementById('DocUpload');
+
+      if (!increment_date || !increment_type || !pay_level || !previous_basic_pay || !increment_amount || !new_basic_pay || !effective_date_from || !approved_by) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('employee_code', employee_code);
+      formData.append('increment_date', increment_date);
+      formData.append('increment_type', increment_type);
+      formData.append('pay_level', pay_level);
+      formData.append('previous_basic_pay', previous_basic_pay);
+      formData.append('increment_amount', increment_amount);
+      formData.append('new_basic_pay', new_basic_pay);
+      formData.append('effective_date_from', effective_date_from);
+      formData.append('approved_by', approved_by);
+      if (remark) formData.append('remark', remark);
+      if (fileInput && fileInput.files.length > 0) {
+        formData.append('document', fileInput.files[0]);
+      }
+
+      try {
+        const res = await fetch('/api/accounts/increments/', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Token ' + token
+          },
+          body: formData
+        });
+
+        if (res.ok) {
+          alert('Increment record saved successfully!');
+          window.location.href = '/hr/employee-increment-history/?emp=' + employee_code;
+        } else {
+          const errorData = await res.json();
+          alert('Failed to save increment record: ' + JSON.stringify(errorData));
+        }
+      } catch(err) {
+        console.error(err);
+        alert('An error occurred while saving the record.');
+      }
+    });
   });
 </script>
 {% endblock %}

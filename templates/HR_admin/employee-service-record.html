@@ -346,7 +346,8 @@
         renderServiceHistory(allServiceEvents);
       }
 
-      loadPromotionHistory(targetCode);
+      await loadPromotionHistory(targetCode);
+      await loadIncrementHistory(targetCode);
     } catch (err) {
       console.error('Error fetching employee record:', err);
     }
@@ -382,26 +383,57 @@
         const promotions = await res.json();
         const list = Array.isArray(promotions) ? promotions : (promotions.results || []);
         renderPromotionHistory(list);
-        updateServiceHistory(list);
+        updateServiceHistory(list, 'Promotion');
       }
     } catch(err) {
       console.error('Error fetching promotion history:', err);
     }
   }
 
-  function updateServiceHistory(promotions) {
-    const promotionEvents = promotions.map(p => ({
-      effective_date: p.effective_date_from,
-      event: 'Promotion',
-      department: 'Rajasthan ULB',
-      office: 'NAGAR NIGAM JAIPUR',
-      designation: p.designation_name,
-      pay_level: p.pay_level,
-      basic_pay: p.basic_pay,
-      remark: p.remark || 'Regular Promotion'
-    }));
+  async function loadIncrementHistory(targetCode) {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
 
-    allServiceEvents = allServiceEvents.concat(promotionEvents);
+    try {
+      const res = await fetch('/api/accounts/increments/?emp=' + targetCode, { headers });
+      if (res.ok) {
+        const increments = await res.json();
+        const list = Array.isArray(increments) ? increments : (increments.results || []);
+        renderIncrementHistory(list);
+        updateServiceHistory(list, 'Increment');
+      }
+    } catch(err) {
+      console.error('Error fetching increment history:', err);
+    }
+  }
+
+  function updateServiceHistory(items, type) {
+    let newEvents = [];
+    if (type === 'Promotion') {
+      newEvents = items.map(p => ({
+        effective_date: p.effective_date_from,
+        event: 'Promotion',
+        department: 'Rajasthan ULB',
+        office: 'NAGAR NIGAM JAIPUR',
+        designation: p.designation_name,
+        pay_level: p.pay_level,
+        basic_pay: p.basic_pay,
+        remark: p.remark || 'Regular Promotion'
+      }));
+    } else if (type === 'Increment') {
+      newEvents = items.map(inc => ({
+        effective_date: inc.effective_date_from,
+        event: 'Increment',
+        department: 'Rajasthan ULB',
+        office: 'NAGAR NIGAM JAIPUR',
+        designation: 'Tax Collector',
+        pay_level: inc.pay_level,
+        basic_pay: inc.new_basic_pay,
+        remark: `${inc.increment_type} (+${inc.increment_amount})`
+      }));
+    }
+
+    allServiceEvents = allServiceEvents.concat(newEvents);
     allServiceEvents.sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
     renderServiceHistory(allServiceEvents);
   }
@@ -445,6 +477,30 @@
         <td>${item.remark || '-'}</td>
         <td class="d-print-none">
           ${item.document ? `<button class="btn btn-secondary btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderIncrementHistory(list) {
+    const tbody = document.getElementById('incrementHistoryBody');
+    if (!tbody) return;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No records found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(item => `
+      <tr class="text-center">
+        <td>${formatDate(item.increment_date)}</td>
+        <td>${item.increment_type || '-'}</td>
+        <td>${item.previous_basic_pay || '-'}</td>
+        <td>${item.increment_amount || '-'}</td>
+        <td>${item.new_basic_pay || '-'}</td>
+        <td>${item.pay_level || '-'}</td>
+        <td>${formatDate(item.effective_date_from)}</td>
+        <td>${item.remark || '-'}</td>
+        <td class="d-print-none">
+          ${item.document ? `<button class="btn btn-success btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
         </td>
       </tr>
     `).join('');

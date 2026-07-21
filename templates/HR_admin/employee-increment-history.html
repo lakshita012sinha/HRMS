@@ -46,7 +46,7 @@
     <div class="card card-stats card-round">
       <div class="card-header d-print-none text-start">
         <a href="/hr/employee-service-search/"><button class="btn btn-black btn-sm mb-1"><strong><i class="ri-arrow-left-circle-line"></i> Back</strong></button></a>
-        <a href="/hr/employee-increment-add/"><button class="btn btn-success btn-sm mb-1 ms-2"><strong><i class="ri-add-line"></i> Add Increment</strong></button></a>
+        <a id="addIncrementLink" href="/hr/employee-increment-add/"><button class="btn btn-success btn-sm mb-1 ms-2"><strong><i class="ri-add-line"></i> Add Increment</strong></button></a>
       </div>
       <div class="card-body modify-form">
         <div class="row">
@@ -239,6 +239,10 @@
 
     if (!targetCode) return;
 
+    if (document.getElementById('addIncrementLink')) {
+      document.getElementById('addIncrementLink').href = '/hr/employee-increment-add/?emp=' + targetCode;
+    }
+
     const token = localStorage.getItem('authToken');
     const headers = token ? { 'Authorization': 'Token ' + token } : {};
 
@@ -264,6 +268,8 @@
       if (foundEmp) {
         populateDetails(foundEmp);
       }
+
+      loadIncrementHistory(targetCode);
     } catch (err) {
       console.error('Error fetching employee record:', err);
     }
@@ -287,15 +293,31 @@
     document.getElementById('empStatusVal').textContent = emp.is_active !== false ? 'Active' : 'Inactive';
     document.getElementById('empContactVal').textContent = profile.contact_number || '-';
     document.getElementById('empEmailVal').textContent = emp.email || profile.official_email || '-';
+  }
 
-    if (emp.increment_history && emp.increment_history.length) {
-      renderIncrementHistory(emp.increment_history);
+  async function loadIncrementHistory(targetCode) {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      const res = await fetch('/api/accounts/increments/?emp=' + targetCode, { headers });
+      if (res.ok) {
+        const increments = await res.json();
+        const list = Array.isArray(increments) ? increments : (increments.results || []);
+        renderIncrementHistory(list);
+      }
+    } catch(err) {
+      console.error('Error fetching increment history:', err);
     }
   }
 
   function renderIncrementHistory(list) {
     const tbody = document.getElementById('incrementHistoryBody');
-    if (!tbody || !list.length) return;
+    if (!tbody) return;
+    if (!list || !list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No records found</td></tr>';
+      return;
+    }
     tbody.innerHTML = list.map(item => `
       <tr class="text-center">
         <td>${formatDate(item.increment_date)}</td>
@@ -304,8 +326,8 @@
         <td>${item.increment_amount || '-'}</td>
         <td>${item.new_basic_pay || '-'}</td>
         <td>${item.pay_level || '-'}</td>
-        <td>${formatDate(item.effective_date)}</td>
-        <td>${item.remarks || '-'}</td>
+        <td>${formatDate(item.effective_date_from)}</td>
+        <td>${item.remark || '-'}</td>
         <td class="d-print-none">
           ${item.document ? `<button class="btn btn-success btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
         </td>
