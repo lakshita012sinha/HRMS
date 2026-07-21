@@ -196,14 +196,20 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="contactNumber1">Contact Number</label>
-                  <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                  <label for="contactNumber1">Contact Number<span class="text-danger">*</span></label>
+                  <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only" required>
+                  <div class="invalid-feedback" id="contactNumber1Error">
+                    Enter valid 10 digit mobile number starting from 6,7, 8 or 9
+                  </div>  
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="contactNumber2">Another Contact Number</label>
-                  <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                  <label for="contactNumber2">Another Contact Number<span class="text-danger">*</span></label>
+                  <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10" minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only" required>
+                  <div class="invalid-feedback" id="contactNumber1Error">
+                    Enter valid 10 digit mobile number starting from 6,7, 8 or 9
+                  </div>
                 </div>
               </div>
               <div class="col-lg-6 col-md-6 col-sm-6">
@@ -530,6 +536,112 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const mobileInput = document.getElementById("contactNumber1");
+    const errorMessage = document.getElementById("contactNumber1Error");
+
+    mobileInput.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 10 digits
+        this.value = this.value.slice(0, 10);
+
+        const mobileNumber = this.value;
+
+        // Empty field
+        if (mobileNumber === "") {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+            errorMessage.textContent =
+                "Mobile number is required";
+            return;
+        }
+
+        // First digit must be 6,7, 8 or 9
+        if (!/^[6789]/.test(mobileNumber)) {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+            errorMessage.textContent =
+                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+            return;
+        }
+
+        // Must be exactly 10 digits
+        if (mobileNumber.length !== 10) {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+            errorMessage.textContent =
+                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+        errorMessage.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const mobileInput2 = document.getElementById("contactNumber2");
+    const errorMessage2 = document.getElementById("contactNumber2Error");
+
+    mobileInput2.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 10 digits
+        this.value = this.value.slice(0, 10);
+
+        const mobileNumber = this.value;
+
+        // Optional field
+        // If empty, remove validation error
+        if (mobileNumber === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            errorMessage2.textContent = "";
+            return;
+        }
+
+        // First digit must be 6,7, 8 or 9
+        if (!/^[6789]/.test(mobileNumber)) {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            errorMessage2.textContent =
+                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+
+            return;
+        }
+
+        // Must be exactly 10 digits
+        if (mobileNumber.length !== 10) {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            errorMessage2.textContent =
+                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+
+            return;
+        }
+
+        // Valid mobile number
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        errorMessage2.textContent = "";
+    });
+
+});
+</script>
+<script>
     function goToTab(tabId) {
         const el = document.getElementById(tabId);
         if (el) bootstrap.Tab.getOrCreateInstance(el).show();
@@ -611,10 +723,29 @@
         if (!employeeRoleId) {
             alert('Could not load roles from server. Please refresh and try again.'); return;
         }
-        // Split employee name into first/last
-        const fullName = g('employeeName').trim().split(' ');
-        const firstName = fullName[0] || '';
-        const lastName  = fullName.slice(1).join(' ') || '-';
+        const bddVal = g('designationText').trim();
+        let branchVal = '';
+        let departmentVal = '';
+        let designationVal = '';
+
+        if (bddVal) {
+            let parts = [];
+            if (bddVal.includes('|')) {
+                parts = bddVal.split('|');
+            } else if (bddVal.includes('/')) {
+                parts = bddVal.split('/');
+            } else if (bddVal.includes(' - ')) {
+                parts = bddVal.split(' - ');
+            }
+            
+            if (parts.length >= 3) {
+                branchVal = (parts[0] || '').trim();
+                departmentVal = (parts[1] || '').trim();
+                designationVal = (parts[2] || '').trim();
+            } else {
+                designationVal = bddVal;
+            }
+        }
 
         // Build payload matching serializer field names exactly
         const payload = {
@@ -661,9 +792,9 @@
             parent_mobile:            g('parentMobile1'),
             emergency_another_mobile: g('parentMobile2'),
 
-            branch:                   null,
-            department:               null,
-            designation:              null,
+            branch:                   branchVal || null,
+            department:               departmentVal || null,
+            designation:              designationVal || null,
             grade:                    g('grade'),
             employment_type:          g('employmentType'),
             reporting_officer:        gn('reportingOfficer') ? parseInt(gn('reportingOfficer')) : null,

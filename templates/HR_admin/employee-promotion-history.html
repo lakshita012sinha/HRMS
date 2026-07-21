@@ -1,0 +1,340 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee Promotion History{% endblock %}
+
+{% block content %}
+<!-- Modal -->
+<div class="modal fade" id="fileModal" tabindex="-1" >
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">File Preview</h5>
+
+        <div class="btn-group me-2 ms-2">
+          <button id="fullscreenBtn" class="btn btn-sm btn-outline-primary d-none" onclick="toggleFullscreen()">
+            <i class="ri-fullscreen-line"></i>
+          </button>
+        </div>
+
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div id="zoomControls" class="mb-2 text-center d-none">
+          <button class="btn btn-sm btn-info" onclick="zoomIn()"><i class="ri-add-line"></i></button>
+          <button class="btn btn-sm btn-info" onclick="zoomOut()"><i class="ri-subtract-line"></i></button>
+          <button class="btn btn-sm btn-secondary" onclick="resetZoom()">Reset</button>
+        </div>
+
+        <div id="fileContainer"
+            style="width:100%; height:75vh; max-height:calc(100vh - 160px); overflow:auto; text-align:center;">
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">Employee Promotion History</h4>
+</div>
+<div class="row">
+  <div class="col-sm-12 col-md-12">
+    <div class="card card-stats card-round">
+      <div class="card-header d-print-none text-start">
+        <a href="/hr/employee-service-search/"><button class="btn btn-black btn-sm mb-1"><strong><i class="ri-arrow-left-circle-line"></i> Back</strong></button></a>
+        <a id="addPromotionLink" href="/hr/employee-promotion-add/"><button class="btn btn-secondary btn-sm mb-1 ms-2"><strong><i class="ri-add-line"></i> Add Promotion</strong></button></a>
+      </div>
+      <div class="card-body modify-form">
+        <div class="row">
+          <div class="table-responsive">
+            <table class="display table table-bordered my-3 table-head-bg-light" width="100%">
+              <thead>
+                <th colspan="4" class="text-center">Employee Details</th>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Employee Name</td>
+                  <td class="fw-bold" id="empNameVal">-</td>
+                  <td>Employee Code</td>
+                  <td colspan="3" class="fw-bold" id="empCodeVal">-</td>
+                </tr>
+                <tr>
+                  <td>Department</td>
+                  <td class="fw-bold" id="empDeptVal">-</td>
+                  <td>Deputed Project</td>
+                  <td colspan="3" class="fw-bold" id="empProjectVal">-</td>
+                </tr>
+                <tr>
+                  <td>Present Designation</td>
+                  <td class="fw-bold" id="empDesignationVal">-</td>
+                  <td>Date of Joining</td>
+                  <td colspan="3" class="fw-bold" id="empDojVal">-</td>
+                </tr>
+                <tr>
+                  <td>Employee Type</td>
+                  <td class="fw-bold" id="empTypeVal">-</td>
+                  <td>Employee Status</td>
+                  <td colspan="3" class="fw-bold" id="empStatusVal">-</td>
+                </tr>
+                <tr>
+                  <td>Contact Number</td>
+                  <td class="fw-bold" id="empContactVal">-</td>
+                  <td>Email ID</td>
+                  <td colspan="3" class="fw-bold" id="empEmailVal">-</td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="display table table-bordered my-3 table-head-bg-light" width="100%">
+              <thead>
+                <th colspan="8" class="text-center">Promotion History</th>
+                <tr class="text-center">
+                  <th>Promotion Date</th>
+                  <th>Designation</th>
+                  <th>Pay Level</th>
+                  <th>Basic Pay</th>
+                  <th>Effective From</th>
+                  <th>Approved By</th>
+                  <th>Remarks (optional)</th>
+                  <th>Promotion Document (optional)</th>
+                </tr>
+              </thead>
+              <tbody id="promotionHistoryBody">
+                <tr><td colspan="8" class="text-center text-muted py-3">No records found</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let scale = 1;
+    const step = 0.2;
+    const minScale = 0.5;
+    const maxScale = 4;
+    let isFullscreen = false;
+
+    function openModal(type, fileUrl) {
+      const container = document.getElementById('fileContainer');
+      const zoomControls = document.getElementById('zoomControls');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+      scale = 1;
+      container.innerHTML = '';
+      zoomControls.classList.add('d-none');
+      fullscreenBtn.classList.add('d-none');
+
+      if (type === 'image') {
+        zoomControls.classList.remove('d-none');
+        fullscreenBtn.classList.remove('d-none');
+
+        container.innerHTML = `
+          <img id="previewImage"
+                src="${fileUrl}"
+                class="img-fluid"
+                style="transform:scale(1); transition:transform .15s ease; cursor:zoom-in; user-select: none;">
+          `;
+
+          enableImageInteractions();
+        }
+
+        if (type === 'pdf') {
+          
+        container.innerHTML = `
+            <iframe src="${fileUrl}"
+                    style="width:100%; height:100%; border:none;">
+            </iframe>
+          `;
+        }
+
+        new bootstrap.Modal(document.getElementById('fileModal')).show();
+      }
+
+
+      function zoomIn() {
+        if (scale < maxScale) scale += step;
+        applyZoom();
+      }
+
+      function zoomOut() {
+        if (scale > minScale) scale -= step;
+        applyZoom();
+      }
+
+      function resetZoom() {
+        scale = 1;
+        applyZoom();
+      }
+
+      function applyZoom() {
+        const img = document.getElementById('previewImage');
+        if (img) {
+          img.style.transform = `scale(${scale})`;
+        }
+      }
+
+      function enableImageInteractions() {
+        const img = document.getElementById('previewImage');
+
+        img.addEventListener('wheel', function (e) {
+          e.preventDefault();
+          e.deltaY < 0 ? zoomIn() : zoomOut();
+        });
+
+        img.addEventListener('dblclick', function () {
+          scale = scale === 1 ? 2 : 1;
+          applyZoom();
+        });
+      }
+
+      function toggleFullscreen() {
+        const modalContent = document.querySelector('#fileModal .modal-content');
+
+        if (!document.fullscreenElement) {
+          modalContent.requestFullscreen();
+          isFullscreen = true;
+        } else {
+          document.exitFullscreen();
+          isFullscreen = false;
+        }
+      }
+
+      document.getElementById('fileModal')
+        .addEventListener('hidden.bs.modal', () => {
+          document.getElementById('fileContainer').innerHTML = '';
+          scale = 1;
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+      });
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  }
+
+  async function loadEmployeeRecord() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetCode = urlParams.get('emp') || urlParams.get('code') || urlParams.get('id');
+
+    if (!targetCode) return;
+
+    if (document.getElementById('addPromotionLink')) {
+      document.getElementById('addPromotionLink').href = '/hr/employee-promotion-add/?emp=' + targetCode;
+    }
+
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      let url = '/api/accounts/employees/';
+      let foundEmp = null;
+
+      while (url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+
+        foundEmp = list.find(e => 
+          (e.user_id && e.user_id.toLowerCase() === targetCode.toLowerCase()) ||
+          (e.id && String(e.id) === String(targetCode))
+        );
+
+        if (foundEmp) break;
+        url = Array.isArray(data) ? null : data.next;
+      }
+
+      if (foundEmp) {
+        populateDetails(foundEmp);
+      }
+
+      loadPromotionHistory(targetCode);
+    } catch (err) {
+      console.error('Error fetching employee record:', err);
+    }
+  }
+
+  function populateDetails(emp) {
+    const profile = emp.employee_profile || {};
+    const employment = emp.employment_details || {};
+
+    const firstName = (emp.first_name || '').trim();
+    const lastName = (emp.last_name || '').trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || emp.user_id || '-';
+
+    document.getElementById('empNameVal').textContent = fullName;
+    document.getElementById('empCodeVal').textContent = emp.user_id || '-';
+    document.getElementById('empDeptVal').textContent = employment.department || '-';
+    document.getElementById('empProjectVal').textContent = employment.deputed_project || '-';
+    document.getElementById('empDesignationVal').textContent = employment.designation || '-';
+    document.getElementById('empDojVal').textContent = formatDate(profile.date_of_joining || emp.created_at);
+    document.getElementById('empTypeVal').textContent = employment.employment_type || 'Permanent';
+    document.getElementById('empStatusVal').textContent = emp.is_active !== false ? 'Active' : 'Inactive';
+    document.getElementById('empContactVal').textContent = profile.contact_number || '-';
+    document.getElementById('empEmailVal').textContent = emp.email || profile.official_email || '-';
+  }
+
+  async function loadPromotionHistory(targetCode) {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      const res = await fetch('/api/accounts/promotions/?emp=' + targetCode, { headers });
+      if (res.ok) {
+        const promotions = await res.json();
+        const list = Array.isArray(promotions) ? promotions : (promotions.results || []);
+        renderPromotionHistory(list);
+      }
+    } catch(err) {
+      console.error('Error fetching promotion history:', err);
+    }
+  }
+
+  function renderPromotionHistory(list) {
+    const tbody = document.getElementById('promotionHistoryBody');
+    if (!tbody) return;
+    if (!list || !list.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No records found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(item => `
+      <tr class="text-center">
+        <td>${formatDate(item.promoted_date)}</td>
+        <td>${item.designation_name || '-'}</td>
+        <td>${item.pay_level || '-'}</td>
+        <td>${item.basic_pay || '-'}</td>
+        <td>${formatDate(item.effective_date_from)}</td>
+        <td>${item.approved_by || '-'}</td>
+        <td>${item.remark || '-'}</td>
+        <td class="d-print-none">
+          ${item.document ? `<button class="btn btn-info btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  $(document).ready(function() {
+    loadEmployeeRecord();
+  });
+</script>
+{% endblock %}

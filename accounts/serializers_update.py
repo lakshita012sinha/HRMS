@@ -57,9 +57,9 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     emergency_another_mobile = serializers.CharField(required=False, allow_blank=True)
     
     # Employment Details fields
-    branch = serializers.IntegerField(required=False, allow_null=True)
-    department = serializers.IntegerField(required=False, allow_null=True)
-    designation = serializers.IntegerField(required=False)
+    branch = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    designation = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     grade = serializers.CharField(required=False, allow_blank=True)
     employment_type = serializers.CharField(required=False)
     reporting_officer = serializers.IntegerField(required=False, allow_null=True)
@@ -156,11 +156,49 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         # Update Employment Details
         employment_fields = {}
         if 'branch' in validated_data:
-            employment_fields['branch_id'] = validated_data.pop('branch')
+            branch_val = validated_data.pop('branch')
+            branch_obj = None
+            if branch_val:
+                branch_val_str = str(branch_val).strip()
+                if branch_val_str:
+                    if branch_val_str.isdigit():
+                        branch_obj = Branch.objects.filter(id=int(branch_val_str)).first()
+                    if not branch_obj:
+                        branch_obj, _ = Branch.objects.get_or_create(
+                            name=branch_val_str,
+                            defaults={'code': branch_val_str[:20].upper()}
+                        )
+            employment_fields['branch'] = branch_obj
+
         if 'department' in validated_data:
-            employment_fields['department_id'] = validated_data.pop('department')
+            dept_val = validated_data.pop('department')
+            dept_obj = None
+            if dept_val:
+                dept_val_str = str(dept_val).strip()
+                if dept_val_str:
+                    if dept_val_str.isdigit():
+                        dept_obj = Department.objects.filter(id=int(dept_val_str)).first()
+                    if not dept_obj:
+                        dept_obj, _ = Department.objects.get_or_create(
+                            name=dept_val_str,
+                            defaults={'code': dept_val_str[:20].upper()}
+                        )
+            employment_fields['department'] = dept_obj
+
         if 'designation' in validated_data:
-            employment_fields['designation_id'] = validated_data.pop('designation')
+            desig_val = validated_data.pop('designation')
+            desig_obj = None
+            if desig_val:
+                desig_val_str = str(desig_val).strip()
+                if desig_val_str:
+                    if desig_val_str.isdigit():
+                        desig_obj = Designation.objects.filter(id=int(desig_val_str)).first()
+                    if not desig_obj:
+                        desig_obj, _ = Designation.objects.get_or_create(
+                            name=desig_val_str,
+                            defaults={'code': desig_val_str[:20].upper()}
+                        )
+            employment_fields['designation'] = desig_obj
         if 'grade' in validated_data:
             employment_fields['grade'] = validated_data.pop('grade')
         if 'employment_type' in validated_data:

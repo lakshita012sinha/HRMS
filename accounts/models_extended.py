@@ -195,3 +195,25 @@ class EmployeeDocument(models.Model):
     
     class Meta:
         db_table = 'employee_documents'
+
+
+class Promotion(models.Model):
+    """Employee promotion history records"""
+    employee = models.ForeignKey(EmployeeProfile, on_delete=models.CASCADE, related_name='promotions')
+    promoted_date = models.DateField()
+    promoted_designation = models.ForeignKey(Designation, on_delete=models.SET_NULL, null=True, blank=True)
+    pay_level = models.CharField(max_length=50)
+    basic_pay = models.CharField(max_length=50)
+    effective_date_from = models.DateField()
+    approved_by = models.CharField(max_length=100)
+    remark = models.TextField(blank=True, null=True)
+    document = models.FileField(upload_to='promotion_documents/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'employee_promotions'
+
+    def __str__(self):
+        return f"{self.employee.user.user_id} - {self.promoted_designation}"
+

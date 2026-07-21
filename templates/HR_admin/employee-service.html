@@ -1,0 +1,313 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee Service{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">Employee Service</h4>
+  <ul class="breadcrumbs mb-3">
+    <li class="nav-home">
+      <a href="/dashboard/">
+        <i class="ri-home-3-line"></i>
+      </a>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">Employee Service Book</span>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">Service</span>
+    </li>
+  </ul>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-print-none">
+        <div class="row">
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="employeeCode">Employee Code</label>
+              <input type="text" class="form-control" id="employeeCode" name="employeeCode" placeholder="Enter Employee Code">
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="empName">Employee Name</label>
+              <select class="form-select" id="empName" name="empName">
+                <option value="">Select</option>
+              </select>                       
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="startJoiningDate">Start Joining Date</label>
+              <input type="date" class="form-control" id="startJoiningDate" name="startJoiningDate">
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="endJoiningDate">End Joining Date</label>
+              <input type="date" class="form-control" id="endJoiningDate" name="endJoiningDate">
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="accountStatus">Account Status</label>
+              <select class="form-select" id="accountStatus" name="accountStatus">
+                <option value="">Select</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>                       
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6">
+            <div class="form-group">
+              <label for="empStatus">Employee Status</label>
+              <select class="form-select" id="empStatus" name="empStatus">
+                <option value="">Select</option>
+                <option value="Active">Active</option>
+                <option value="Retired">Retired</option>
+                <option value="Exit">Exit</option>
+              </select>                       
+            </div>
+          </div>
+        </div>
+        <div class="col-12 py-3 text-center">
+          <button type="button" class="btn btn-primary btn-sm" name="submit" id="orSearch"><i class="fa fa-search"></i> Search</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive" id="printableArea">
+          <div class="d-print-none">
+            <p class="text-start">
+                <button type="button" class="btn btn-primary btn-sm" name="submit1" id="exportExcel" onclick="exportExcel()"><strong><i class="ri-download-2-line"></i> Export</strong></button>
+            </p>
+          </div>
+          <table id="basic-datatables" class="display table table-hover table-bordered">
+            <thead>
+              <tr>
+                <th colspan="9" class="text-center bg-light"><strong>Employee Service</strong></th>
+              </tr>
+              <tr class="text-center">
+                <th>#</th>
+                <th>Employee Code</th>
+                <th>Employee Name</th>
+                <th>Present Designation</th>
+                <th>Date of Joining</th>
+                <th>Account Status</th>
+                <th>Employee Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTableBody">
+              <tr>
+                <td colspan="8" class="text-center py-4">Loading employee data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script>
+  let allEmployeesData = [];
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  }
+
+  async function loadEmployees() {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+    let url = '/api/accounts/employees/';
+    allEmployeesData = [];
+
+    try {
+      while (url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          allEmployeesData = data;
+          url = null;
+        } else {
+          allEmployeesData = allEmployeesData.concat(data.results || []);
+          url = data.next || null;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+    }
+
+    populateEmpNameDropdown(allEmployeesData);
+    renderEmployeeTable(allEmployeesData);
+  }
+
+  function populateEmpNameDropdown(employees) {
+    const select = document.getElementById('empName');
+    if (!select) return;
+    select.innerHTML = '<option value="">Select</option><option value="ALL">ALL</option>';
+
+    employees.forEach(emp => {
+      const firstName = (emp.first_name || '').trim();
+      const lastName = (emp.last_name || '').trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || emp.user_id;
+      const code = emp.user_id || '';
+
+      const option = document.createElement('option');
+      option.value = code;
+      option.textContent = `${fullName} (${code})`;
+      select.appendChild(option);
+    });
+  }
+
+  function renderEmployeeTable(employees) {
+    const tbody = document.getElementById('employeeTableBody');
+    if (!tbody) return;
+
+    if ($.fn.DataTable.isDataTable('#basic-datatables')) {
+      $('#basic-datatables').DataTable().clear().destroy();
+    }
+
+    if (!employees || employees.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No employees found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = employees.map((emp, index) => {
+      const profile = emp.employee_profile || {};
+      const employment = emp.employment_details || {};
+
+      const code = emp.user_id || '-';
+      const firstName = (emp.first_name || '').trim();
+      const lastName = (emp.last_name || '').trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || '-';
+      const designation = (employment.designation || 'TAX COLLECTOR').toUpperCase();
+      const joiningDate = formatDate(profile.date_of_joining || emp.created_at);
+
+      const isAccountActive = emp.is_active !== false;
+      const accountStatusText = isAccountActive ? 'Active' : 'Inactive';
+      const empStatusText = isAccountActive ? 'Active' : 'Exit';
+      const badgeClass = isAccountActive ? 'badge-success' : 'badge-danger';
+
+      return `
+        <tr>
+          <td class="text-center">${index + 1}</td>
+          <td class="text-center">${code}</td>
+          <td class="text-center">${fullName}</td>
+          <td class="text-center">${designation}</td>
+          <td class="text-center">${joiningDate}</td>
+          <td class="text-center">${accountStatusText}</td>
+          <td class="text-center"><span class="badge ${badgeClass}">${empStatusText}</span></td>
+          <td class="text-center">
+            <a target="_blank" href="/hr/employee-service-record/?emp=${code}"><button class="btn btn-info btn-xs mb-1">View</button></a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    $('#basic-datatables').DataTable({
+      pageLength: 10,
+      ordering: true
+    });
+  }
+
+  function applyFilters() {
+    const codeVal = ($('#employeeCode').val() || '').trim().toLowerCase();
+    const nameVal = ($('#empName').val() || '').trim().toLowerCase();
+    const startDateVal = $('#startJoiningDate').val();
+    const endDateVal = $('#endJoiningDate').val();
+    const accountStatusVal = ($('#accountStatus').val() || '').trim().toLowerCase();
+    const empStatusVal = ($('#empStatus').val() || '').trim().toLowerCase();
+
+    const filtered = allEmployeesData.filter(emp => {
+      const profile = emp.employee_profile || {};
+      const code = (emp.user_id || '').toLowerCase();
+      const firstName = (emp.first_name || '').toLowerCase();
+      const lastName = (emp.last_name || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      // 1. Employee Code
+      if (codeVal && !code.includes(codeVal)) {
+        return false;
+      }
+
+      // 2. Employee Name
+      if (nameVal && nameVal !== 'all') {
+        if (!code.includes(nameVal) && !fullName.includes(nameVal)) {
+          return false;
+        }
+      }
+
+      // 3. Date of Joining range
+      const joiningDateStr = profile.date_of_joining || (emp.created_at ? emp.created_at.split('T')[0] : '');
+      if (startDateVal && joiningDateStr) {
+        if (joiningDateStr < startDateVal) return false;
+      }
+      if (endDateVal && joiningDateStr) {
+        if (joiningDateStr > endDateVal) return false;
+      }
+
+      // 4. Account Status
+      const isAccountActive = emp.is_active !== false;
+      if (accountStatusVal === 'active' && !isAccountActive) return false;
+      if (accountStatusVal === 'inactive' && isAccountActive) return false;
+
+      // 5. Employee Status
+      if (empStatusVal === 'active' && !isAccountActive) return false;
+      if ((empStatusVal === 'retired' || empStatusVal === 'exit') && isAccountActive) return false;
+
+      return true;
+    });
+
+    renderEmployeeTable(filtered);
+  }
+
+  function exportExcel() {
+    let table = document.getElementById("basic-datatables");
+    let html = table.outerHTML;
+    let url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html);
+    let downloadLink = document.createElement("a");
+    document.body.appendChild(downloadLink);
+    downloadLink.href = url;
+    downloadLink.download = 'employee_service.xls';
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  }
+
+  $(document).ready(function () {
+    loadEmployees();
+
+    $('#orSearch').on('click', function (e) {
+      e.preventDefault();
+      applyFilters();
+    });
+  });
+</script>
+{% endblock %}

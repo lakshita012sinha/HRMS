@@ -78,9 +78,9 @@ class CompleteEmployeeRegistrationSerializer(serializers.Serializer):
     emergency_another_mobile = serializers.CharField(max_length=15, required=False, allow_blank=True)
     
     # Employment Details
-    branch = serializers.IntegerField(required=False, allow_null=True)
-    department = serializers.IntegerField(required=False, allow_null=True)
-    designation = serializers.IntegerField(required=False, allow_null=True)
+    branch = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    designation = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     grade = serializers.CharField(max_length=20, required=False, allow_blank=True)
     employment_type = serializers.ChoiceField(
         choices=['PROBATION', 'TRAINEE', 'PERMANENT', 'UNDER NOTICE'],
@@ -130,10 +130,49 @@ class CompleteEmployeeRegistrationSerializer(serializers.Serializer):
             except User.DoesNotExist:
                 reporting_officer = None
         
+        branch_val = validated_data.pop('branch', None)
+        branch_obj = None
+        if branch_val:
+            branch_val_str = str(branch_val).strip()
+            if branch_val_str:
+                if branch_val_str.isdigit():
+                    branch_obj = Branch.objects.filter(id=int(branch_val_str)).first()
+                if not branch_obj:
+                    branch_obj, _ = Branch.objects.get_or_create(
+                        name=branch_val_str,
+                        defaults={'code': branch_val_str[:20].upper()}
+                    )
+
+        dept_val = validated_data.pop('department', None)
+        dept_obj = None
+        if dept_val:
+            dept_val_str = str(dept_val).strip()
+            if dept_val_str:
+                if dept_val_str.isdigit():
+                    dept_obj = Department.objects.filter(id=int(dept_val_str)).first()
+                if not dept_obj:
+                    dept_obj, _ = Department.objects.get_or_create(
+                        name=dept_val_str,
+                        defaults={'code': dept_val_str[:20].upper()}
+                    )
+
+        desig_val = validated_data.pop('designation', None)
+        desig_obj = None
+        if desig_val:
+            desig_val_str = str(desig_val).strip()
+            if desig_val_str:
+                if desig_val_str.isdigit():
+                    desig_obj = Designation.objects.filter(id=int(desig_val_str)).first()
+                if not desig_obj:
+                    desig_obj, _ = Designation.objects.get_or_create(
+                        name=desig_val_str,
+                        defaults={'code': desig_val_str[:20].upper()}
+                    )
+
         employment_data = {
-            'branch_id': validated_data.pop('branch', None),
-            'department_id': validated_data.pop('department', None),
-            'designation_id': validated_data.pop('designation', None),
+            'branch': branch_obj,
+            'department': dept_obj,
+            'designation': desig_obj,
             'grade': validated_data.pop('grade', ''),
             'employment_type': validated_data.pop('employment_type'),
             'reporting_officer': reporting_officer,

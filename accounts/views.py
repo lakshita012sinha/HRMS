@@ -9,7 +9,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.db import transaction
 from .models import User, Role, Permission
-from .models_extended import Branch, Department, Designation
+from .models_extended import Branch, Department, Designation, Promotion
 from .models_past_employees import PastEmployee
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, LoginSerializer,
@@ -17,7 +17,7 @@ from .serializers import (
     ChangePasswordSerializer, RoleSerializer, PermissionSerializer
 )
 from .serializers_employee import CompleteEmployeeRegistrationSerializer, EmployeeDetailSerializer
-from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer
+from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer, PromotionSerializer
 from .serializers_update import EmployeeUpdateSerializer
 from .serializers_past_employees import PastEmployeeSerializer, DeleteEmployeeSerializer
 
@@ -404,3 +404,17 @@ class EmployeeSoftDeleteView(APIView):
             'message': f'Employee {user.user_id} exit initiated successfully.',
             'past_employee_id': past.id,
         }, status=status.HTTP_201_CREATED)
+
+
+class PromotionListCreateView(generics.ListCreateAPIView):
+    """API endpoint for listing and creating employee promotions"""
+    serializer_class = PromotionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Promotion.objects.all().order_by('-promoted_date')
+        emp = self.request.query_params.get('emp')
+        if emp:
+            qs = qs.filter(employee__user__user_id=emp)
+        return qs
+

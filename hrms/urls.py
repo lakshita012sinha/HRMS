@@ -19,7 +19,6 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='auth/login.html'), name='home'),
@@ -27,6 +26,18 @@ urlpatterns = [
     path('forgot-password/', TemplateView.as_view(template_name='auth/forgot-password.html'), name='forgot-password'),
     path('dashboard/', TemplateView.as_view(template_name='HR_admin/index.html'), name='dashboard'),
     path('hr/employee-add/', TemplateView.as_view(template_name='HR_admin/employee-add.html'), name='employee-add'),
+    path('hr/employee-service-search/', TemplateView.as_view(template_name='HR_admin/employee-service-search.html'), name='employee-service-search'),
+    path('hr/employee-service-record/', TemplateView.as_view(template_name='HR_admin/employee-service-record.html'), name='employee-service-record'),
+    path('hr/employee-promotion-history/', TemplateView.as_view(template_name='HR_admin/employee-promotion-history.html'), name='employee-promotion-history'),
+    path('hr/employee-promotion-add/', TemplateView.as_view(template_name='HR_admin/employee-promotion-add.html'), name='employee-promotion-add'),
+    path('hr/employee-increment-history/', TemplateView.as_view(template_name='HR_admin/employee-increment-history.html'), name='employee-increment-history'),
+    path('hr/employee-increment-add/', TemplateView.as_view(template_name='HR_admin/employee-increment-add.html'), name='employee-increment-add'),
+    path('hr/employee-transfer-history/', TemplateView.as_view(template_name='HR_admin/employee-transfer-history.html'), name='employee-transfer-history'),
+    path('hr/employee-transfer-add/', TemplateView.as_view(template_name='HR_admin/employee-transfer-add.html'), name='employee-transfer-add'),
+    path('hr/employee-service/', TemplateView.as_view(template_name='HR_admin/employee-service.html'), name='employee-service'),
+    path('hr/employee-promotion-report/', TemplateView.as_view(template_name='HR_admin/employee-promotion-report.html'), name='employee-promotion-report'),
+    path('hr/employee-increment-report/', TemplateView.as_view(template_name='HR_admin/employee-increment-report.html'), name='employee-increment-report'),
+    path('hr/employee-transfer-report/', TemplateView.as_view(template_name='HR_admin/employee-transfer-report.html'), name='employee-transfer-report'),
     path('hr/employee-profile/', TemplateView.as_view(template_name='HR_admin/employee-profile.html'), name='employee-profile'),
     path('hr/employee-list/', TemplateView.as_view(template_name='HR_admin/employee-list.html'), name='employee-list'),
     path('hr/employee-id-card/', TemplateView.as_view(template_name='HR_admin/employee-id-card.html'), name='employee-id-card'),

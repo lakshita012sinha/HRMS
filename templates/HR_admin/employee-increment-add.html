@@ -1,0 +1,248 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Add Increment{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">Add Increment Form</h4>
+</div>
+<div class="row">
+  <div class="col-sm-12 col-md-12">
+    <div class="card card-stats card-round">
+      <div class="card-header d-print-none text-start">
+        <a id="backBtn" href="/hr/employee-increment-history/"><button class="btn btn-black btn-sm"><strong><i class="ri-arrow-left-circle-line"></i> Back</strong></button></a>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <h5><strong>Employee Details</strong></h5>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="employeeName">Employee Name</label>
+              <input type="text" class="form-control" id="employeeName" value="" readonly>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="employeeCode">Employee Code</label>
+              <input type="text" class="form-control" id="employeeCode" value="" readonly>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="employeeDepartment">Department</label>
+              <select class="form-select" id="employeeDepartment" disabled>
+                <option value="">-</option>
+              </select>    
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="deputedProject">Deputed Project</label>
+              <select class="form-select" id="deputedProject" name="deputedProject" disabled>
+                <option value="">-</option>
+              </select>    
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="employeeDesignation">Present Designation</label>
+              <input type="text" class="form-control" id="employeeDesignation" Value="" readonly>   
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="doj">Date of Joining</label>
+              <input type="date" class="form-control" id="doj" value="" readonly>   
+            </div>
+          </div>   
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="contactNumber1">Contact Number</label>
+              <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" value="" readonly>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="emailId">Email ID</label>
+              <input type="email" id="emailId" name="emailId" class="form-control" value="" readonly>
+            </div>
+          </div>                   
+        </div>
+        <div class="row">
+          <h5 class="mt-2"><strong>Increment Details</strong></h5>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="incrementDate">Increment Date</label>
+              <input type="Date" class="form-control" id="incrementDate" name="incrementDate" required>   
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="incrementType">Increment Type</label>
+              <select class="form-select" id="incrementType" name="incrementType" required="">
+                <option value="">Select Increment Type</option>
+                <option value="Promotion">Promotion</option>
+                <option value="Performance">Performance</option>
+              </select>    
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="payLevel">Present Pay Level</label>
+              <select class="form-select" id="payLevel" name="payLevel" required>
+                <option value="">Select Pay Level</option>
+                <option value="L1">L1</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+              </select>    
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="previousBasicPay">Previous Basic Pay</label>
+              <input type="text" class="form-control" id="previousBasicPay" name="previousBasicPay" value="">
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="incrementAmount">Increment Amount</label>
+              <input type="text" class="form-control" id="incrementAmount" name="incrementAmount" value="">
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="basicPay">New Basic Pay</label>
+              <input type="text" class="form-control" id="basicPay" name="basicPay" required>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="lwd">Effective Date From</label>
+              <input type="Date" class="form-control" id="effDate" name="effDate" required>   
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="approvedBy">Approved By</label>
+              <select class="form-select" id="approvedBy" name="approvedBy" required>
+                <option value="">Select Approved By</option>
+                <option value="Administration">Administration</option>
+                <option value="HR Management">HR Management</option>
+                <option value="Finance Management">Finance Management</option>
+                <option value="Sales Management">Sales Management</option>
+              </select>    
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="othersRemark">Remark (Optional)</label>
+              <textarea id="othersRemark" name="othersRemark" class="form-control" rows="3" cols="20" placeholder="Enter Remark"></textarea>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="form-group">
+              <label for="DocUpload">Document Upload (optional)</label>
+              <input type="file" class="form-control" id="DocUpload" name="DocUpload">
+            </div>
+          </div>
+          
+        </div>
+        <div class="mt-2">
+          <div class="col-12 py-3 px-3 text-center">
+            <button type="submit" class="btn btn-success btn-sm" name="submit" id="submit"> Submit</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  async function loadEmployeeForForm() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetCode = urlParams.get('emp') || urlParams.get('code') || urlParams.get('id');
+
+    if (targetCode && document.getElementById('backBtn')) {
+      document.getElementById('backBtn').href = '/hr/employee-increment-history/?emp=' + targetCode;
+    }
+
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      let url = '/api/accounts/employees/';
+      let allEmp = [];
+
+      while (url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+        allEmp = allEmp.concat(list);
+        url = Array.isArray(data) ? null : data.next;
+      }
+
+      if (targetCode) {
+        const found = allEmp.find(e => 
+          (e.user_id && e.user_id.toLowerCase() === targetCode.toLowerCase()) ||
+          (e.id && String(e.id) === String(targetCode))
+        );
+        if (found) {
+          populateEmpFields(found);
+        }
+      } else if (allEmp.length > 0) {
+        populateEmpFields(allEmp[0]);
+      }
+    } catch (err) {
+      console.error('Error fetching employee details:', err);
+    }
+  }
+
+  function populateEmpFields(emp) {
+    const profile = emp.employee_profile || {};
+    const employment = emp.employment_details || {};
+
+    const firstName = (emp.first_name || '').trim();
+    const lastName = (emp.last_name || '').trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || emp.user_id || '-';
+
+    if (document.getElementById('employeeName')) {
+      document.getElementById('employeeName').value = fullName;
+    }
+    if (document.getElementById('employeeCode')) {
+      document.getElementById('employeeCode').value = emp.user_id || '-';
+    }
+    if (document.getElementById('employeeDepartment')) {
+      const deptSelect = document.getElementById('employeeDepartment');
+      const deptVal = employment.department || '';
+      deptSelect.innerHTML = `<option value="${deptVal}">${deptVal || '-'}</option>`;
+    }
+    if (document.getElementById('deputedProject')) {
+      const projSelect = document.getElementById('deputedProject');
+      const projVal = employment.deputed_project || '';
+      projSelect.innerHTML = `<option value="${projVal}">${projVal || '-'}</option>`;
+    }
+    if (document.getElementById('employeeDesignation')) {
+      document.getElementById('employeeDesignation').value = employment.designation || '-';
+    }
+    if (document.getElementById('doj')) {
+      const dateVal = profile.date_of_joining || (emp.created_at ? emp.created_at.split('T')[0] : '');
+      document.getElementById('doj').value = dateVal;
+    }
+    if (document.getElementById('contactNumber1')) {
+      document.getElementById('contactNumber1').value = profile.contact_number || '-';
+    }
+    if (document.getElementById('emailId')) {
+      document.getElementById('emailId').value = emp.email || profile.official_email || '-';
+    }
+  }
+
+  $(document).ready(function() {
+    loadEmployeeForForm();
+  });
+</script>
+{% endblock %}
