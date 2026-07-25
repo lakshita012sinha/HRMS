@@ -7,7 +7,7 @@ from .views import (
     PermissionListCreateView, PermissionDetailView,
     BranchListCreateView, DepartmentListCreateView, DesignationListCreateView,
     EmployeeDetailAPIView, EmployeeListAPIView, PastEmployeeListView, PastEmployeeDetailView,
-    EmployeeDocumentUploadView, EmployeePhotoUploadView, EmployeeSoftDeleteView, PromotionListCreateView, IncrementListCreateView
+    EmployeeDocumentUploadView, EmployeePhotoUploadView, EmployeeSoftDeleteView, PromotionListCreateView, IncrementListCreateView, TransferListCreateView
 )
 
 urlpatterns = [
@@ -49,4 +49,5 @@ urlpatterns = [
     path('designations/', DesignationListCreateView.as_view(), name='designation-list'),
     path('promotions/', PromotionListCreateView.as_view(), name='promotion-list'),
     path('increments/', IncrementListCreateView.as_view(), name='increment-list'),
+    path('transfers/', TransferListCreateView.as_view(), name='transfer-list'),
 ]

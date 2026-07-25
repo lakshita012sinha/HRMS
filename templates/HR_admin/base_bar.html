@@ -399,6 +399,7 @@
         document.getElementById('logoutBtn').addEventListener('click', function(e) { e.preventDefault(); doLogout(); });
         document.getElementById('logoutIcon').addEventListener('click', function(e) { e.preventDefault(); doLogout(); });
     </script>
+    <script src="{% static 'js/inactivity-logout.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

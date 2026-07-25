@@ -11,6 +11,7 @@ from .serializers import (
     ApplyLeaveSerializer, ApproveLeaveSerializer, LeavePolicySerializer
 )
 from accounts.models import User
+from accounts.models_extended import EmployeeProfile, EmploymentDetails
 
 
 # Leave Type Management
@@ -95,13 +96,28 @@ class LeaveRequestListView(generics.ListAPIView):
         if employee_id:
             queryset = queryset.filter(employee_id=employee_id)
         elif user.role and user.role.name not in ['HR', 'ADMIN', 'MANAGER']:
-            # Employees can only see their own requests
-            queryset = queryset.filter(employee=user)
+            # Employees can only see their own requests or requests of employees they report to/manage
+            queryset = queryset.filter(
+                Q(employee=user) |
+                Q(employee__reporting_manager=user) |
+                Q(employee__employee_profile__employment_details__reporting_officer=user)
+            )
+        
+        # Filter by reporting manager
+        reporting_manager_id = self.request.query_params.get('reporting_manager', None)
+        if reporting_manager_id:
+            queryset = queryset.filter(
+                Q(employee__reporting_manager_id=reporting_manager_id) |
+                Q(employee__employee_profile__employment_details__reporting_officer_id=reporting_manager_id)
+            )
         
         # Filter by status
         status_filter = self.request.query_params.get('status', None)
         if status_filter:
-            queryset = queryset.filter(status=status_filter)
+            if status_filter == 'PENDING':
+                queryset = queryset.filter(status__in=['PENDING', 'PENDING_MANAGER', 'PENDING_HR'])
+            else:
+                queryset = queryset.filter(status=status_filter)
         
         # Filter by date range
         start_date = self.request.query_params.get('start_date', None)
@@ -159,34 +175,28 @@ class ApplyLeaveView(APIView):
         year = start_date.year
         is_hr = request.user.role and request.user.role.name in ['HR', 'ADMIN']
 
-        # Balance check — HR/Admin bypass if no balance record exists (auto-create)
+        # Balance check — Auto-create balance record if it doesn't exist
         try:
             balance = LeaveBalance.objects.get(employee=employee, leave_type=leave_type, year=year)
-            if not is_hr and balance.available < total_days:
-                return Response(
-                    {'error': f'Insufficient leave balance. Available: {balance.available} days'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
         except LeaveBalance.DoesNotExist:
-            if is_hr:
-                # Auto-create balance for HR-applied leaves
-                balance = LeaveBalance.objects.create(
-                    employee=employee,
-                    leave_type=leave_type,
-                    year=year,
-                    total_allocated=leave_type.max_days_per_year,
-                    used=0,
-                    available=leave_type.max_days_per_year
-                )
-            else:
-                return Response(
-                    {'error': 'No leave balance found for this leave type and year'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            balance = LeaveBalance.objects.create(
+                employee=employee,
+                leave_type=leave_type,
+                year=year,
+                total_allocated=leave_type.max_days_per_year,
+                used=0,
+                available=leave_type.max_days_per_year
+            )
+
+        if not is_hr and balance.available < total_days:
+            return Response(
+                {'error': f'Insufficient leave balance. Available: {balance.available} days'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Check overlapping
         overlapping = LeaveRequest.objects.filter(
-            employee=employee, status__in=['PENDING', 'APPROVED']
+            employee=employee, status__in=['PENDING', 'PENDING_MANAGER', 'PENDING_HR', 'APPROVED']
         ).filter(Q(start_date__lte=end_date) & Q(end_date__gte=start_date))
 
         if overlapping.exists():
@@ -199,19 +209,39 @@ class ApplyLeaveView(APIView):
             end_date=end_date,
             total_days=total_days,
             reason=reason,
-            status='PENDING'
+            status='PENDING_MANAGER'
         )
 
-        # Notify reporting manager if exists
+        # Notify reporting manager(s) and HR immediately
         try:
-            from accounts.models_extended import EmploymentDetails
-            emp_details = EmploymentDetails.objects.get(employee__user=employee)
-            if emp_details.reporting_officer:
-                from .models import LeaveNotification
+            from .models import LeaveNotification
+            
+            # 1. Notify Reporting Manager(s)
+            manager_recipients = set()
+            if employee.reporting_manager:
+                manager_recipients.add(employee.reporting_manager)
+            try:
+                from accounts.models_extended import EmploymentDetails
+                emp_details = EmploymentDetails.objects.get(employee__user=employee)
+                if emp_details.reporting_officer:
+                    manager_recipients.add(emp_details.reporting_officer)
+            except Exception:
+                pass
+                
+            for m in manager_recipients:
                 LeaveNotification.objects.create(
-                    recipient=emp_details.reporting_officer,
+                    recipient=m,
                     leave_request=leave_request,
                     message=f"{employee.get_full_name()} ({employee.user_id}) has applied for {leave_type.name} from {start_date} to {end_date}."
+                )
+                
+            # 2. Notify HR users
+            hr_users = User.objects.filter(role__name__in=['HR', 'ADMIN'])
+            for hr in hr_users:
+                LeaveNotification.objects.create(
+                    recipient=hr,
+                    leave_request=leave_request,
+                    message=f"New leave request from {employee.get_full_name()} ({employee.user_id}) for {leave_type.name} from {start_date} to {end_date} (Pending Manager Approval)."
                 )
         except Exception as e:
             pass  # Notification failure shouldn't block leave creation
@@ -222,19 +252,31 @@ class ApplyLeaveView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+def update_attendance_for_leave(leave_request):
+    """Automatically create or update Attendance records to status='LEAVE' for leave dates"""
+    from attendance.models import Attendance
+    from datetime import timedelta
+    
+    curr_date = leave_request.start_date
+    end_date = leave_request.end_date
+    while curr_date <= end_date:
+        att, created = Attendance.objects.get_or_create(
+            employee=leave_request.employee,
+            date=curr_date,
+            defaults={'status': 'LEAVE'}
+        )
+        if not created:
+            att.status = 'LEAVE'
+            att.save()
+        curr_date += timedelta(days=1)
+
+
 class ApproveLeaveView(APIView):
     """Approve or reject leave request"""
     permission_classes = [permissions.IsAuthenticated]
     
     @transaction.atomic
     def post(self, request, pk):
-        # Only HR/Admin/Manager can approve
-        if not request.user.role or request.user.role.name not in ['HR', 'ADMIN', 'MANAGER']:
-            return Response(
-                {'error': 'Only HR, Admin, and Managers can approve leave requests'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         try:
             leave_request = LeaveRequest.objects.get(pk=pk)
         except LeaveRequest.DoesNotExist:
@@ -243,7 +285,31 @@ class ApproveLeaveView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        if leave_request.status != 'PENDING':
+        user = request.user
+        role_name = user.role.name if user.role else 'EMPLOYEE'
+        
+        # Determine if request.user is the reporting manager
+        is_reporting_manager = False
+        if leave_request.employee.reporting_manager == user:
+            is_reporting_manager = True
+        else:
+            try:
+                from accounts.models_extended import EmploymentDetails
+                emp_details = EmploymentDetails.objects.get(employee__user=leave_request.employee)
+                if emp_details.reporting_officer == user:
+                    is_reporting_manager = True
+            except Exception:
+                pass
+
+        # Only HR/Admin/Manager or the specific reporting manager/officer can approve
+        is_authorized = role_name in ['HR', 'ADMIN', 'MANAGER'] or is_reporting_manager
+        if not is_authorized:
+            return Response(
+                {'error': 'Only HR, Admin, and Managers can approve leave requests'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if leave_request.status in ['APPROVED', 'REJECTED', 'CANCELLED']:
             return Response(
                 {'error': f'Leave request is already {leave_request.status.lower()}'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -251,29 +317,205 @@ class ApproveLeaveView(APIView):
         
         serializer = ApproveLeaveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        action_status = serializer.validated_data['status']  # 'APPROVED' or 'REJECTED'
+        rejection_reason = serializer.validated_data.get('rejection_reason', '')
+        remarks = serializer.validated_data.get('remarks', '')
+                
+        is_hr_or_admin = role_name in ['HR', 'ADMIN']
+        from .models import LeaveNotification, LeaveApprovalHistory, LeaveBalance
+        from django.conf import settings
+        from datetime import timedelta
         
-        leave_request.status = serializer.validated_data['status']
-        leave_request.approved_by = request.user
-        leave_request.approved_at = timezone.now()
+        action_name = ''
+        notify_msg = ''
         
-        if serializer.validated_data['status'] == 'APPROVED':
-            # Update leave balance
-            year = leave_request.start_date.year
-            balance = LeaveBalance.objects.get(
-                employee=leave_request.employee,
-                leave_type=leave_request.leave_type,
-                year=year
-            )
-            balance.used += leave_request.total_days
-            balance.calculate_available()
-            balance.save()
+        if leave_request.status == 'PENDING_MANAGER':
+            if is_reporting_manager:
+                if action_status == 'APPROVED':
+                    leave_request.status = 'PENDING_HR'
+                    action_name = 'Manager Approved'
+                    notify_msg = f"Manager {user.get_full_name()} approved. Pending HR Final Approval."
+                    
+                    # Notify HR
+                    hr_users = User.objects.filter(role__name__in=['HR', 'ADMIN'])
+                    for hr in hr_users:
+                        LeaveNotification.objects.create(
+                            recipient=hr,
+                            leave_request=leave_request,
+                            message=f"Manager approved leave for {leave_request.employee.get_full_name()} ({leave_request.employee.user_id}). Pending HR Final Approval."
+                        )
+                else:
+                    leave_request.status = 'REJECTED'
+                    leave_request.rejection_reason = rejection_reason
+                    action_name = 'Manager Rejected'
+                    notify_msg = f"Manager {user.get_full_name()} rejected the leave request."
+                    
+                    # Notify Employee
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been rejected by Manager {user.get_full_name()}. Reason: {rejection_reason}"
+                    )
+            elif is_hr_or_admin:
+                # HR Override
+                time_diff = timezone.now() - leave_request.created_at
+                escalation_hours = getattr(settings, 'LEAVE_ESCALATION_HOURS', 48)
+                if time_diff.total_seconds() >= escalation_hours * 3600:
+                    if action_status == 'APPROVED':
+                        leave_request.status = 'APPROVED'
+                        leave_request.approved_by = user
+                        leave_request.approved_at = timezone.now()
+                        action_name = 'HR Override Approved'
+                        notify_msg = f"HR {user.get_full_name()} override-approved the leave request."
+                        
+                        # Update balance
+                        year = leave_request.start_date.year
+                        balance = LeaveBalance.objects.get(
+                            employee=leave_request.employee,
+                            leave_type=leave_request.leave_type,
+                            year=year
+                        )
+                        balance.used += leave_request.total_days
+                        balance.calculate_available()
+                        balance.save()
+                        
+                        # Update attendance
+                        update_attendance_for_leave(leave_request)
+                        
+                        # Notify Employee
+                        LeaveNotification.objects.create(
+                            recipient=leave_request.employee,
+                            leave_request=leave_request,
+                            message=f"Your leave request has been override-approved by HR. Status is now Approved."
+                        )
+                    else:
+                        leave_request.status = 'REJECTED'
+                        leave_request.rejection_reason = rejection_reason
+                        action_name = 'HR Override Rejected'
+                        notify_msg = f"HR {user.get_full_name()} override-rejected the leave request."
+                        
+                        # Notify Employee
+                        LeaveNotification.objects.create(
+                            recipient=leave_request.employee,
+                            leave_request=leave_request,
+                            message=f"Your leave request has been override-rejected by HR. Reason: {rejection_reason}"
+                        )
+                else:
+                    return Response(
+                        {'error': f'Cannot override yet. Manager has {escalation_hours} hours to act before HR override is active.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                return Response(
+                    {'error': 'Only the reporting manager can act on this request, or HR can override after 48 hours.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+        elif leave_request.status == 'PENDING_HR':
+            if is_hr_or_admin:
+                if action_status == 'APPROVED':
+                    leave_request.status = 'APPROVED'
+                    leave_request.approved_by = user
+                    leave_request.approved_at = timezone.now()
+                    action_name = 'HR Approved'
+                    notify_msg = f"HR {user.get_full_name()} finally approved the leave request."
+                    
+                    # Update balance
+                    year = leave_request.start_date.year
+                    balance = LeaveBalance.objects.get(
+                        employee=leave_request.employee,
+                        leave_type=leave_request.leave_type,
+                        year=year
+                    )
+                    balance.used += leave_request.total_days
+                    balance.calculate_available()
+                    balance.save()
+                    
+                    # Update attendance
+                    update_attendance_for_leave(leave_request)
+                    
+                    # Notify Employee
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been finally approved by HR."
+                    )
+                else:
+                    leave_request.status = 'REJECTED'
+                    leave_request.rejection_reason = rejection_reason
+                    action_name = 'HR Rejected'
+                    notify_msg = f"HR {user.get_full_name()} rejected the leave request."
+                    
+                    # Notify Employee
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been rejected by HR. Reason: {rejection_reason}"
+                    )
+            else:
+                return Response(
+                    {'error': 'Only HR or Admin can perform final approval/rejection.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         else:
-            leave_request.rejection_reason = serializer.validated_data.get('rejection_reason', '')
-        
+            # Fallback for legacy PENDING requests
+            if is_hr_or_admin or is_reporting_manager:
+                if action_status == 'APPROVED':
+                    if is_hr_or_admin:
+                        leave_request.status = 'APPROVED'
+                        leave_request.approved_by = user
+                        leave_request.approved_at = timezone.now()
+                        action_name = 'HR Approved'
+                        notify_msg = f"Leave request approved by HR."
+                        
+                        # Update balance
+                        year = leave_request.start_date.year
+                        balance = LeaveBalance.objects.get(
+                            employee=leave_request.employee,
+                            leave_type=leave_request.leave_type,
+                            year=year
+                        )
+                        balance.used += leave_request.total_days
+                        balance.calculate_available()
+                        balance.save()
+                        
+                        # Update attendance
+                        update_attendance_for_leave(leave_request)
+                    else:
+                        leave_request.status = 'PENDING_HR'
+                        action_name = 'Manager Approved'
+                        notify_msg = f"Manager approved. Pending HR Final Approval."
+                else:
+                    leave_request.status = 'REJECTED'
+                    leave_request.rejection_reason = rejection_reason
+                    action_name = 'Rejected'
+                    notify_msg = f"Leave request rejected."
+                    
+                    # Notify Employee
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been rejected. Reason: {rejection_reason}"
+                    )
+            else:
+                return Response(
+                    {'error': 'No permissions to act on this leave request.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
         leave_request.save()
         
+        # Record approval history
+        LeaveApprovalHistory.objects.create(
+            leave_request=leave_request,
+            action_by=user,
+            role=role_name or 'UNKNOWN',
+            action=action_name,
+            remarks=remarks or rejection_reason or notify_msg
+        )
+        
         return Response({
-            'message': f'Leave request {serializer.validated_data["status"].lower()}',
+            'message': notify_msg,
             'leave_request': LeaveRequestSerializer(leave_request).data
         }, status=status.HTTP_200_OK)
 

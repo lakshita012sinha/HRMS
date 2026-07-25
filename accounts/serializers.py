@@ -19,13 +19,24 @@ class RoleSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role_name = serializers.CharField(source='role.name', read_only=True)
     permissions = PermissionSerializer(many=True, read_only=True)
+    is_manager = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = ['id', 'user_id', 'username', 'email', 'first_name', 'last_name', 
                   'phone', 'role', 'role_name', 'permissions', 'is_active', 
-                  'created_at', 'updated_at']
+                  'created_at', 'updated_at', 'is_manager']
         read_only_fields = ['id', 'user_id', 'username', 'created_at', 'updated_at']
+
+    def get_is_manager(self, obj):
+        if obj.role and obj.role.name in ['HR', 'ADMIN', 'MANAGER']:
+            return True
+        if User.objects.filter(reporting_manager=obj).exists():
+            return True
+        from accounts.models_extended import EmploymentDetails
+        if EmploymentDetails.objects.filter(reporting_officer=obj).exists():
+            return True
+        return False
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

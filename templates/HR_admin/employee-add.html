@@ -63,31 +63,31 @@
                 <div class="row">
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="employeeName">Employee Name</label>
+                      <label for="employeeName">Employee Name<span class="text-danger">*</span></label>
                       <input type="text" id="employeeName" name="employeeName" class="form-control" placeholder="Enter Employee Name">
                     </div>
                   </div>
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="fatherName">Father's Name</label>
+                      <label for="fatherName">Father's Name<span class="text-danger">*</span></label>
                       <input type="text" id="fatherName" name="fatherName" class="form-control" placeholder="Enter Father's Name">
                     </div>
                   </div>
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="motherName">Mother's Name</label>
+                      <label for="motherName">Mother's Name<span class="text-danger">*</span></label>
                       <input type="text" id="motherName" name="motherName" class="form-control" placeholder="Enter Mother's Name">
                     </div>
                   </div>
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="dob">Date Of Birth</label>
+                      <label for="dob">Date Of Birth<span class="text-danger">*</span></label>
                       <input type="date" id="dob" name="dob" class="form-control">
                     </div>
                   </div>
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="gender">Gender</label>
+                      <label for="gender">Gender<span class="text-danger">*</span></label>
                       <select class="form-select" id="gender" name="gender">
                         <option value="">Select</option>
                         <option value="MALE">Male</option>
@@ -98,7 +98,7 @@
                   </div>
                   <div class="col-lg-4 col-md-4 col-sm-6">
                     <div class="form-group">
-                      <label for="doj">Date Of Joining</label>
+                      <label for="doj">Date Of Joining<span class="text-danger">*</span></label>
                       <input type="date" id="doj" name="doj" class="form-control">
                     </div>
                   </div>
@@ -111,13 +111,13 @@
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
                   <label for="height">Height In CM.</label>
-                  <input type="number" id="height" name="height" class="form-control" placeholder="Enter Height">
+                  <input type="number" id="height" name="height" class="form-control" maxlength="3" inputmode="numeric" placeholder="Enter Height">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
                   <label for="weight">Weight In KG</label>
-                  <input type="number" id="weight" name="weight" class="form-control" placeholder="Enter Weight">
+                  <input type="number" id="weight" name="weight" class="form-control" maxlength="3" inputmode="numeric" placeholder="Enter Weight">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
@@ -132,7 +132,7 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="maritalStatus">Marital Status</label>
+                  <label for="maritalStatus">Marital Status<span class="text-danger">*</span></label>
                   <select class="form-select" id="maritalStatus" name="maritalStatus">
                     <option value="">Select</option>
                     <option value="MARRIED">Married</option>
@@ -142,49 +142,60 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="emailId">Email ID</label>
+                  <label for="emailId">Email ID<span class="text-danger">*</span></label>
                   <input type="email" id="emailId" name="emailId" class="form-control" placeholder="Enter Email ID">
+                  <div class="invalid-feedback" id="emailIdError">
+                    Enter a valid email address
+                  </div>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="officialEmailId">Official Email</label>
-                  <input type="email" id="officialEmailId" name="officialEmailId" class="form-control" placeholder="Enter Official Email">
+                  <label for="officialEmail">Official Email</label>
+                  <input type="email" id="officialEmail" name="officialEmail" class="form-control" placeholder="Enter Official Email">
+                  <div class="invalid-feedback" id="officialEmailError">
+                    Enter a valid email address
+                  </div>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="panNumber">Pan Number</label>
-                  <input type="text" id="panNumber" name="panNumber" class="form-control" maxlength="10" placeholder="10 Digits Only">
+                  <label for="panNumber">Pan Number<span class="text-danger">*</span></label>
+                  <input type="text" id="panNumber" name="panNumber" class="form-control" maxlength="10" minlength="10" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" placeholder="Enter PAN number" required >
+                  <small id="panNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
                   <label for="uidNumber">UID Number</label>
-                  <input type="text" id="uidNumber" name="uidNumber" class="form-control" maxlength="12" placeholder="12 Digits Only">
+                  <input type="text" id="uidNumber" name="uidNumber" class="form-control" maxlength="12" minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="12 Digits Only" required>
+                  <small id="uidNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="unaNumber">UNA Number</label>
-                  <input type="text" id="unaNumber" name="unaNumber" class="form-control" maxlength="20" placeholder="12 Digits Only">
+                  <label for="uanNumber">UAN Number</label>
+                  <input type="text" id="uanNumber" name="uanNumber" class="form-control" maxlength="12" minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="12 Digits Only" required>
+                  <small id="uanNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
                   <label for="esicNumber">ESIC Number</label>
-                  <input type="text" id="esicNumber" name="esicNumber" class="form-control" placeholder="Enter ESIC Number">
+                  <input type="text" id="esicNumber" name="esicNumber" class="form-control" maxlength="10" minlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="Enter ESIC Number" required>
+                  <small id="esicNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
                   <label for="pfNumber">PF Number</label>
-                  <input type="text" id="pfNumber" name="pfNumber" class="form-control" placeholder="Enter PF Number">
+                  <input type="text" id="pfNumber" name="pfNumber" class="form-control" maxlength="30" minlength="5" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g, '')" placeholder="Enter PF Number" required>
+                    <small id="pfNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="qualification">Qualification Of Employee</label>
+                  <label for="qualification">Qualification Of Employee<span class="text-danger">*</span></label>
                   <select class="form-select" id="qualification" name="qualification">
                     <option value="">Select</option>
                     <option>ILLITERATE</option><option>NON-METRIC</option><option>METRIC</option>
@@ -205,7 +216,7 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="contactNumber2">Another Contact Number<span class="text-danger">*</span></label>
+                  <label for="contactNumber2">Another Contact Number</label>
                   <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10" minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only" required>
                   <div class="invalid-feedback" id="contactNumber1Error">
                     Enter valid 10 digit mobile number starting from 6,7, 8 or 9
@@ -214,19 +225,19 @@
               </div>
               <div class="col-lg-6 col-md-6 col-sm-6">
                 <div class="form-group">
-                  <label for="presentAddress">Present Address</label>
+                  <label for="presentAddress">Present Address<span class="text-danger">*</span></label>
                   <textarea id="presentAddress" name="presentAddress" class="form-control" rows="3" placeholder="Enter Present Address" maxlength="200"></textarea>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="presentCity">Present City</label>
+                  <label for="presentCity">Present City<span class="text-danger">*</span></label>
                   <input type="text" id="presentCity" name="presentCity" class="form-control" placeholder="Enter Present City">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="presentState">Present State</label>
+                  <label for="presentState">Present State<span class="text-danger">*</span></label>
                   <select class="form-select" id="presentState" name="presentState">
                     <option value="">Select</option>
                     <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
@@ -244,8 +255,11 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="presentPincode">Present Pincode</label>
-                  <input type="text" id="presentPincode" name="presentPincode" class="form-control" maxlength="6" placeholder="Enter Pincode">
+                  <label for="presentPincode">Present Pincode<span class="text-danger">*</span></label>
+                  <input type="text" id="presentPincode" name="presentPincode" class="form-control" maxlength="6" inputmode="numeric" placeholder="Enter Pincode">
+                  <div class="invalid-feedback" id="presentPincodeError">
+                    Enter a valid 6 digit pincode
+                  </div>
                 </div>
               </div>
               <div class="col-12">
@@ -258,13 +272,13 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="relationName">Relation Ship Name</label>
+                  <label for="relationName">Relation Ship Name<span class="text-danger">*</span></label>
                   <input type="text" id="relationName" name="relationName" class="form-control" placeholder="Enter Relation Ship Name">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="relationType">Relation Ship Type</label>
+                  <label for="relationType">Relation Ship Type<span class="text-danger">*</span></label>
                   <select class="form-select" id="relationType" name="relationType">
                     <option value="">Select</option>
                     <option value="FATHER">Father</option>
@@ -277,7 +291,7 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="parentMobile1">Parent Mobile</label>
+                  <label for="parentMobile1">Parent Mobile<span class="text-danger">*</span></label>
                   <input type="text" id="parentMobile1" name="parentMobile1" class="form-control" maxlength="10" placeholder="10 Digits Only">
                 </div>
               </div>
@@ -289,19 +303,19 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="permanentAddress">Permanent Address</label>
+                  <label for="permanentAddress">Permanent Address<span class="text-danger">*</span></label>
                   <textarea id="permanentAddress" name="permanentAddress" class="form-control" rows="3" placeholder="Enter Permanent Address"></textarea>
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="permanentCity">Permanent City</label>
+                  <label for="permanentCity">Permanent City<span class="text-danger">*</span></label>
                   <input type="text" id="permanentCity" name="permanentCity" class="form-control" placeholder="Enter Permanent City">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="permanentState">Permanent State</label>
+                  <label for="permanentState">Permanent State<span class="text-danger">*</span></label>
                   <select class="form-select" id="permanentState" name="permanentState">
                     <option value="">Select</option>
                     <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
@@ -319,8 +333,11 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="permanentPincode">Permanent Pincode</label>
-                  <input type="text" id="permanentPincode" name="permanentPincode" class="form-control" maxlength="6" placeholder="Enter Permanent Pincode">
+                  <label for="permanentPincode">Permanent Pincode<span class="text-danger">*</span></label>
+                  <input type="text" id="permanentPincode" name="permanentPincode" class="form-control" maxlength="6" inputmode="numeric" placeholder="Enter Permanent Pincode">
+                  <div class="invalid-feedback" id="permanentPincodeError">
+                    Enter a valid 6 digit pincode
+                  </div>
                 </div>
               </div>
             </div>
@@ -329,13 +346,13 @@
             <div class="row mt-2">
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="empPassword">Password</label>
+                  <label for="empPassword">Password<span class="text-danger">*</span></label>
                   <input type="password" id="empPassword" name="empPassword" class="form-control" placeholder="Set Password">
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="empPassword2">Confirm Password</label>
+                  <label for="empPassword2">Confirm Password<span class="text-danger">*</span></label>
                   <input type="password" id="empPassword2" name="empPassword2" class="form-control" placeholder="Confirm Password">
                 </div>
               </div>
@@ -353,13 +370,13 @@
             <div class="row">
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="designationText">Branch Department Designation</label>
+                  <label for="designationText">Branch Department Designation<span class="text-danger">*</span></label>
                   <input type="text" id="designationText" name="designationText" class="form-control" placeholder="Enter Designation">
                 </div>
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="grade">Grade</label>
+                  <label for="grade">Grade<span class="text-danger">*</span></label>
                   <select class="form-select" id="grade" name="grade">
                     <option value="">Select Grade</option>
                     <option>M</option><option>M1</option><option>E1</option><option>E1-Jaipur</option>
@@ -369,7 +386,7 @@
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="employmentType">Employement Type</label>
+                  <label for="employmentType">Employement Type<span class="text-danger">*</span></label>
                   <select class="form-select" id="employmentType" name="employmentType">
                     <option value="">Select Employement Type</option>
                     <option value="PROBATION">PROBATION</option>
@@ -381,7 +398,7 @@
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="reportingOfficer">Reporting Officer</label>
+                  <label for="reportingOfficer">Reporting Officer<span class="text-danger">*</span></label>
                   <select class="form-select" id="reportingOfficer" name="reportingOfficer">
                     <option value="">Select Reporting Officer</option>
                   </select>
@@ -389,7 +406,7 @@
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="deputedProject">Deputed Project</label>
+                  <label for="deputedProject">Deputed Project <span class="text-danger">*</span></label>
                   <select class="form-select" id="deputedProject" name="deputedProject">
                     <option value="">Select Project</option>
                     <option>NAGAR NIGAM JAIPUR HERITAGE</option>
@@ -404,7 +421,7 @@
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="effectiveDate">Effective Date</label>
+                  <label for="effectiveDate">Effective Date <span class="text-danger">*</span></label>
                   <input type="date" id="effectiveDate" name="effectiveDate" class="form-control">
                 </div>
               </div>
@@ -420,7 +437,7 @@
             <div class="row">
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="bankName">Bank Name</label>
+                  <label for="bankName">Bank Name<span class="text-danger">*</span></label>
                   <select class="form-select" id="bankName" name="bankName">
                     <option value="">Select Bank</option>
                     <option>AIRTEL PAYMENT BANK</option><option>ALLAHABAD BANK</option>
@@ -447,25 +464,27 @@
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="bankBranch">Bank Branch</label>
+                  <label for="bankBranch">Bank Branch<span class="text-danger">*</span></label>
                   <input type="text" id="bankBranch" name="bankBranch" class="form-control" placeholder="Enter Bank Branch">
                 </div>
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="bankAccountNumber">Bank Account Number</label>
-                  <input type="text" id="bankAccountNumber" name="bankAccountNumber" class="form-control" placeholder="Enter Bank Account Number">
+                  <label for="bankAccountNumber">Bank Account Number<span class="text-danger">*</span></label>
+                  <input type="text" id="bankAccountNumber" name="bankAccountNumber" class="form-control" maxlength="18" minlength="9" inputmode="numeric" pattern="[0-9]{9,18}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Enter Bank Account Number" required>
+                  <small id="bankAccountNumberError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="ifscCode">IFSC Code</label>
-                  <input type="text" id="ifscCode" name="ifscCode" class="form-control" placeholder="Enter IFSC Code">
+                  <label for="ifscCode">IFSC Code<span class="text-danger">*</span></label>
+                  <input type="text" id="ifscCode" name="ifscCode" class="form-control" maxlength="11" minlength="11" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" placeholder="Enter IFSC Code" required>
+                  <small id="ifscCodeError" class="text-danger"></small>
                 </div>
               </div>
               <div class="col-lg-4 col-md-4 col-sm-6">
                 <div class="form-group">
-                  <label for="isSalaryAccount">Salaried Account</label>
+                  <label for="isSalaryAccount">Salaried Account<span class="text-danger">*</span></label>
                   <select class="form-select" id="isSalaryAccount" name="isSalaryAccount">
                     <option value="">Select Project</option>
                     <option value="true">Yes</option>
@@ -642,6 +661,366 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const heightInput = document.getElementById("height");
+    const heightError = document.getElementById("heightError");
+
+    heightInput.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 3 digits
+        this.value = this.value.slice(0, 3);
+
+        const height = this.value;
+
+        // Optional field
+        if (height === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            heightError.textContent = "";
+            return;
+        }
+
+        // Must be exactly 3 digits
+        if (!/^\d{3}$/.test(height)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            heightError.textContent =
+                "Enter a valid 3 digit height";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        heightError.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const weightInput = document.getElementById("weight");
+    const weightError = document.getElementById("weightError");
+
+    weightInput.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 3 digits
+        this.value = this.value.slice(0, 3);
+
+        const weight = this.value;
+
+        // Optional field
+        if (weight === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            weightError.textContent = "";
+            return;
+        }
+
+        // Must contain exactly 2 or 3 digits
+        if (!/^\d{2,3}$/.test(weight)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            weightError.textContent =
+                "Enter a valid 2 or 3 digit weight";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        weightError.textContent = "";
+    });
+
+});
+</script>
+<script>
+  document.getElementById("panNumber").addEventListener("input", function () {
+    const pan = this.value;
+    const error = document.getElementById("panNumberError");
+
+    const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+
+    if (pan.length > 0 && pan.length < 10) {
+        error.textContent = "PAN Number must contain exactly 10 characters.";
+    } else if (pan.length === 10 && !panPattern.test(pan)) {
+        error.textContent = "Please enter a valid PAN Number.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+  document.getElementById("uanNumber").addEventListener("input", function () {
+    const uan = this.value;
+    const error = document.getElementById("uanNumberError");
+
+    if (uan.length > 0 && uan.length < 12) {
+        error.textContent = "UAN Number must contain exactly 12 digits.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+  document.getElementById("uidNumber").addEventListener("input", function () {
+    const uid = this.value;
+    const error = document.getElementById("uidNumberError");
+
+    if (uid.length > 0 && uid.length < 12) {
+        error.textContent = "UID Number must contain exactly 12 digits.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+  document.getElementById("esicNumber").addEventListener("input", function () {
+    const esic = this.value;
+    const error = document.getElementById("esicNumberError");
+
+    if (esic.length > 0 && esic.length < 10) {
+        error.textContent = "ESIC Number must contain exactly 10 digits.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+  document.getElementById("pfNumber").addEventListener("input", function () {
+    const pf = this.value;
+    const error = document.getElementById("pfNumberError");
+
+    if (pf.length > 0 && pf.length < 5) {
+        error.textContent = "PF Number must contain at least 5 characters.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const emailInput = document.getElementById("emailId");
+    const emailError = document.getElementById("emailIdError");
+
+    emailInput.addEventListener("input", function () {
+
+        const email = this.value.trim();
+
+        // Optional field
+        if (email === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            emailError.textContent = "";
+            return;
+        }
+
+        // Email validation
+        const emailPattern =
+            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!emailPattern.test(email)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            emailError.textContent =
+                "Enter a valid email address";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        emailError.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const officialEmailInput =
+        document.getElementById("officialEmail");
+
+    const officialEmailError =
+        document.getElementById("officialEmailError");
+
+    officialEmailInput.addEventListener("input", function () {
+
+        const email = this.value.trim();
+
+        // Optional field
+        if (email === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            officialEmailError.textContent = "";
+            return;
+        }
+
+        // Email validation
+        const emailPattern =
+            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!emailPattern.test(email)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            officialEmailError.textContent =
+                "Enter a valid official email address";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        officialEmailError.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const presentPincode =
+        document.getElementById("presentPincode");
+
+    const presentPincodeError =
+        document.getElementById("presentPincodeError");
+
+    presentPincode.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 6 digits
+        this.value = this.value.slice(0, 6);
+
+        const pincode = this.value;
+
+        // Optional field
+        if (pincode === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            presentPincodeError.textContent = "";
+            return;
+        }
+
+        // Must be exactly 6 digits and cannot start with 0
+        if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            presentPincodeError.textContent =
+                "Enter a valid 6 digit pincode";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        presentPincodeError.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const permanentPincode =
+        document.getElementById("permanentPincode");
+
+    const permanentPincodeError =
+        document.getElementById("permanentPincodeError");
+
+    permanentPincode.addEventListener("input", function () {
+
+        // Allow only numbers
+        this.value = this.value.replace(/\D/g, "");
+
+        // Maximum 6 digits
+        this.value = this.value.slice(0, 6);
+
+        const pincode = this.value;
+
+        // Optional field
+        if (pincode === "") {
+            this.classList.remove("is-invalid", "is-valid");
+            permanentPincodeError.textContent = "";
+            return;
+        }
+
+        // Must be exactly 6 digits and cannot start with 0
+        if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+
+            permanentPincodeError.textContent =
+                "Enter a valid 6 digit pincode";
+
+            return;
+        }
+
+        // Valid
+        this.classList.remove("is-invalid");
+        this.classList.add("is-valid");
+
+        permanentPincodeError.textContent = "";
+    });
+
+});
+</script>
+<script>
+document.getElementById("bankAccountNumber").addEventListener("input", function () {
+    const accountNumber = this.value;
+    const error = document.getElementById("bankAccountNumberError");
+
+    if (accountNumber.length > 0 && accountNumber.length < 9) {
+        error.textContent = "Bank Account Number must contain at least 9 digits.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
+document.getElementById("ifscCode").addEventListener("input", function () {
+    const ifscCode = this.value;
+    const error = document.getElementById("ifscCodeError");
+
+    // IFSC format: 4 letters + 0 + 6 alphanumeric characters
+    const ifscPattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+    if (ifscCode.length > 0 && ifscCode.length < 11) {
+        error.textContent = "IFSC Code must contain exactly 11 characters.";
+    } else if (ifscCode.length === 11 && !ifscPattern.test(ifscCode)) {
+        error.textContent = "Please enter a valid IFSC Code.";
+    } else {
+        error.textContent = "";
+    }
+});
+</script>
+<script>
     function goToTab(tabId) {
         const el = document.getElementById(tabId);
         if (el) bootstrap.Tab.getOrCreateInstance(el).show();
@@ -747,6 +1126,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
+        const empName = g('employeeName').trim();
+        const nameParts = empName.split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '.';
+
         // Build payload matching serializer field names exactly
         const payload = {
             first_name:               firstName,
@@ -766,13 +1150,13 @@ document.addEventListener("DOMContentLoaded", function () {
             blood_group:              g('bloodGroup'),
             marital_status:           g('maritalStatus'),
 
-            official_email:           g('officialEmailId'),
+            official_email:           g('officialEmail'),
             contact_number:           g('contactNumber1'),
             another_contact_number:   g('contactNumber2'),
 
             pan_number:               g('panNumber'),
             uid_number:               g('uidNumber'),
-            una_number:               g('unaNumber'),
+            una_number:               g('uanNumber'),
             esic_number:              g('esicNumber'),
             pf_number:                g('pfNumber'),
             qualification:            g('qualification'),

@@ -396,7 +396,7 @@ class GenerateMonthlyPayrollView(APIView):
 
         import calendar as cal
         from attendance.models import Attendance, Holiday
-        from datetime import date
+        from datetime import date, timedelta
         from decimal import Decimal
 
         days_in_month = cal.monthrange(year, month)[1]
@@ -420,6 +420,29 @@ class GenerateMonthlyPayrollView(APIView):
             elif a.status == 'HALF_DAY':
                 att_map[emp_id]['half_day'] += 1
 
+        # Get all approved leave requests of the month
+        from leave_management.models import LeaveRequest
+        approved_leaves = LeaveRequest.objects.filter(
+            status='APPROVED',
+            start_date__lte=date(year, month, days_in_month),
+            end_date__gte=date(year, month, 1)
+        ).select_related('leave_type')
+
+        # Build a map of employee -> set of paid leave dates in this month
+        paid_leave_map = {}
+        for lr in approved_leaves:
+            if not lr.leave_type.is_paid:
+                continue
+            if lr.employee_id not in paid_leave_map:
+                paid_leave_map[lr.employee_id] = set()
+            
+            # Add all dates in the range that fall within this month
+            cur = max(lr.start_date, date(year, month, 1))
+            last = min(lr.end_date, date(year, month, days_in_month))
+            while cur <= last:
+                paid_leave_map[lr.employee_id].add(cur)
+                cur += timedelta(days=1)
+
         generated = []
         skipped   = []
 
@@ -440,7 +463,15 @@ class GenerateMonthlyPayrollView(APIView):
             # Calculate pay days
             emp_att   = att_map.get(emp.id, {'present': 0, 'half_day': 0})
             present   = emp_att['present'] + emp_att['half_day'] * Decimal('0.5')
-            pay_days  = present + sundays  # present days + all sundays
+            
+            # Count paid leave days (excluding Sundays and actual worked days to avoid double counting)
+            worked_dates = set(a.date for a in att_qs if a.employee_id == emp.id and a.status in ['PRESENT', 'HALF_DAY'])
+            paid_leave_days = 0
+            for dt in paid_leave_map.get(emp.id, set()):
+                if dt.weekday() != 6 and dt not in worked_dates:
+                    paid_leave_days += 1
+            
+            pay_days  = present + sundays + paid_leave_days
 
             # Cap at days_in_month
             pay_days = min(pay_days, days_in_month)

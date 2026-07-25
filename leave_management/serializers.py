@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import LeaveType, LeaveBalance, LeaveRequest, LeavePolicy
+from .models import LeaveType, LeaveBalance, LeaveRequest, LeavePolicy, LeaveApprovalHistory
 from accounts.models import User
 from datetime import datetime
 
@@ -23,21 +23,44 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
         read_only_fields = ['available', 'created_at', 'updated_at']
 
 
+class LeaveApprovalHistorySerializer(serializers.ModelSerializer):
+    action_by_name = serializers.CharField(source='action_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = LeaveApprovalHistory
+        fields = ['id', 'action_by', 'action_by_name', 'role', 'action', 'remarks', 'created_at']
+
+
 class LeaveRequestSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.get_full_name', read_only=True)
     employee_id = serializers.CharField(source='employee.user_id', read_only=True)
     leave_type_name = serializers.CharField(source='leave_type.name', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
+    reporting_manager_id = serializers.SerializerMethodField()
+    approval_history = LeaveApprovalHistorySerializer(many=True, read_only=True)
     
     class Meta:
         model = LeaveRequest
         fields = ['id', 'employee', 'employee_id', 'employee_name', 'leave_type',
                   'leave_type_name', 'start_date', 'end_date', 'total_days', 'reason',
                   'status', 'approved_by', 'approved_by_name', 'approved_at',
-                  'rejection_reason', 'created_at', 'updated_at']
+                  'rejection_reason', 'created_at', 'updated_at',
+                  'reporting_manager_id', 'approval_history']
         read_only_fields = ['employee', 'total_days', 'status', 'approved_by', 
                            'approved_at', 'created_at', 'updated_at']
     
+    def get_reporting_manager_id(self, obj):
+        if obj.employee.reporting_manager:
+            return obj.employee.reporting_manager.id
+        try:
+            from accounts.models_extended import EmploymentDetails
+            emp_details = EmploymentDetails.objects.get(employee__user=obj.employee)
+            if emp_details.reporting_officer:
+                return emp_details.reporting_officer.id
+        except Exception:
+            pass
+        return None
+
     def validate(self, attrs):
         """Validate leave request"""
         start_date = attrs.get('start_date')
@@ -76,6 +99,7 @@ class ApproveLeaveSerializer(serializers.Serializer):
     """Serializer for approving/rejecting leave"""
     status = serializers.ChoiceField(choices=['APPROVED', 'REJECTED'], required=True)
     rejection_reason = serializers.CharField(required=False, allow_blank=True)
+    remarks = serializers.CharField(required=False, allow_blank=True)
 
 
 class LeavePolicySerializer(serializers.ModelSerializer):

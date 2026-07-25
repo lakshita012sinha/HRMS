@@ -348,6 +348,7 @@
 
       await loadPromotionHistory(targetCode);
       await loadIncrementHistory(targetCode);
+      await loadTransferHistory(targetCode);
     } catch (err) {
       console.error('Error fetching employee record:', err);
     }
@@ -407,6 +408,23 @@
     }
   }
 
+  async function loadTransferHistory(targetCode) {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      const res = await fetch('/api/accounts/transfers/?emp=' + targetCode, { headers });
+      if (res.ok) {
+        const transfers = await res.json();
+        const list = Array.isArray(transfers) ? transfers : (transfers.results || []);
+        renderTransferHistory(list);
+        updateServiceHistory(list, 'Transfer');
+      }
+    } catch(err) {
+      console.error('Error fetching transfer history:', err);
+    }
+  }
+
   function updateServiceHistory(items, type) {
     let newEvents = [];
     if (type === 'Promotion') {
@@ -430,6 +448,17 @@
         pay_level: inc.pay_level,
         basic_pay: inc.new_basic_pay,
         remark: `${inc.increment_type} (+${inc.increment_amount})`
+      }));
+    } else if (type === 'Transfer') {
+      newEvents = items.map(t => ({
+        effective_date: t.effective_date_from,
+        event: 'Transfer',
+        department: t.new_department,
+        office: t.new_office,
+        designation: 'Tax Collector',
+        pay_level: 'L2',
+        basic_pay: '-',
+        remark: t.remark || 'Regular Transfer'
       }));
     }
 
@@ -501,6 +530,32 @@
         <td>${item.remark || '-'}</td>
         <td class="d-print-none">
           ${item.document ? `<button class="btn btn-success btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderTransferHistory(list) {
+    const tbody = document.getElementById('transferHistoryBody');
+    if (!tbody) return;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-3">No records found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(item => `
+      <tr class="text-center">
+        <td>${formatDate(item.transfer_date)}</td>
+        <td>${item.present_office || '-'}</td>
+        <td>${item.new_office || '-'}</td>
+        <td>${item.present_department || '-'}</td>
+        <td>${item.new_department || '-'}</td>
+        <td>${item.present_zone || '-'}</td>
+        <td>${item.new_zone || '-'}</td>
+        <td>${formatDate(item.effective_date_from)}</td>
+        <td>${formatDate(item.relieving_date)}</td>
+        <td>${item.remark || '-'}</td>
+        <td class="d-print-none">
+          ${item.document ? `<button class="btn btn-warning btn-xs mb-1" onclick="openModal('image', '${item.document}')"><i class="ri-file-download-line"></i> View</button>` : '-'}
         </td>
       </tr>
     `).join('');

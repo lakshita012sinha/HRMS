@@ -5,7 +5,7 @@ from .choices import (
     QUALIFICATION_CHOICES, STATE_CHOICES, GRADE_CHOICES,
     EMPLOYMENT_TYPE_CHOICES, PROJECT_CHOICES, RELATIONSHIP_TYPE_CHOICES
 )
-
+from .encrypted_fields import EncryptedCharField
 
 class Branch(models.Model):
     """Branch model"""
@@ -74,11 +74,11 @@ class EmployeeProfile(models.Model):
     another_contact_number = models.CharField(max_length=15, blank=True)
     
     # Government IDs
-    pan_number = models.CharField(max_length=10, blank=True)
-    uid_number = models.CharField(max_length=12, blank=True, help_text="Aadhaar Number")
-    una_number = models.CharField(max_length=50, blank=True)
-    esic_number = models.CharField(max_length=50, blank=True)
-    pf_number = models.CharField(max_length=50, blank=True)
+    pan_number = EncryptedCharField(max_length=255, blank=True)
+    uid_number = EncryptedCharField(max_length=255, blank=True, help_text="Aadhaar Number")
+    una_number = EncryptedCharField(max_length=255, blank=True)
+    esic_number = EncryptedCharField(max_length=255, blank=True)
+    pf_number = EncryptedCharField(max_length=255, blank=True)
     
     # Education
     qualification = models.CharField(max_length=50, choices=QUALIFICATION_CHOICES)
@@ -98,7 +98,9 @@ class EmployeeProfile(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     
+
     def __str__(self):
         return f"{self.user.user_id} - {self.user.get_full_name()}"
     
@@ -239,5 +241,31 @@ class Increment(models.Model):
 
     def __str__(self):
         return f"{self.employee.user.user_id} - {self.increment_type} - {self.new_basic_pay}"
+
+
+class Transfer(models.Model):
+    """Employee transfer history records"""
+    employee = models.ForeignKey(EmployeeProfile, on_delete=models.CASCADE, related_name='transfers')
+    transfer_date = models.DateField()
+    present_office = models.CharField(max_length=100)
+    new_office = models.CharField(max_length=100)
+    present_department = models.CharField(max_length=100)
+    new_department = models.CharField(max_length=100)
+    present_zone = models.CharField(max_length=100)
+    new_zone = models.CharField(max_length=100)
+    relieving_date = models.DateField()
+    effective_date_from = models.DateField()
+    approved_by = models.CharField(max_length=100)
+    remark = models.TextField(blank=True, null=True)
+    document = models.FileField(upload_to='transfer_documents/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'employee_transfers'
+
+    def __str__(self):
+        return f"{self.employee.user.user_id} - {self.present_office} to {self.new_office}"
+
 
 

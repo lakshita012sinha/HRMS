@@ -202,19 +202,48 @@
 <script>
     const token = localStorage.getItem('authToken');
 
-    // Validate token
-    fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } })
-        .then(res => { if (!res.ok) { localStorage.removeItem('authToken'); localStorage.removeItem('user'); window.location.replace('/login/'); } })
-        .catch(() => {});
+    // Populate user info from localStorage first for immediate display
+    let user = JSON.parse(localStorage.getItem('user') || '{}');
+    updateUserUI(user);
 
-    // Populate user info
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.first_name) {
-        const name = user.first_name + ' ' + (user.last_name || '');
-        document.getElementById('navUsername').textContent = name;
-        document.getElementById('dropdownName').textContent = name;
+    function updateUserUI(data) {
+        if (data.first_name) {
+            const name = data.first_name + ' ' + (data.last_name || '');
+            document.getElementById('navUsername').textContent = name;
+            document.getElementById('dropdownName').textContent = name;
+        }
+        if (data.user_id) document.getElementById('dropdownUserId').textContent = data.user_id;
+
+        // Dynamically show Team Leave Requests for Managers / HR / Admin / Users with subordinates
+        if (data.is_manager || data.role_name === 'MANAGER' || data.role_name === 'HR' || data.role_name === 'ADMIN') {
+            const leaveMenuCollapse = document.querySelector('#leaveMenu .nav-collapse');
+            if (leaveMenuCollapse && !document.getElementById('teamLeaveLiItem')) {
+                const teamLeaveLi = document.createElement('li');
+                teamLeaveLi.id = 'teamLeaveLiItem';
+                teamLeaveLi.innerHTML = `<a href="/user/team-leaves/"><span class="sub-item">Team Leave Requests</span></a>`;
+                leaveMenuCollapse.appendChild(teamLeaveLi);
+            }
+        }
     }
-    if (user.user_id) document.getElementById('dropdownUserId').textContent = user.user_id;
+
+    // Validate token and update localStorage with fresh data
+    fetch('/api/accounts/profile/', { headers: { 'Authorization': 'Token ' + token } })
+        .then(res => {
+            if (!res.ok) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                window.location.replace('/login/');
+            } else {
+                return res.json();
+            }
+        })
+        .then(data => {
+            if (data) {
+                localStorage.setItem('user', JSON.stringify(data));
+                updateUserUI(data);
+            }
+        })
+        .catch(() => {});
 
     function doLogout() {
         localStorage.removeItem('authToken');
@@ -224,6 +253,7 @@
     document.getElementById('logoutBtn').addEventListener('click', e => { e.preventDefault(); doLogout(); });
     document.getElementById('logoutIcon').addEventListener('click', e => { e.preventDefault(); doLogout(); });
 </script>
+<script src="{% static 'js/inactivity-logout.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -52,6 +52,8 @@ class LeaveRequest(models.Model):
     """Leave request model"""
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
+        ('PENDING_MANAGER', 'Pending Manager Approval'),
+        ('PENDING_HR', 'Pending HR Approval'),
         ('APPROVED', 'Approved'),
         ('REJECTED', 'Rejected'),
         ('CANCELLED', 'Cancelled'),
@@ -63,7 +65,7 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
     total_days = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     reason = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='PENDING')
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_leaves')
     approved_at = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
@@ -83,6 +85,23 @@ class LeaveRequest(models.Model):
     class Meta:
         db_table = 'leave_requests'
         ordering = ['-created_at']
+
+
+class LeaveApprovalHistory(models.Model):
+    """Approval history tracking for leave requests"""
+    leave_request = models.ForeignKey(LeaveRequest, on_delete=models.CASCADE, related_name='approval_history')
+    action_by = models.ForeignKey('accounts.User', on_delete=models.CASCADE)
+    role = models.CharField(max_length=50) # e.g. MANAGER, HR, ADMIN
+    action = models.CharField(max_length=50) # e.g. 'Manager Approved', 'Manager Rejected', 'HR Approved', 'HR Rejected', 'HR Override Approved', 'HR Override Rejected'
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'leave_approval_history'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.leave_request.id} - {self.action} by {self.action_by.username}"
 
 
 class LeavePolicy(models.Model):

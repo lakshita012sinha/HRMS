@@ -261,14 +261,26 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     employment_details = serializers.SerializerMethodField()
     bank_details = serializers.SerializerMethodField()
     documents = serializers.SerializerMethodField()
+    is_manager = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = [
             'id', 'user_id', 'email', 'first_name', 'last_name',
             'role', 'role_name', 'is_active', 'created_at',
-            'employee_profile', 'emergency_contact', 'employment_details', 'bank_details', 'documents'
+            'employee_profile', 'emergency_contact', 'employment_details', 'bank_details', 'documents',
+            'is_manager'
         ]
+    
+    def get_is_manager(self, obj):
+        if obj.role and obj.role.name in ['HR', 'ADMIN', 'MANAGER']:
+            return True
+        if User.objects.filter(reporting_manager=obj).exists():
+            return True
+        from accounts.models_extended import EmploymentDetails
+        if EmploymentDetails.objects.filter(reporting_officer=obj).exists():
+            return True
+        return False
     
     def get_employee_profile(self, obj):
         try:

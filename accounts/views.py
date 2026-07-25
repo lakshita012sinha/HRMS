@@ -9,7 +9,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.db import transaction
 from .models import User, Role, Permission
-from .models_extended import Branch, Department, Designation, Promotion, Increment
+from .models_extended import Branch, Department, Designation, Promotion, Increment, Transfer
 from .models_past_employees import PastEmployee
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, LoginSerializer,
@@ -17,7 +17,7 @@ from .serializers import (
     ChangePasswordSerializer, RoleSerializer, PermissionSerializer
 )
 from .serializers_employee import CompleteEmployeeRegistrationSerializer, EmployeeDetailSerializer
-from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer, PromotionSerializer, IncrementSerializer
+from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer, PromotionSerializer, IncrementSerializer, TransferSerializer
 from .serializers_update import EmployeeUpdateSerializer
 from .serializers_past_employees import PastEmployeeSerializer, DeleteEmployeeSerializer
 
@@ -431,3 +431,23 @@ class IncrementListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(employee__user__user_id=emp)
         return qs
 
+
+class TransferListCreateView(generics.ListCreateAPIView):
+    """API endpoint for listing and creating employee transfers"""
+    serializer_class = TransferSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Transfer.objects.all().order_by('-transfer_date')
+        emp = self.request.query_params.get('emp')
+        if emp:
+            qs = qs.filter(employee__user__user_id=emp)
+        return qs
+        
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
+
+def browser_logout(request):
+    logout(request)
+    return redirect('login')

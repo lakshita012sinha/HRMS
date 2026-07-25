@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models_extended import (
     Branch, Department, Designation, EmployeeProfile,
-    EmergencyContact, EmploymentDetails, BankDetails, EmployeeDocument, Promotion, Increment
+    EmergencyContact, EmploymentDetails, BankDetails, EmployeeDocument, Promotion, Increment, Transfer
 )
 from .models import User
 
@@ -118,6 +118,34 @@ class IncrementSerializer(serializers.ModelSerializer):
             'id', 'employee', 'employee_code', 'increment_date', 'increment_type', 
             'pay_level', 'previous_basic_pay', 'increment_amount', 'new_basic_pay', 
             'effective_date_from', 'approved_by', 'remark', 'document', 'created_at'
+        ]
+        extra_kwargs = {
+            'employee': {'required': False, 'allow_null': True}
+        }
+
+    def create(self, validated_data):
+        employee_code = validated_data.pop('employee_code', None)
+        employee = validated_data.pop('employee', None)
+        
+        if not employee and employee_code:
+            employee = EmployeeProfile.objects.filter(user__user_id=employee_code).first()
+            if not employee:
+                raise serializers.ValidationError({"employee": f"Employee with code {employee_code} not found."})
+
+        validated_data['employee'] = employee
+        return super().create(validated_data)
+
+
+class TransferSerializer(serializers.ModelSerializer):
+    employee_code = serializers.CharField(required=False, write_only=True)
+
+    class Meta:
+        model = Transfer
+        fields = [
+            'id', 'employee', 'employee_code', 'transfer_date', 'present_office', 
+            'new_office', 'present_department', 'new_department', 'present_zone', 
+            'new_zone', 'relieving_date', 'effective_date_from', 'approved_by', 
+            'remark', 'document', 'created_at'
         ]
         extra_kwargs = {
             'employee': {'required': False, 'allow_null': True}

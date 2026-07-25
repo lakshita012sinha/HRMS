@@ -80,6 +80,7 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     phone = models.CharField(max_length=15, blank=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    reporting_manager = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='reporting_employees', help_text="Employee's reporting manager")
     permissions = models.ManyToManyField(Permission, blank=True, related_name='users')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

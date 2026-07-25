@@ -19,10 +19,12 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='auth/login.html'), name='home'),
     path('login/', TemplateView.as_view(template_name='auth/login.html'), name='login'),
+    path('logout/', views.browser_logout, name='browser_logout'),
     path('forgot-password/', TemplateView.as_view(template_name='auth/forgot-password.html'), name='forgot-password'),
     path('dashboard/', TemplateView.as_view(template_name='HR_admin/index.html'), name='dashboard'),
     path('hr/employee-add/', TemplateView.as_view(template_name='HR_admin/employee-add.html'), name='employee-add'),
@@ -76,6 +78,7 @@ urlpatterns = [
     path('user/my-profile/', TemplateView.as_view(template_name='hrms_user/my-profile.html'), name='user-my-profile'),
     path('user/apply-leave/', TemplateView.as_view(template_name='hrms_user/employee-apply-leave.html'), name='user-apply-leave'),
     path('user/leave-list/', TemplateView.as_view(template_name='hrms_user/employee-leave-list.html'), name='user-leave-list'),
+    path('user/team-leaves/', TemplateView.as_view(template_name='hrms_user/team-leaves.html'), name='user-team-leaves'),
     path('user/attendance/', TemplateView.as_view(template_name='hrms_user/employee-attendance-report.html'), name='user-attendance'),
     path('user/payslip/', TemplateView.as_view(template_name='hrms_user/employee-payslip.html'), name='user-payslip'),
     path('user/holidays/', TemplateView.as_view(template_name='hrms_user/holiday-list.html'), name='user-holidays'),

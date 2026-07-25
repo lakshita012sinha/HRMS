@@ -1,53 +1,29 @@
-{% extends 'HR_admin/base_bar.html' %}
+{% extends 'hrms_user/base_user.html' %}
 {% load static %}
 
-{% block title %}Leave Review - HRMS{% endblock %}
+{% block title %}Team Leave Requests - HRMS User{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'js/datatables/datatables.min.css' %}">
 <style>
-    .badge-pending  { background: #ffc107; color: #000; }
-    .badge-approved { background: #28a745; color: #fff; }
-    .badge-rejected { background: #dc3545; color: #fff; }
-    .badge-cancelled{ background: #6c757d; color: #fff; }
-    .btn-xs { padding: 2px 8px; font-size: 11px; }
-    .filter-btn.active { box-shadow: 0 0 0 2px #372f6e; }
+    .badge-pending   { background:#ffc107; color:#000; }
+    .badge-approved  { background:#28a745; color:#fff; }
+    .badge-rejected  { background:#dc3545; color:#fff; }
+    .badge-cancelled { background:#6c757d; color:#fff; }
+    .btn-xs { padding:2px 8px; font-size:11px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h4 class="fw-bold mb-3">Leave Review</h4>
+    <h4 class="fw-bold mb-3">Team Leave Requests</h4>
     <ul class="breadcrumbs mb-3">
-        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
         <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
         <li class="nav-item"><span>Leave</span></li>
         <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
-        <li class="nav-item"><span>Leave Review</span></li>
+        <li class="nav-item"><span>Team Leave Requests</span></li>
     </ul>
-</div>
-
-<!-- File Preview Modal -->
-<div class="modal fade" id="fileModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">File Preview</h5>
-                <button id="fullscreenBtn" class="btn btn-sm btn-outline-primary ms-2 d-none" onclick="toggleFullscreen()">
-                    <i class="ri-fullscreen-line"></i>
-                </button>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="zoomControls" class="mb-2 text-center d-none">
-                    <button class="btn btn-sm btn-info" onclick="zoomIn()"><i class="ri-add-line"></i></button>
-                    <button class="btn btn-sm btn-info" onclick="zoomOut()"><i class="ri-subtract-line"></i></button>
-                    <button class="btn btn-sm btn-secondary" onclick="resetZoom()">Reset</button>
-                </div>
-                <div id="fileContainer" style="width:100%;height:75vh;max-height:calc(100vh - 160px);overflow:auto;text-align:center;"></div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Reject Reason Modal -->
@@ -103,7 +79,6 @@
 <div class="row">
     <div class="col-sm-12">
         <div class="card card-stats card-round">
-
             <div class="card-header">
                 <div id="alertArea"></div>
                 <div>
@@ -113,17 +88,17 @@
                     <button class="btn btn-secondary btn-sm mb-1 filter-btn" data-status="">All</button>
                 </div>
             </div>
-
             <div class="card-body">
                 <div id="loadingState" class="text-center py-4">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 text-muted">Loading leave requests...</p>
+                    <p class="mt-2 text-muted">Loading team leave requests...</p>
                 </div>
+
                 <div id="tableWrapper" class="table-responsive d-none">
                     <table id="leaveTable" class="display table table-hover table-bordered table-head-bg-secondary">
                         <thead>
                             <tr>
-                                <th colspan="11" class="text-center bg-light"><strong id="tableTitle">PENDING LEAVE REQUESTS</strong></th>
+                                <th colspan="11" class="text-center bg-light"><strong>TEAM LEAVE REQUESTS</strong></th>
                             </tr>
                             <tr class="text-center">
                                 <th>#</th>
@@ -143,7 +118,6 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
@@ -154,16 +128,12 @@
 <script>
 let dtInstance = null;
 let currentStatus = 'PENDING';
-let scale = 1;
-let isFullscreen = false;
 let fetchedRequests = [];
 
-const statusTitles = {
-    'PENDING':  'PENDING LEAVE REQUESTS',
-    'APPROVED': 'APPROVED LEAVE REQUESTS',
-    'REJECTED': 'REJECTED LEAVE REQUESTS',
-    '':         'ALL LEAVE REQUESTS'
-};
+function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
 
 const statusBadge = {
     'PENDING':          '<span class="badge badge-pending">PENDING</span>',
@@ -173,12 +143,6 @@ const statusBadge = {
     'REJECTED':         '<span class="badge badge-rejected">REJECTED</span>',
     'CANCELLED':        '<span class="badge badge-cancelled">CANCELLED</span>'
 };
-
-function fmtDate(d) {
-    if (!d) return '-';
-    const dt = new Date(d);
-    return dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-}
 
 function showAlert(container, msg, type='danger') {
     document.getElementById(container).innerHTML =
@@ -191,9 +155,13 @@ async function loadLeaveRequests(statusFilter) {
     document.getElementById('loadingState').classList.remove('d-none');
     document.getElementById('tableWrapper').classList.add('d-none');
 
-    const url = statusFilter
-        ? `/api/leave/leave-requests/?status=${statusFilter}`
-        : `/api/leave/leave-requests/`;
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = currentUser.id;
+
+    let url = `/api/leave/leave-requests/?reporting_manager=${userId}`;
+    if (statusFilter) {
+        url += `&status=${statusFilter}`;
+    }
 
     try {
         const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
@@ -202,7 +170,6 @@ async function loadLeaveRequests(statusFilter) {
         const requests = Array.isArray(data) ? data : (data.results || []);
         fetchedRequests = requests;
 
-        document.getElementById('tableTitle').textContent = statusTitles[statusFilter] || 'ALL LEAVE REQUESTS';
         renderTable(requests);
     } catch(e) {
         showAlert('alertArea', 'Failed to load leave requests: ' + e.message);
@@ -220,57 +187,44 @@ function renderTable(requests) {
     const tbody = document.getElementById('leaveTableBody');
     if (!requests.length) {
         tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No leave requests found</td></tr>';
-    } else {
-        tbody.innerHTML = requests.map((r, i) => {
-            let actions = '';
-            
-            if (r.status === 'PENDING_MANAGER') {
-                if (r.reporting_manager_id === userId) {
-                    actions = `
-                        <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
-                        <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
-                    `;
-                } else if (role === 'HR' || role === 'ADMIN') {
-                    const timeDiff = new Date() - new Date(r.created_at);
-                    if (timeDiff >= 48 * 3600 * 1000) {
-                        actions = `
-                            <button class="btn btn-warning btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> HR Override Approve</button>
-                            <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> HR Override Reject</button>
-                        `;
-                    } else {
-                        actions = `<span class="text-muted small">Pending Manager</span>`;
-                    }
-                } else {
-                    actions = `<span class="text-muted small">Pending Manager</span>`;
-                }
-            } else if (r.status === 'PENDING_HR') {
-                if (role === 'HR' || role === 'ADMIN') {
-                    actions = `
-                        <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> HR Approve</button>
-                        <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> HR Reject</button>
-                    `;
-                } else {
-                    actions = `<span class="text-muted small">Pending HR Final Approval</span>`;
-                }
-            } else if (r.status === 'PENDING') {
-                if (role === 'HR' || role === 'ADMIN' || r.reporting_manager_id === userId) {
-                    actions = `
-                        <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
-                        <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
-                    `;
-                } else {
-                    actions = `<span class="text-muted">-</span>`;
-                }
+        document.getElementById('loadingState').classList.add('d-none');
+        document.getElementById('tableWrapper').classList.remove('d-none');
+        return;
+    }
+
+    tbody.innerHTML = requests.map((r, i) => {
+        let actions = '';
+        
+        if (r.status === 'PENDING_MANAGER') {
+            if (r.reporting_manager_id === userId) {
+                actions = `
+                    <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
+                    <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
+                `;
+            } else {
+                actions = `<span class="text-muted small">Pending Manager</span>`;
+            }
+        } else if (r.status === 'PENDING_HR') {
+            actions = `<span class="text-muted small">Pending HR Approval</span>`;
+        } else if (r.status === 'PENDING') {
+            if (r.reporting_manager_id === userId || role === 'HR' || role === 'ADMIN') {
+                actions = `
+                    <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
+                    <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
+                `;
             } else {
                 actions = `<span class="text-muted">-</span>`;
             }
+        } else {
+            actions = `<span class="text-muted">-</span>`;
+        }
 
-            const historyButton = `<button class="btn btn-info btn-xs mb-1 ms-1" onclick="showHistory(${r.id})"><i class="ri-history-line"></i> History</button>`;
-            if (actions !== `<span class="text-muted">-</span>` && actions !== `-`) {
-                actions += historyButton;
-            } else {
-                actions = historyButton;
-            }
+        const historyButton = `<button class="btn btn-info btn-xs mb-1 ms-1" onclick="showHistory(${r.id})"><i class="ri-history-line"></i> History</button>`;
+        if (actions !== `<span class="text-muted">-</span>` && actions !== `-`) {
+            actions += historyButton;
+        } else {
+            actions = historyButton;
+        }
 
             return `<tr class="text-center">
                 <td>${i+1}</td>
@@ -286,7 +240,6 @@ function renderTable(requests) {
                 <td class="d-print-none">${actions}</td>
             </tr>`;
         }).join('');
-    }
 
     document.getElementById('loadingState').classList.add('d-none');
     document.getElementById('tableWrapper').classList.remove('d-none');
@@ -378,43 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     loadLeaveRequests('PENDING');
-});
-
-// File preview
-function openModal(type, fileUrl) {
-    const container = document.getElementById('fileContainer');
-    scale = 1;
-    container.innerHTML = '';
-    document.getElementById('zoomControls').classList.add('d-none');
-    document.getElementById('fullscreenBtn').classList.add('d-none');
-
-    if (type === 'image') {
-        document.getElementById('zoomControls').classList.remove('d-none');
-        document.getElementById('fullscreenBtn').classList.remove('d-none');
-        container.innerHTML = `<img id="previewImage" src="${fileUrl}" class="img-fluid" style="transform:scale(1);transition:transform .15s ease;cursor:zoom-in;">`;
-        const img = document.getElementById('previewImage');
-        img.addEventListener('wheel', e => { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); });
-        img.addEventListener('dblclick', () => { scale = scale === 1 ? 2 : 1; applyZoom(); });
-    } else if (type === 'pdf') {
-        container.innerHTML = `<iframe src="${fileUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
-    }
-    new bootstrap.Modal(document.getElementById('fileModal')).show();
-}
-
-function zoomIn()    { if (scale < 4) { scale += 0.2; applyZoom(); } }
-function zoomOut()   { if (scale > 0.5) { scale -= 0.2; applyZoom(); } }
-function resetZoom() { scale = 1; applyZoom(); }
-function applyZoom() { const img = document.getElementById('previewImage'); if (img) img.style.transform = `scale(${scale})`; }
-function toggleFullscreen() {
-    const mc = document.querySelector('#fileModal .modal-content');
-    if (!document.fullscreenElement) { mc.requestFullscreen(); isFullscreen = true; }
-    else { document.exitFullscreen(); isFullscreen = false; }
-}
-
-document.getElementById('fileModal').addEventListener('hidden.bs.modal', () => {
-    document.getElementById('fileContainer').innerHTML = '';
-    scale = 1;
-    if (document.fullscreenElement) document.exitFullscreen();
 });
 </script>
 {% endblock %}

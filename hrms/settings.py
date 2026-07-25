@@ -15,6 +15,9 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from decouple import config
+FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -44,6 +47,7 @@ INSTALLED_APPS = [
     'leave_management',
     'payroll',
     'asset_management',
+    
 ]
 
 MIDDLEWARE = [
@@ -121,6 +125,11 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Session expires after 15 minutes of inactivity
+SESSION_COOKIE_AGE = 15 * 60
+
+# Reset session expiry whenever the user makes a request
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/

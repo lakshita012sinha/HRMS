@@ -73,13 +73,13 @@
           <h5 class="mt-2"><strong>Transfer Details</strong></h5>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="TransferDate">Transfer Date</label>
+              <label for="TransferDate">Transfer Date<span class="text-danger">*</span></label>
               <input type="Date" class="form-control" id="TransferDate" name="TransferDate" required>   
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="presentOffice">Present Office</label>
+              <label for="presentOffice">Present Office<span class="text-danger">*</span></label>
               <select class="form-select" id="presentOffice" name="presentOffice" required="">
                 <option value="">Select Present Office</option>
                 <option value="NAGAR NIGAM JAIPUR">NAGAR NIGAM JAIPUR</option>
@@ -88,7 +88,7 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="newOffice">New Office</label>
+              <label for="newOffice">New Office<span class="text-danger">*</span></label>
               <select class="form-select" id="newOffice" name="newOffice" required="">
                 <option value="">Select Present Office</option>
                 <option value="NAGAR NIGAM KOTA">NAGAR NIGAM KOTA</option>
@@ -97,7 +97,7 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="presentDepartment">Present Department</label>
+              <label for="presentDepartment">Present Department<span class="text-danger">*</span></label>
               <select class="form-select" id="presentDepartment" name="presentDepartment" required>
                 <option value="">Select Present Department</option>
                 <option value="Rajsthan ULB">Rajsthan ULB</option>
@@ -106,7 +106,7 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="newDepartment">New Department</label>
+              <label for="newDepartment">New Department<span class="text-danger">*</span></label>
               <select class="form-select" id="newDepartment" name="newDepartment" required>
                 <option value="">Select New Department</option>
                 <option value="Kota ULB">Kota ULB</option>
@@ -115,7 +115,7 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="presentZone">Present Zone</label>
+              <label for="presentZone">Present Zone<span class="text-danger">*</span></label>
               <select class="form-select" id="presentZone" name="presentZone" required>
                 <option value="">Select Present Zone</option>
                 <option value="Jaipur">Jaipur</option>
@@ -124,7 +124,7 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="newZone">New Zone</label>
+              <label for="newZone">New Zone<span class="text-danger">*</span></label>
               <select class="form-select" id="newZone" name="newZone" required>
                 <option value="">Select New Department</option>
                 <option value="Kota">Kota</option>
@@ -133,19 +133,19 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="relievingDate">Relieving Date</label>
+              <label for="relievingDate">Relieving Date<span class="text-danger">*</span></label>
               <input type="Date" class="form-control" id="relievingDate" name="relievingDate" required>   
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="effDate">Effective Date From</label>
+              <label for="effDate">Effective Date From<span class="text-danger">*</span></label>
               <input type="Date" class="form-control" id="effDate" name="effDate" required>   
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="approvedBy">Approved By</label>
+              <label for="approvedBy">Approved By<span class="text-danger">*</span></label>
               <select class="form-select" id="approvedBy" name="approvedBy" required>
                 <option value="">Select Approved By</option>
                 <option value="Administration">Administration</option>
@@ -171,7 +171,7 @@
         </div>
         <div class="mt-2">
           <div class="col-12 py-3 px-3 text-center">
-            <button type="submit" class="btn btn-success btn-sm" name="submit" id="submit"> Submit</button>
+            <button type="button" class="btn btn-success btn-sm" name="submit" id="submit"> Submit</button>
           </div>
         </div>
 
@@ -264,6 +264,73 @@
 
   $(document).ready(function() {
     loadEmployeeForForm();
+
+    $('#submit').on('click', async function(e) {
+      e.preventDefault();
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required. Please login again.');
+        return;
+      }
+
+      const employee_code = $('#employeeCode').val();
+      const transfer_date = $('#TransferDate').val();
+      const present_office = $('#presentOffice').val();
+      const new_office = $('#newOffice').val();
+      const present_department = $('#presentDepartment').val();
+      const new_department = $('#newDepartment').val();
+      const present_zone = $('#presentZone').val();
+      const new_zone = $('#newZone').val();
+      const relieving_date = $('#relievingDate').val();
+      const effective_date_from = $('#effDate').val();
+      const approved_by = $('#approvedBy').val();
+      const remark = $('#othersRemark').val();
+      const fileInput = document.getElementById('DocUpload');
+
+      if (!transfer_date || !present_office || !new_office || !present_department || !new_department || !present_zone || !new_zone || !relieving_date || !effective_date_from || !approved_by) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('employee_code', employee_code);
+      formData.append('transfer_date', transfer_date);
+      formData.append('present_office', present_office);
+      formData.append('new_office', new_office);
+      formData.append('present_department', present_department);
+      formData.append('new_department', new_department);
+      formData.append('present_zone', present_zone);
+      formData.append('new_zone', new_zone);
+      formData.append('relieving_date', relieving_date);
+      formData.append('effective_date_from', effective_date_from);
+      formData.append('approved_by', approved_by);
+      if (remark) formData.append('remark', remark);
+      if (fileInput && fileInput.files.length > 0) {
+        formData.append('document', fileInput.files[0]);
+      }
+
+      try {
+        const res = await fetch('/api/accounts/transfers/', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Token ' + token
+          },
+          body: formData
+        });
+
+        if (res.ok) {
+          alert('Transfer record saved successfully!');
+          window.location.href = '/hr/employee-transfer-history/?emp=' + employee_code;
+        } else {
+          const errorData = await res.json();
+          alert('Failed to save transfer record: ' + JSON.stringify(errorData));
+        }
+      } catch(err) {
+        console.error(err);
+        alert('An error occurred while saving the record.');
+      }
+    });
   });
 </script>
 {% endblock %}
