@@ -203,15 +203,14 @@ class DesignationListCreateView(generics.ListCreateAPIView):
 # ── Employee APIs ─────────────────────────────────────────────────────────────
 
 class EmployeeListAPIView(generics.ListAPIView):
-    """List all employees (users with an EmployeeProfile)"""
+    """List all employees (users from users table)"""
     serializer_class = EmployeeDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
-        from .models_extended import EmployeeProfile
         from django.db.models import Q
-        emp_user_ids = EmployeeProfile.objects.values_list('user_id', flat=True)
-        qs = User.objects.filter(id__in=emp_user_ids).order_by('user_id')
+        qs = User.objects.all().order_by('user_id')
         search = self.request.query_params.get('search')
         if search:
             qs = qs.filter(
@@ -410,12 +409,23 @@ class PromotionListCreateView(generics.ListCreateAPIView):
     """API endpoint for listing and creating employee promotions"""
     serializer_class = PromotionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = Promotion.objects.all().order_by('-promoted_date')
         emp = self.request.query_params.get('emp')
         if emp:
             qs = qs.filter(employee__user__user_id=emp)
+            
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        emp_code = self.request.query_params.get('employee_code')
+        if start_date:
+            qs = qs.filter(promoted_date__gte=start_date)
+        if end_date:
+            qs = qs.filter(promoted_date__lte=end_date)
+        if emp_code:
+            qs = qs.filter(employee__user__user_id__icontains=emp_code)
         return qs
 
 
@@ -423,12 +433,23 @@ class IncrementListCreateView(generics.ListCreateAPIView):
     """API endpoint for listing and creating employee increments"""
     serializer_class = IncrementSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = Increment.objects.all().order_by('-increment_date')
         emp = self.request.query_params.get('emp')
         if emp:
             qs = qs.filter(employee__user__user_id=emp)
+            
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        emp_code = self.request.query_params.get('employee_code')
+        if start_date:
+            qs = qs.filter(increment_date__gte=start_date)
+        if end_date:
+            qs = qs.filter(increment_date__lte=end_date)
+        if emp_code:
+            qs = qs.filter(employee__user__user_id__icontains=emp_code)
         return qs
 
 
@@ -436,12 +457,23 @@ class TransferListCreateView(generics.ListCreateAPIView):
     """API endpoint for listing and creating employee transfers"""
     serializer_class = TransferSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = Transfer.objects.all().order_by('-transfer_date')
         emp = self.request.query_params.get('emp')
         if emp:
             qs = qs.filter(employee__user__user_id=emp)
+            
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        emp_code = self.request.query_params.get('employee_code')
+        if start_date:
+            qs = qs.filter(transfer_date__gte=start_date)
+        if end_date:
+            qs = qs.filter(transfer_date__lte=end_date)
+        if emp_code:
+            qs = qs.filter(employee__user__user_id__icontains=emp_code)
         return qs
         
 from django.contrib.auth import logout

@@ -34,12 +34,9 @@
           <div class="col-lg-3 col-md-3 col-sm-6">
             <div class="form-group">
               <label for="empName">Employee Name</label>
-              <select class="form-select" id="empName" name="empName" required>
+              <select class="form-select" id="empName" name="empName">
                 <option value="">Select</option>
-                <option value="">ALL</option>
-                <option value="">VIMAL KUMAR SHARMA (SSPL-00221)</option>
-                <option value="">NIRANJAN KUMAR (SSPL-00222)</option>
-                <option value="">RITESH KUMAR (SSPL-00001)</option>
+                <option value="ALL">ALL</option>
               </select>                       
             </div>
           </div>
@@ -94,19 +91,6 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>1</td>
-                <td class="text-center">SSPL-12345</td>
-                <td class="text-center">CHANDRA MOHAN SHARMA</td>
-                <td class="text-center">NAGAR NIGAM JAIPUR</td>
-                <td class="text-center">NAGAR NIGAM KOTA</td>
-                <td class="text-center">Rajsthan ULB</td>
-                <td class="text-center">Kota ULB</td>
-                <td class="text-center">Present Zone</td>
-                <td class="text-center">New Zone</td>
-                <td class="text-center">December 02, 2025</td>
-                <td class="text-center">Transfer to kota office</td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -120,60 +104,167 @@
 {% block extra_js %}
 <script src="{% static 'js/datatables/datatables.min.js' %}"></script>
 <script>
-  $(document).ready(function () {
-        $("#basic-datatables").DataTable({});
+  let dtTable = null;
 
-        $("#multi-filter-select").DataTable({
-          pageLength: 10,
-          initComplete: function () {
-            this.api()
-              .columns()
-              .every(function () {
-                var column = this;
-                var select = $(
-                  '<select class="form-select"><option value=""></option></select>'
-                )
-                  .appendTo($(column.footer()).empty())
-                  .on("change", function () {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
+  function formatDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+  }
 
-                    column
-                      .search(val ? "^" + val + "$" : "", true, false)
-                      .draw();
-                  });
+  async function loadEmployees() {
+    const token = localStorage.getItem('authToken');
+    if (!token) { window.location.href = '/login/'; return; }
 
-                column
-                  .data()
-                  .unique()
-                  .sort()
-                  .each(function (d, j) {
-                    select.append(
-                      '<option value="' + d + '">' + d + "</option>"
-                    );
-                  });
-              });
-          },
-        });
-
-        // Add Row
-        $("#add-row").DataTable({
-          pageLength: 10,
-        });
-
-        var action =
-          '<td> <div class="form-button-action"> <button type="button" data-bs-toggle="tooltip" title="" class="btn btn-link btn-primary btn-lg" data-original-title="Edit Task"> <i class="fa fa-edit"></i> </button> <button type="button" data-bs-toggle="tooltip" title="" class="btn btn-link btn-danger" data-original-title="Remove"> <i class="fa fa-times"></i> </button> </div> </td>';
-
-        $("#addRowButton").click(function () {
-          $("#add-row")
-            .dataTable()
-            .fnAddData([
-              $("#addName").val(),
-              $("#addPosition").val(),
-              $("#addOffice").val(),
-              action,
-            ]);
-          $("#addRowModal").modal("hide");
-        });
+    try {
+      const res = await fetch('/api/accounts/employees/', {
+        headers: { 'Authorization': 'Token ' + token }
       });
+      if (res.ok) {
+        const emps = await res.json();
+        const select = document.getElementById('empName');
+        select.innerHTML = '<option value="">Select</option><option value="ALL">ALL</option>';
+        emps.forEach(emp => {
+          const name = [(emp.first_name || ''), (emp.last_name || '')].join(' ').trim().toUpperCase() || emp.user_id;
+          select.innerHTML += `<option value="${emp.user_id}">${name} (${emp.user_id})</option>`;
+        });
+      }
+    } catch (err) {
+      console.error('Error loading employees:', err);
+    }
+  }
+
+  async function loadReport() {
+    const token = localStorage.getItem('authToken');
+    if (!token) { window.location.href = '/login/'; return; }
+
+    const empNameVal = document.getElementById('empName').value;
+    const startVal = document.getElementById('startTransferDate').value;
+    const endVal = document.getElementById('endTransferDate').value;
+    const codeVal = document.getElementById('employeeCode').value.trim();
+
+    let url = '/api/accounts/transfers/?';
+    if (empNameVal && empNameVal !== 'ALL') {
+      url += `emp=${empNameVal}&`;
+    }
+    if (startVal) {
+      url += `start_date=${startVal}&`;
+    }
+    if (endVal) {
+      url += `end_date=${endVal}&`;
+    }
+    if (codeVal) {
+      url += `employee_code=${codeVal}&`;
+    }
+
+    try {
+      const res = await fetch(url, {
+        headers: { 'Authorization': 'Token ' + token }
+      });
+      if (!res.ok) throw new Error('Failed to fetch transfer data');
+      const data = await res.json();
+      renderTable(data);
+      
+      const spanStart = document.querySelector('thead span:first-of-type');
+      const spanEnd = document.querySelector('thead span:last-of-type');
+      if (spanStart) spanStart.textContent = startVal ? new Date(startVal).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'None';
+      if (spanEnd) spanEnd.textContent = endVal ? new Date(endVal).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'None';
+
+    } catch (err) {
+      console.error(err);
+      const tbody = document.querySelector('#basic-datatables tbody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center text-danger">Error: ${err.message}</td></tr>`;
+      }
+    }
+  }
+
+  function renderTable(transfers) {
+    const tbody = document.querySelector('#basic-datatables tbody');
+    if (dtTable) { dtTable.destroy(); }
+
+    if (!transfers.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No transfer records found</td></tr>';
+      dtTable = $('#basic-datatables').DataTable({});
+      return;
+    }
+
+    tbody.innerHTML = transfers.map((p, i) => {
+      const code = p.employee_code_display || '-';
+      const name = (p.employee_name || '-').toUpperCase();
+      const prevOffice = p.present_office || '-';
+      const newOffice = p.new_office || '-';
+      const prevDept = p.present_department || '-';
+      const newDept = p.new_department || '-';
+      const prevZone = p.present_zone || '-';
+      const newZone = p.new_zone || '-';
+      const effDate = formatDate(p.effective_date_from);
+      const remark = p.remark || '-';
+
+      return `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="text-center">${code}</td>
+          <td class="text-center">${name}</td>
+          <td class="text-center">${prevOffice}</td>
+          <td class="text-center">${newOffice}</td>
+          <td class="text-center">${prevDept}</td>
+          <td class="text-center">${newDept}</td>
+          <td class="text-center">${prevZone}</td>
+          <td class="text-center">${newZone}</td>
+          <td class="text-center">${effDate}</td>
+          <td class="text-center">${remark}</td>
+        </tr>
+      `;
+    }).join('');
+
+    dtTable = $('#basic-datatables').DataTable({
+      destroy: true,
+      pageLength: 50
+    });
+  }
+
+  function exportExcel() {
+    if (!dtTable) return;
+    const rows = [['#', 'Employee Code', 'Employee Name', 'Previous Office', 'New Office', 'Previous Department', 'New Department', 'Previous Zone', 'New Zone', 'Effective Date From', 'Remarks (optional)']];
+    $('#basic-datatables tbody tr').each(function(i, row) {
+      const cells = $(row).find('td');
+      if (cells.length > 1) {
+        rows.push([
+          $(cells[0]).text().trim(),
+          $(cells[1]).text().trim(),
+          $(cells[2]).text().trim(),
+          $(cells[3]).text().trim(),
+          $(cells[4]).text().trim(),
+          $(cells[5]).text().trim(),
+          $(cells[6]).text().trim(),
+          $(cells[7]).text().trim(),
+          $(cells[8]).text().trim(),
+          $(cells[9]).text().trim(),
+          $(cells[10]).text().trim(),
+        ]);
+      }
+    });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Employee_Transfer_Report.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  $(document).ready(async function () {
+    const token = localStorage.getItem('authToken');
+    window.token = token; // ensure global availability
+
+    await loadEmployees();
+    await loadReport();
+
+    $('#orSearch').on('click', function(e) {
+      e.preventDefault();
+      loadReport();
+    });
+  });
 </script>
 {% endblock %}

@@ -67,18 +67,39 @@ class PromotionSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(required=False, write_only=True)
     promoted_designation_name = serializers.CharField(required=False, write_only=True)
     designation_name = serializers.CharField(source='promoted_designation.name', read_only=True)
+    employee_name = serializers.CharField(source='employee.user.get_full_name', read_only=True)
+    employee_code_display = serializers.CharField(source='employee.user.user_id', read_only=True)
+    previous_designation = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
         fields = [
             'id', 'employee', 'employee_code', 'promoted_date', 'promoted_designation', 
             'promoted_designation_name', 'designation_name', 'pay_level', 'basic_pay', 
-            'effective_date_from', 'approved_by', 'remark', 'document', 'created_at'
+            'effective_date_from', 'approved_by', 'remark', 'document', 'created_at',
+            'employee_name', 'employee_code_display', 'previous_designation'
         ]
         extra_kwargs = {
             'employee': {'required': False, 'allow_null': True},
             'promoted_designation': {'required': False, 'allow_null': True}
         }
+
+    def get_previous_designation(self, obj):
+        prev_promotions = Promotion.objects.filter(
+            employee=obj.employee,
+            promoted_date__lt=obj.promoted_date
+        ).order_by('-promoted_date', '-id')
+        if prev_promotions.exists():
+            return prev_promotions.first().promoted_designation.name if prev_promotions.first().promoted_designation else "-"
+        
+        try:
+            from accounts.models_extended import EmploymentDetails
+            emp_details = EmploymentDetails.objects.filter(employee=obj.employee).first()
+            if emp_details and emp_details.designation:
+                return emp_details.designation.name
+        except Exception:
+            pass
+        return "-"
 
     def create(self, validated_data):
         employee_code = validated_data.pop('employee_code', None)
@@ -111,13 +132,16 @@ class PromotionSerializer(serializers.ModelSerializer):
 
 class IncrementSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(required=False, write_only=True)
+    employee_name = serializers.CharField(source='employee.user.get_full_name', read_only=True)
+    employee_code_display = serializers.CharField(source='employee.user.user_id', read_only=True)
 
     class Meta:
         model = Increment
         fields = [
             'id', 'employee', 'employee_code', 'increment_date', 'increment_type', 
             'pay_level', 'previous_basic_pay', 'increment_amount', 'new_basic_pay', 
-            'effective_date_from', 'approved_by', 'remark', 'document', 'created_at'
+            'effective_date_from', 'approved_by', 'remark', 'document', 'created_at',
+            'employee_name', 'employee_code_display'
         ]
         extra_kwargs = {
             'employee': {'required': False, 'allow_null': True}
@@ -138,6 +162,8 @@ class IncrementSerializer(serializers.ModelSerializer):
 
 class TransferSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(required=False, write_only=True)
+    employee_name = serializers.CharField(source='employee.user.get_full_name', read_only=True)
+    employee_code_display = serializers.CharField(source='employee.user.user_id', read_only=True)
 
     class Meta:
         model = Transfer
@@ -145,7 +171,8 @@ class TransferSerializer(serializers.ModelSerializer):
             'id', 'employee', 'employee_code', 'transfer_date', 'present_office', 
             'new_office', 'present_department', 'new_department', 'present_zone', 
             'new_zone', 'relieving_date', 'effective_date_from', 'approved_by', 
-            'remark', 'document', 'created_at'
+            'remark', 'document', 'created_at',
+            'employee_name', 'employee_code_display'
         ]
         extra_kwargs = {
             'employee': {'required': False, 'allow_null': True}

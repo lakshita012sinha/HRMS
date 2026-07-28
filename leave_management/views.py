@@ -44,7 +44,8 @@ class LeaveBalanceListView(generics.ListAPIView):
         if employee_id:
             queryset = queryset.filter(employee_id=employee_id)
         elif user.role and user.role.name not in ['HR', 'ADMIN']:
-            # Non-HR/Admin can only see their own balance
+            # Non-HR/Admin 
+            # can only see their own balance
             queryset = queryset.filter(employee=user)
         
         # Filter by year
