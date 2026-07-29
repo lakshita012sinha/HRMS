@@ -5,549 +5,695 @@
 
 {% block extra_css %}
 <style>
-    #empTab .nav-link {
-        color: #444;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        padding: 6px 18px;
-        font-size: 0.875rem;
-        background: #fff;
-    }
-    #empTab .nav-link.active {
-        background: #372f6e;
-        border-color: #372f6e;
-        color: #fff;
-    }
-    #empTab .nav-link:hover:not(.active) { background: #f0f0f0; }
+  #empTab .nav-link {
+    color: #444;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 6px 18px;
+    font-size: 0.875rem;
+    background: #fff;
+  }
+
+  #empTab .nav-link.active {
+    background: #372f6e;
+    border-color: #372f6e;
+    color: #fff;
+  }
+
+  #empTab .nav-link:hover:not(.active) {
+    background: #f0f0f0;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none">
-    <h4 class="fw-bold mb-3">Employee Management</h4>
-    <ul class="breadcrumbs mb-3">
-        <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
-        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
-        <li class="nav-item"><span>Add New Employee</span></li>
-    </ul>
+  <h4 class="fw-bold mb-3">Employee Management</h4>
+  <ul class="breadcrumbs mb-3">
+    <li class="nav-home"><a href="/dashboard/"><i class="ri-home-3-line"></i></a></li>
+    <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+    <li class="nav-item"><span>Add New Employee</span></li>
+  </ul>
 </div>
 
 <div class="row">
   <div class="col-12">
     <form id="employeeForm">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="fw-bold mb-3">Employee Profile</h5>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="fw-bold mb-3">Employee Profile</h5>
 
-        <!-- Tab Nav -->
-        <ul class="nav mb-4" id="empTab" role="tablist" style="border-bottom:1px solid #dee2e6;padding-bottom:8px;gap:4px;">
-          <li class="nav-item"><button class="nav-link active" id="tab-basic"        data-bs-toggle="pill" data-bs-target="#pane-basic"        type="button">Basic Info</button></li>
-          <li class="nav-item"><button class="nav-link"        id="tab-professional" data-bs-toggle="pill" data-bs-target="#pane-professional" type="button">Professional</button></li>
-          <li class="nav-item"><button class="nav-link"        id="tab-accounts"     data-bs-toggle="pill" data-bs-target="#pane-accounts"     type="button">Accounts</button></li>
-          <li class="nav-item"><button class="nav-link"        id="tab-documents"    data-bs-toggle="pill" data-bs-target="#pane-documents"    type="button">Documents</button></li>
-        </ul>
+          <!-- Tab Nav -->
+          <ul class="nav mb-4" id="empTab" role="tablist"
+            style="border-bottom:1px solid #dee2e6;padding-bottom:8px;gap:4px;">
+            <li class="nav-item"><button class="nav-link active" id="tab-basic" data-bs-toggle="pill"
+                data-bs-target="#pane-basic" type="button">Basic Info</button></li>
+            <li class="nav-item"><button class="nav-link" id="tab-professional" data-bs-toggle="pill"
+                data-bs-target="#pane-professional" type="button">Professional</button></li>
+            <li class="nav-item"><button class="nav-link" id="tab-accounts" data-bs-toggle="pill"
+                data-bs-target="#pane-accounts" type="button">Accounts</button></li>
+            <li class="nav-item"><button class="nav-link" id="tab-documents" data-bs-toggle="pill"
+                data-bs-target="#pane-documents" type="button">Documents</button></li>
+          </ul>
 
-        <div class="tab-content" id="empTabContent">
+          <div class="tab-content" id="empTabContent">
 
-          <!-- ========== BASIC INFO ========== -->
-          <div class="tab-pane fade show active" id="pane-basic" role="tabpanel">
+            <!-- ========== BASIC INFO ========== -->
+            <div class="tab-pane fade show active" id="pane-basic" role="tabpanel">
 
-            <!-- Photo + top 6 fields -->
-            <div class="row mb-2 align-items-start">
-              <div class="col-lg-2 col-md-3" style="min-width:150px;">
-                <img src="{% static 'images/profile/user.png' %}" id="userPhoto" alt="Profile"
-                     style="height:120px;width:120px;border:1px solid #CCCCCC;margin-top:10px;display:block;">
-                <input type="file" class="form-control my-1" id="profileImage" name="profileImage">
-              </div>
-              <div class="col">
-                <div class="row">
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="employeeName">Employee Name<span class="text-danger">*</span></label>
-                      <input type="text" id="employeeName" name="employeeName" class="form-control" placeholder="Enter Employee Name">
+              <!-- Photo + top 6 fields -->
+              <div class="row mb-2 align-items-start">
+                <div class="col-lg-2 col-md-3" style="min-width:150px;">
+                  <img src="{% static 'images/profile/user.png' %}" id="userPhoto" alt="Profile"
+                    style="height:120px;width:120px;border:1px solid #CCCCCC;margin-top:10px;display:block;">
+                  <input type="file" class="form-control my-1" id="profileImage" name="profileImage">
+                </div>
+                <div class="col">
+                  <div class="row">
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="employeeName">Employee Name<span class="text-danger">*</span></label>
+                        <input type="text" id="employeeName" name="employeeName" class="form-control"
+                          placeholder="Enter Employee Name">
+                      </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="fatherName">Father's Name<span class="text-danger">*</span></label>
+                        <input type="text" id="fatherName" name="fatherName" class="form-control"
+                          placeholder="Enter Father's Name">
+                      </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="motherName">Mother's Name<span class="text-danger">*</span></label>
+                        <input type="text" id="motherName" name="motherName" class="form-control"
+                          placeholder="Enter Mother's Name">
+                      </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="dob">Date Of Birth<span class="text-danger">*</span></label>
+                        <input type="date" id="dob" name="dob" class="form-control">
+                      </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="gender">Gender<span class="text-danger">*</span></label>
+                        <select class="form-select" id="gender" name="gender">
+                          <option value="">Select</option>
+                          <option value="MALE">Male</option>
+                          <option value="FEMALE">Female</option>
+                          <option value="OTHERS">Others</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                      <div class="form-group">
+                        <label for="doj">Date Of Joining<span class="text-danger">*</span></label>
+                        <input type="date" id="doj" name="doj" class="form-control">
+                      </div>
                     </div>
                   </div>
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="fatherName">Father's Name<span class="text-danger">*</span></label>
-                      <input type="text" id="fatherName" name="fatherName" class="form-control" placeholder="Enter Father's Name">
-                    </div>
-                  </div>
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="motherName">Mother's Name<span class="text-danger">*</span></label>
-                      <input type="text" id="motherName" name="motherName" class="form-control" placeholder="Enter Mother's Name">
-                    </div>
-                  </div>
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="dob">Date Of Birth<span class="text-danger">*</span></label>
-                      <input type="date" id="dob" name="dob" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="gender">Gender<span class="text-danger">*</span></label>
-                      <select class="form-select" id="gender" name="gender">
-                        <option value="">Select</option>
-                        <option value="MALE">Male</option>
-                        <option value="FEMALE">Female</option>
-                        <option value="OTHERS">Others</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-4 col-md-4 col-sm-6">
-                    <div class="form-group">
-                      <label for="doj">Date Of Joining<span class="text-danger">*</span></label>
-                      <input type="date" id="doj" name="doj" class="form-control">
-                    </div>
-                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Remaining basic fields -->
-            <div class="row">
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="height">Height In CM.</label>
-                  <input type="number" id="height" name="height" class="form-control" maxlength="3" inputmode="numeric" placeholder="Enter Height">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="weight">Weight In KG</label>
-                  <input type="number" id="weight" name="weight" class="form-control" maxlength="3" inputmode="numeric" placeholder="Enter Weight">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="bloodGroup">Blood Group</label>
-                  <select class="form-select" id="bloodGroup" name="bloodGroup">
-                    <option value="">Select</option>
-                    <option>A+</option><option>O+</option><option>B+</option><option>AB+</option>
-                    <option>A-</option><option>O-</option><option>B-</option><option>AB-</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="maritalStatus">Marital Status<span class="text-danger">*</span></label>
-                  <select class="form-select" id="maritalStatus" name="maritalStatus">
-                    <option value="">Select</option>
-                    <option value="MARRIED">Married</option>
-                    <option value="UNMARRIED">Unmarried</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="emailId">Email ID<span class="text-danger">*</span></label>
-                  <input type="email" id="emailId" name="emailId" class="form-control" placeholder="Enter Email ID">
-                  <div class="invalid-feedback" id="emailIdError">
-                    Enter a valid email address
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="officialEmail">Official Email</label>
-                  <input type="email" id="officialEmail" name="officialEmail" class="form-control" placeholder="Enter Official Email">
-                  <div class="invalid-feedback" id="officialEmailError">
-                    Enter a valid email address
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="panNumber">Pan Number<span class="text-danger">*</span></label>
-                  <input type="text" id="panNumber" name="panNumber" class="form-control" maxlength="10" minlength="10" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" placeholder="Enter PAN number" required >
-                  <small id="panNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="uidNumber">UID Number</label>
-                  <input type="text" id="uidNumber" name="uidNumber" class="form-control" maxlength="12" minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="12 Digits Only" required>
-                  <small id="uidNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="uanNumber">UAN Number</label>
-                  <input type="text" id="uanNumber" name="uanNumber" class="form-control" maxlength="12" minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="12 Digits Only" required>
-                  <small id="uanNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="esicNumber">ESIC Number</label>
-                  <input type="text" id="esicNumber" name="esicNumber" class="form-control" maxlength="10" minlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" placeholder="Enter ESIC Number" required>
-                  <small id="esicNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="pfNumber">PF Number</label>
-                  <input type="text" id="pfNumber" name="pfNumber" class="form-control" maxlength="30" minlength="5" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g, '')" placeholder="Enter PF Number" required>
-                    <small id="pfNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="qualification">Qualification Of Employee<span class="text-danger">*</span></label>
-                  <select class="form-select" id="qualification" name="qualification">
-                    <option value="">Select</option>
-                    <option>ILLITERATE</option><option>NON-METRIC</option><option>METRIC</option>
-                    <option>SENIOR-SECONDARY</option><option>GRADUATE</option><option>POST-GRADUATE</option>
-                    <option>TECHNICAL(PROFESSIONAL)</option><option>DOCTORATE</option>
-                    <option>DIPLOMA</option><option>MBA</option><option>OTHERS</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="contactNumber1">Contact Number<span class="text-danger">*</span></label>
-                  <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only" required>
-                  <div class="invalid-feedback" id="contactNumber1Error">
-                    Enter valid 10 digit mobile number starting from 6,7, 8 or 9
-                  </div>  
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="contactNumber2">Another Contact Number</label>
-                  <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10" minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only" required>
-                  <div class="invalid-feedback" id="contactNumber1Error">
-                    Enter valid 10 digit mobile number starting from 6,7, 8 or 9
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-6 col-md-6 col-sm-6">
-                <div class="form-group">
-                  <label for="presentAddress">Present Address<span class="text-danger">*</span></label>
-                  <textarea id="presentAddress" name="presentAddress" class="form-control" rows="3" placeholder="Enter Present Address" maxlength="200"></textarea>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="presentCity">Present City<span class="text-danger">*</span></label>
-                  <input type="text" id="presentCity" name="presentCity" class="form-control" placeholder="Enter Present City">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="presentState">Present State<span class="text-danger">*</span></label>
-                  <select class="form-select" id="presentState" name="presentState">
-                    <option value="">Select</option>
-                    <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
-                    <option>BIHAR</option><option>CHHATTISGARH</option><option>DELHI</option>
-                    <option>GOA</option><option>GUJARAT</option><option>HARYANA</option>
-                    <option>HIMACHAL PRADESH</option><option>JHARKHAND</option><option>KARNATAKA</option>
-                    <option>KERALA</option><option>MADHYA PRADESH</option><option>MAHARASHTRA</option>
-                    <option>MANIPUR</option><option>MEGHALAYA</option><option>MIZORAM</option>
-                    <option>NAGALAND</option><option>ODISHA</option><option>PUNJAB</option>
-                    <option>RAJASTHAN</option><option>SIKKIM</option><option>TAMIL NADU</option>
-                    <option>TELANGANA</option><option>TRIPURA</option><option>UTTAR PRADESH</option>
-                    <option>UTTARAKHAND</option><option>WEST BENGAL</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="presentPincode">Present Pincode<span class="text-danger">*</span></label>
-                  <input type="text" id="presentPincode" name="presentPincode" class="form-control" maxlength="6" inputmode="numeric" placeholder="Enter Pincode">
-                  <div class="invalid-feedback" id="presentPincodeError">
-                    Enter a valid 6 digit pincode
-                  </div>
-                </div>
-              </div>
-              <div class="col-12">
-                <div class="form-group">
-                  <label style="font-size:14px;color:#495057;">
-                    Check, If Present Address is Same as Permanent Address:
-                    <input type="checkbox" id="checkAddress" class="ms-1">
-                  </label>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="relationName">Relation Ship Name<span class="text-danger">*</span></label>
-                  <input type="text" id="relationName" name="relationName" class="form-control" placeholder="Enter Relation Ship Name">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="relationType">Relation Ship Type<span class="text-danger">*</span></label>
-                  <select class="form-select" id="relationType" name="relationType">
-                    <option value="">Select</option>
-                    <option value="FATHER">Father</option>
-                    <option value="MOTHER">Mother</option>
-                    <option value="SPOUSE">Spouse</option>
-                    <option value="SIBLING">Sibling</option>
-                    <option value="OTHERS">Others</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="parentMobile1">Parent Mobile<span class="text-danger">*</span></label>
-                  <input type="text" id="parentMobile1" name="parentMobile1" class="form-control" maxlength="10" placeholder="10 Digits Only">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="parentMobile2">Another Mobile No.</label>
-                  <input type="text" id="parentMobile2" name="parentMobile2" class="form-control" maxlength="10" placeholder="10 Digits Only">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="permanentAddress">Permanent Address<span class="text-danger">*</span></label>
-                  <textarea id="permanentAddress" name="permanentAddress" class="form-control" rows="3" placeholder="Enter Permanent Address"></textarea>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="permanentCity">Permanent City<span class="text-danger">*</span></label>
-                  <input type="text" id="permanentCity" name="permanentCity" class="form-control" placeholder="Enter Permanent City">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="permanentState">Permanent State<span class="text-danger">*</span></label>
-                  <select class="form-select" id="permanentState" name="permanentState">
-                    <option value="">Select</option>
-                    <option>ANDHRA PRADESH</option><option>ARUNACHAL PRADESH</option><option>ASSAM</option>
-                    <option>BIHAR</option><option>CHHATTISGARH</option><option>DELHI</option>
-                    <option>GOA</option><option>GUJARAT</option><option>HARYANA</option>
-                    <option>HIMACHAL PRADESH</option><option>JHARKHAND</option><option>KARNATAKA</option>
-                    <option>KERALA</option><option>MADHYA PRADESH</option><option>MAHARASHTRA</option>
-                    <option>MANIPUR</option><option>MEGHALAYA</option><option>MIZORAM</option>
-                    <option>NAGALAND</option><option>ODISHA</option><option>PUNJAB</option>
-                    <option>RAJASTHAN</option><option>SIKKIM</option><option>TAMIL NADU</option>
-                    <option>TELANGANA</option><option>TRIPURA</option><option>UTTAR PRADESH</option>
-                    <option>UTTARAKHAND</option><option>WEST BENGAL</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="permanentPincode">Permanent Pincode<span class="text-danger">*</span></label>
-                  <input type="text" id="permanentPincode" name="permanentPincode" class="form-control" maxlength="6" inputmode="numeric" placeholder="Enter Permanent Pincode">
-                  <div class="invalid-feedback" id="permanentPincodeError">
-                    Enter a valid 6 digit pincode
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Password row -->
-            <div class="row mt-2">
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="empPassword">Password<span class="text-danger">*</span></label>
-                  <input type="password" id="empPassword" name="empPassword" class="form-control" placeholder="Set Password">
-                </div>
-              </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="empPassword2">Confirm Password<span class="text-danger">*</span></label>
-                  <input type="password" id="empPassword2" name="empPassword2" class="form-control" placeholder="Confirm Password">
-                </div>
-              </div>
-            </div>
-
-            <div class="text-center pt-2 d-print-none">
-              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-professional')"><strong>Next</strong></button>
-            </div>
-          </div>
-          <!-- ========== END BASIC INFO ========== -->
-
-
-          <!-- ========== PROFESSIONAL ========== -->
-          <div class="tab-pane fade" id="pane-professional" role="tabpanel">
-            <div class="row">
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="designationText">Branch Department Designation<span class="text-danger">*</span></label>
-                  <input type="text" id="designationText" name="designationText" class="form-control" placeholder="Enter Designation">
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="grade">Grade<span class="text-danger">*</span></label>
-                  <select class="form-select" id="grade" name="grade">
-                    <option value="">Select Grade</option>
-                    <option>M</option><option>M1</option><option>E1</option><option>E1-Jaipur</option>
-                    <option>E2-Jaipur</option><option>F</option><option>F1</option><option>E</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="employmentType">Employement Type<span class="text-danger">*</span></label>
-                  <select class="form-select" id="employmentType" name="employmentType">
-                    <option value="">Select Employement Type</option>
-                    <option value="PROBATION">PROBATION</option>
-                    <option value="TRAINEE">TRAINEE</option>
-                    <option value="PERMANENT">PERMANENT</option>
-                    <option value="UNDER NOTICE">UNDER NOTICE</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="reportingOfficer">Reporting Officer<span class="text-danger">*</span></label>
-                  <select class="form-select" id="reportingOfficer" name="reportingOfficer">
-                    <option value="">Select Reporting Officer</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="deputedProject">Deputed Project <span class="text-danger">*</span></label>
-                  <select class="form-select" id="deputedProject" name="deputedProject">
-                    <option value="">Select Project</option>
-                    <option>NAGAR NIGAM JAIPUR HERITAGE</option>
-                    <option>UDAIPUR NAGAR NIGAM</option>
-                    <option>NAGAR NIGAM JAIPUR GREATER</option>
-                    <option>KOTA NAGAR NIGAM</option>
-                    <option>NORTH KOTA NAGAR NIGAM</option>
-                    <option>CHURU MUNICIPAL COUNCIL</option>
-                    <option>CHOMU MUNICIPAL COUNCIL</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="effectiveDate">Effective Date <span class="text-danger">*</span></label>
-                  <input type="date" id="effectiveDate" name="effectiveDate" class="form-control">
-                </div>
-              </div>
-            </div>
-            <div class="text-center pt-2 d-print-none">
-              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-accounts')"><strong>Next</strong></button>
-            </div>
-          </div>
-          <!-- ========== END PROFESSIONAL ========== -->
-
-          <!-- ========== ACCOUNTS ========== -->
-          <div class="tab-pane fade" id="pane-accounts" role="tabpanel">
-            <div class="row">
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="bankName">Bank Name<span class="text-danger">*</span></label>
-                  <select class="form-select" id="bankName" name="bankName">
-                    <option value="">Select Bank</option>
-                    <option>AIRTEL PAYMENT BANK</option><option>ALLAHABAD BANK</option>
-                    <option>ANDHRA BANK</option><option>AU SMALL FINANCE BANK</option>
-                    <option>AXIS BANK</option><option>BANDHAN BANK</option>
-                    <option>BANK OF BARODA</option><option>BANK OF INDIA</option>
-                    <option>BANK OF MAHARASHTRA</option><option>CANARA BANK</option>
-                    <option>CENTRAL BANK OF INDIA</option><option>DCB BANK</option>
-                    <option>FEDERAL BANK</option><option>HDFC</option>
-                    <option>ICICI BANK</option><option>IDBI</option>
-                    <option>IDFC FIRST BANK</option><option>INDIAN BANK</option>
-                    <option>INDIAN OVERSEAS BANK</option><option>INDUSIND BANK</option>
-                    <option>KOTAK MAHINDRA BANK</option><option>PNB</option>
-                    <option>PUNJAB &amp; SIND BANK</option>
-                    <option>RAJASTHAN MARUDHARA GRAMIN BANK</option>
-                    <option>SOUTH INDIAN BANK</option><option>STATE BANK OF INDIA</option>
-                    <option>SYNDICATE BANK</option><option>UCO BANK</option>
-                    <option>UNION BANK OF INDIA</option><option>UNITED BANK OF INDIA</option>
-                    <option>UTKARSH SMALL FINANCE BANK</option>
-                    <option>UTTAR BIHAR GRAMIN BANK</option>
-                    <option>VIJAYA BANK</option><option>YES BANK</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="bankBranch">Bank Branch<span class="text-danger">*</span></label>
-                  <input type="text" id="bankBranch" name="bankBranch" class="form-control" placeholder="Enter Bank Branch">
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="bankAccountNumber">Bank Account Number<span class="text-danger">*</span></label>
-                  <input type="text" id="bankAccountNumber" name="bankAccountNumber" class="form-control" maxlength="18" minlength="9" inputmode="numeric" pattern="[0-9]{9,18}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Enter Bank Account Number" required>
-                  <small id="bankAccountNumberError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="ifscCode">IFSC Code<span class="text-danger">*</span></label>
-                  <input type="text" id="ifscCode" name="ifscCode" class="form-control" maxlength="11" minlength="11" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" placeholder="Enter IFSC Code" required>
-                  <small id="ifscCodeError" class="text-danger"></small>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-4 col-sm-6">
-                <div class="form-group">
-                  <label for="isSalaryAccount">Salaried Account<span class="text-danger">*</span></label>
-                  <select class="form-select" id="isSalaryAccount" name="isSalaryAccount">
-                    <option value="">Select Project</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="text-center pt-2 d-print-none">
-              <button type="button" class="btn btn-info btn-sm" onclick="goToTab('tab-documents')"><strong>Next</strong></button>
-            </div>
-          </div>
-          <!-- ========== END ACCOUNTS ========== -->
-
-          <!-- ========== DOCUMENTS ========== -->
-          <div class="tab-pane fade" id="pane-documents" role="tabpanel">
-            <div id="docRows">
-              <div class="doc-row row align-items-end mb-3">
-                <div class="col-lg-3 col-md-3 col-sm-6">
+              <!-- Remaining basic fields -->
+              <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-6">
                   <div class="form-group">
-                    <label>Document Name</label>
-                    <select class="form-select" name="docName[]">
-                      <option value="">Select Document</option>
-                      <option value="AADHAAR">Aadhar Card</option>
-                      <option value="PAN">PAN Card</option>
-                      <option value="PHOTO">Passport Size Photo</option>
-                      <option value="RESUME">Resume/CV</option>
-                      <option value="EDUCATION">Educational Certificates</option>
-                      <option value="OFFER_LETTER">Offer Letter</option>
-                      <option value="JOINING_LETTER">Joining Letter</option>
-                      <option value="BANK_PASSBOOK">Bank Passbook / Cancelled Cheque</option>
+                    <label for="height">Height In CM.</label>
+                    <input type="number" id="height" name="height" class="form-control" maxlength="3"
+                      inputmode="numeric" placeholder="Enter Height">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="weight">Weight In KG</label>
+                    <input type="number" id="weight" name="weight" class="form-control" maxlength="3"
+                      inputmode="numeric" placeholder="Enter Weight">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="bloodGroup">Blood Group</label>
+                    <select class="form-select" id="bloodGroup" name="bloodGroup">
+                      <option value="">Select</option>
+                      <option>A+</option>
+                      <option>O+</option>
+                      <option>B+</option>
+                      <option>AB+</option>
+                      <option>A-</option>
+                      <option>O-</option>
+                      <option>B-</option>
+                      <option>AB-</option>
                     </select>
                   </div>
                 </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="col-lg-3 col-md-4 col-sm-6">
                   <div class="form-group">
-                    <label>Upload Image Of Document</label>
-                    <input type="file" name="docFile[]" class="form-control">
+                    <label for="maritalStatus">Marital Status<span class="text-danger">*</span></label>
+                    <select class="form-select" id="maritalStatus" name="maritalStatus">
+                      <option value="">Select</option>
+                      <option value="MARRIED">Married</option>
+                      <option value="UNMARRIED">Unmarried</option>
+                    </select>
                   </div>
                 </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="col-lg-3 col-md-4 col-sm-6">
                   <div class="form-group">
-                    <label>Remarks</label>
-                    <input type="text" name="docRemarks[]" class="form-control" placeholder="Enter Remarks">
+                    <label for="emailId">Email ID<span class="text-danger">*</span></label>
+                    <input type="email" id="emailId" name="emailId" class="form-control" placeholder="Enter Email ID">
+                    <div class="invalid-feedback" id="emailIdError">
+                      Enter a valid email address
+                    </div>
                   </div>
                 </div>
-                <div class="col-lg-3 col-md-3 col-sm-6">
-                  <div class="form-group d-flex gap-2 mt-4">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="addDocRow()">Add</button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeDocRow(this)">Remove</button>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="officialEmail">Official Email</label>
+                    <input type="email" id="officialEmail" name="officialEmail" class="form-control"
+                      placeholder="Enter Official Email">
+                    <div class="invalid-feedback" id="officialEmailError">
+                      Enter a valid email address
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="panNumber">Pan Number<span class="text-danger">*</span></label>
+                    <input type="text" id="panNumber" name="panNumber" class="form-control" maxlength="10"
+                      minlength="10" style="text-transform: uppercase;"
+                      oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                      placeholder="Enter PAN number">
+                    <small id="panNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="uidNumber">UID Number</label>
+                    <input type="text" id="uidNumber" name="uidNumber" class="form-control" maxlength="12"
+                      minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                      placeholder="12 Digits Only">
+                    <small id="uidNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="uanNumber">UAN Number</label>
+                    <input type="text" id="uanNumber" name="uanNumber" class="form-control" maxlength="12"
+                      minlength="12" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                      placeholder="12 Digits Only">
+                    <small id="uanNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="esicNumber">ESIC Number</label>
+                    <input type="text" id="esicNumber" name="esicNumber" class="form-control" maxlength="10"
+                      minlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                      placeholder="Enter ESIC Number">
+                    <small id="esicNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="pfNumber">PF Number</label>
+                    <input type="text" id="pfNumber" name="pfNumber" class="form-control" maxlength="30" minlength="5"
+                      style="text-transform: uppercase;"
+                      oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g, '')"
+                      placeholder="Enter PF Number">
+                    <small id="pfNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="qualification">Qualification Of Employee<span class="text-danger">*</span></label>
+                    <select class="form-select" id="qualification" name="qualification">
+                      <option value="">Select</option>
+                      <option>ILLITERATE</option>
+                      <option>NON-METRIC</option>
+                      <option>METRIC</option>
+                      <option>SENIOR-SECONDARY</option>
+                      <option>GRADUATE</option>
+                      <option>POST-GRADUATE</option>
+                      <option>TECHNICAL(PROFESSIONAL)</option>
+                      <option>DOCTORATE</option>
+                      <option>DIPLOMA</option>
+                      <option>MBA</option>
+                      <option>OTHERS</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="contactNumber1">Contact Number<span class="text-danger">*</span></label>
+                    <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10"
+                      minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only">
+                    <div class="invalid-feedback" id="contactNumber1Error">
+                      Enter valid 10 digit mobile number starting from 6,7, 8 or 9
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="contactNumber2">Another Contact Number</label>
+                    <input type="text" id="contactNumber2" name="contactNumber2" class="form-control" maxlength="10"
+                      minlength="10" pattern="[6879][0-9]{9}" inputmode="numeric" placeholder="10 Digits Only">
+                    <div class="invalid-feedback" id="contactNumber1Error">
+                      Enter valid 10 digit mobile number starting from 6,7, 8 or 9
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                  <div class="form-group">
+                    <label for="presentAddress">Present Address<span class="text-danger">*</span></label>
+                    <textarea id="presentAddress" name="presentAddress" class="form-control" rows="3"
+                      placeholder="Enter Present Address" maxlength="200"></textarea>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="presentCity">Present City<span class="text-danger">*</span></label>
+                    <input type="text" id="presentCity" name="presentCity" class="form-control"
+                      placeholder="Enter Present City">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="presentState">Present State<span class="text-danger">*</span></label>
+                    <select class="form-select" id="presentState" name="presentState">
+                      <option value="">Select</option>
+                      <option>ANDHRA PRADESH</option>
+                      <option>ARUNACHAL PRADESH</option>
+                      <option>ASSAM</option>
+                      <option>BIHAR</option>
+                      <option>CHHATTISGARH</option>
+                      <option>DELHI</option>
+                      <option>GOA</option>
+                      <option>GUJARAT</option>
+                      <option>HARYANA</option>
+                      <option>HIMACHAL PRADESH</option>
+                      <option>JHARKHAND</option>
+                      <option>KARNATAKA</option>
+                      <option>KERALA</option>
+                      <option>MADHYA PRADESH</option>
+                      <option>MAHARASHTRA</option>
+                      <option>MANIPUR</option>
+                      <option>MEGHALAYA</option>
+                      <option>MIZORAM</option>
+                      <option>NAGALAND</option>
+                      <option>ODISHA</option>
+                      <option>PUNJAB</option>
+                      <option>RAJASTHAN</option>
+                      <option>SIKKIM</option>
+                      <option>TAMIL NADU</option>
+                      <option>TELANGANA</option>
+                      <option>TRIPURA</option>
+                      <option>UTTAR PRADESH</option>
+                      <option>UTTARAKHAND</option>
+                      <option>WEST BENGAL</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="presentPincode">Present Pincode<span class="text-danger">*</span></label>
+                    <input type="text" id="presentPincode" name="presentPincode" class="form-control" maxlength="6"
+                      inputmode="numeric" placeholder="Enter Pincode">
+                    <div class="invalid-feedback" id="presentPincodeError">
+                      Enter a valid 6 digit pincode
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="form-group">
+                    <label style="font-size:14px;color:#495057;">
+                      Check, If Present Address is Same as Permanent Address:
+                      <input type="checkbox" id="checkAddress" class="ms-1">
+                    </label>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="relationName">Relation Ship Name<span class="text-danger">*</span></label>
+                    <input type="text" id="relationName" name="relationName" class="form-control"
+                      placeholder="Enter Relation Ship Name">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="relationType">Relation Ship Type<span class="text-danger">*</span></label>
+                    <select class="form-select" id="relationType" name="relationType">
+                      <option value="">Select</option>
+                      <option value="FATHER">Father</option>
+                      <option value="MOTHER">Mother</option>
+                      <option value="SPOUSE">Spouse</option>
+                      <option value="SIBLING">Sibling</option>
+                      <option value="OTHERS">Others</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="parentMobile1">Parent Mobile<span class="text-danger">*</span></label>
+                    <input type="text" id="parentMobile1" name="parentMobile1" class="form-control" maxlength="10"
+                      placeholder="10 Digits Only">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="parentMobile2">Another Mobile No.</label>
+                    <input type="text" id="parentMobile2" name="parentMobile2" class="form-control" maxlength="10"
+                      placeholder="10 Digits Only">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="permanentAddress">Permanent Address<span class="text-danger">*</span></label>
+                    <textarea id="permanentAddress" name="permanentAddress" class="form-control" rows="3"
+                      placeholder="Enter Permanent Address"></textarea>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="permanentCity">Permanent City<span class="text-danger">*</span></label>
+                    <input type="text" id="permanentCity" name="permanentCity" class="form-control"
+                      placeholder="Enter Permanent City">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="permanentState">Permanent State<span class="text-danger">*</span></label>
+                    <select class="form-select" id="permanentState" name="permanentState">
+                      <option value="">Select</option>
+                      <option>ANDHRA PRADESH</option>
+                      <option>ARUNACHAL PRADESH</option>
+                      <option>ASSAM</option>
+                      <option>BIHAR</option>
+                      <option>CHHATTISGARH</option>
+                      <option>DELHI</option>
+                      <option>GOA</option>
+                      <option>GUJARAT</option>
+                      <option>HARYANA</option>
+                      <option>HIMACHAL PRADESH</option>
+                      <option>JHARKHAND</option>
+                      <option>KARNATAKA</option>
+                      <option>KERALA</option>
+                      <option>MADHYA PRADESH</option>
+                      <option>MAHARASHTRA</option>
+                      <option>MANIPUR</option>
+                      <option>MEGHALAYA</option>
+                      <option>MIZORAM</option>
+                      <option>NAGALAND</option>
+                      <option>ODISHA</option>
+                      <option>PUNJAB</option>
+                      <option>RAJASTHAN</option>
+                      <option>SIKKIM</option>
+                      <option>TAMIL NADU</option>
+                      <option>TELANGANA</option>
+                      <option>TRIPURA</option>
+                      <option>UTTAR PRADESH</option>
+                      <option>UTTARAKHAND</option>
+                      <option>WEST BENGAL</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="permanentPincode">Permanent Pincode<span class="text-danger">*</span></label>
+                    <input type="text" id="permanentPincode" name="permanentPincode" class="form-control" maxlength="6"
+                      inputmode="numeric" placeholder="Enter Permanent Pincode">
+                    <div class="invalid-feedback" id="permanentPincodeError">
+                      Enter a valid 6 digit pincode
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="text-center pt-2 d-print-none">
-              <button type="submit" id="submitBtn" class="btn btn-success btn-sm"><strong>Save</strong></button>
-            </div>
-          </div>
-          <!-- ========== END DOCUMENTS ========== -->
 
-        </div><!-- end tab-content -->
-      </div><!-- end card-body -->
-    </div><!-- end card -->
+              <!-- Password row -->
+              <div class="row mt-2">
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="empPassword">Password<span class="text-danger">*</span></label>
+                    <input type="password" id="empPassword" name="empPassword" class="form-control"
+                      placeholder="Set Password">
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="empPassword2">Confirm Password<span class="text-danger">*</span></label>
+                    <input type="password" id="empPassword2" name="empPassword2" class="form-control"
+                      placeholder="Confirm Password">
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center pt-2 d-print-none">
+                <button type="button" class="btn btn-info btn-sm"
+                  onclick="goToTab('tab-professional')"><strong>Next</strong></button>
+              </div>
+            </div>
+            <!-- ========== END BASIC INFO ========== -->
+
+
+            <!-- ========== PROFESSIONAL ========== -->
+            <div class="tab-pane fade" id="pane-professional" role="tabpanel">
+              <div class="row">
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="branch">Branch<span class="text-danger">*</span></label>
+                    <select class="form-select" id="branch" name="branch" required>
+                      <option value="">Select Branch</option>
+                      <option value="">Rajasthan</option>
+                      <option value="">Bihar</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="department">Department<span class="text-danger">*</span></label>
+                    <select class="form-select" id="department" name="department" required>
+                      <option value="">Select Department</option>
+                      <option value="">Rajasthan ULB</option>
+                      <option value="">Bihar ULB</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="designation">Designation<span class="text-danger">*</span></label>
+                    <select class="form-select" id="designation" name="designation" required>
+                      <option value="">Select Designation</option>
+                      <option value="">Field Officer</option>
+                      <option value="">Team Leader</option>
+                      <option value="">Manager</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="grade">Grade<span class="text-danger">*</span></label>
+                    <select class="form-select" id="grade" name="grade">
+                      <option value="">Select Grade</option>
+                      <option>M</option>
+                      <option>M1</option>
+                      <option>E1</option>
+                      <option>E1-Jaipur</option>
+                      <option>E2-Jaipur</option>
+                      <option>F</option>
+                      <option>F1</option>
+                      <option>E</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="employmentType">Employement Type<span class="text-danger">*</span></label>
+                    <select class="form-select" id="employmentType" name="employmentType">
+                      <option value="">Select Employement Type</option>
+                      <option value="PROBATION">PROBATION</option>
+                      <option value="TRAINEE">TRAINEE</option>
+                      <option value="PERMANENT">PERMANENT</option>
+                      <option value="UNDER NOTICE">UNDER NOTICE</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="reportingOfficer">Reporting Officer<span class="text-danger">*</span></label>
+                    <select class="form-select" id="reportingOfficer" name="reportingOfficer">
+                      <option value="">Select Reporting Officer</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="deputedProject">Deputed Project <span class="text-danger">*</span></label>
+                    <select class="form-select" id="deputedProject" name="deputedProject">
+                      <option value="">Select Project</option>
+                      <option>NAGAR NIGAM JAIPUR HERITAGE</option>
+                      <option>UDAIPUR NAGAR NIGAM</option>
+                      <option>NAGAR NIGAM JAIPUR GREATER</option>
+                      <option>KOTA NAGAR NIGAM</option>
+                      <option>NORTH KOTA NAGAR NIGAM</option>
+                      <option>CHURU MUNICIPAL COUNCIL</option>
+                      <option>CHOMU MUNICIPAL COUNCIL</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="effectiveDate">Effective Date <span class="text-danger">*</span></label>
+                    <input type="date" id="effectiveDate" name="effectiveDate" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <div class="text-center pt-2 d-print-none">
+                <button type="button" class="btn btn-info btn-sm"
+                  onclick="goToTab('tab-accounts')"><strong>Next</strong></button>
+              </div>
+            </div>
+            <!-- ========== END PROFESSIONAL ========== -->
+
+            <!-- ========== ACCOUNTS ========== -->
+            <div class="tab-pane fade" id="pane-accounts" role="tabpanel">
+              <div class="row">
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="bankName">Bank Name<span class="text-danger">*</span></label>
+                    <select class="form-select" id="bankName" name="bankName">
+                      <option value="">Select Bank</option>
+                      <option>AIRTEL PAYMENT BANK</option>
+                      <option>ALLAHABAD BANK</option>
+                      <option>ANDHRA BANK</option>
+                      <option>AU SMALL FINANCE BANK</option>
+                      <option>AXIS BANK</option>
+                      <option>BANDHAN BANK</option>
+                      <option>BANK OF BARODA</option>
+                      <option>BANK OF INDIA</option>
+                      <option>BANK OF MAHARASHTRA</option>
+                      <option>CANARA BANK</option>
+                      <option>CENTRAL BANK OF INDIA</option>
+                      <option>DCB BANK</option>
+                      <option>FEDERAL BANK</option>
+                      <option>HDFC</option>
+                      <option>ICICI BANK</option>
+                      <option>IDBI</option>
+                      <option>IDFC FIRST BANK</option>
+                      <option>INDIAN BANK</option>
+                      <option>INDIAN OVERSEAS BANK</option>
+                      <option>INDUSIND BANK</option>
+                      <option>KOTAK MAHINDRA BANK</option>
+                      <option>PNB</option>
+                      <option>PUNJAB &amp; SIND BANK</option>
+                      <option>RAJASTHAN MARUDHARA GRAMIN BANK</option>
+                      <option>SOUTH INDIAN BANK</option>
+                      <option>STATE BANK OF INDIA</option>
+                      <option>SYNDICATE BANK</option>
+                      <option>UCO BANK</option>
+                      <option>UNION BANK OF INDIA</option>
+                      <option>UNITED BANK OF INDIA</option>
+                      <option>UTKARSH SMALL FINANCE BANK</option>
+                      <option>UTTAR BIHAR GRAMIN BANK</option>
+                      <option>VIJAYA BANK</option>
+                      <option>YES BANK</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="bankBranch">Bank Branch<span class="text-danger">*</span></label>
+                    <input type="text" id="bankBranch" name="bankBranch" class="form-control"
+                      placeholder="Enter Bank Branch">
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="bankAccountNumber">Bank Account Number<span class="text-danger">*</span></label>
+                    <input type="text" id="bankAccountNumber" name="bankAccountNumber" class="form-control"
+                      maxlength="18" minlength="9" inputmode="numeric" pattern="[0-9]{9,18}"
+                      oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Enter Bank Account Number">
+                    <small id="bankAccountNumberError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="ifscCode">IFSC Code<span class="text-danger">*</span></label>
+                    <input type="text" id="ifscCode" name="ifscCode" class="form-control" maxlength="11" minlength="11"
+                      style="text-transform: uppercase;"
+                      oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                      placeholder="Enter IFSC Code">
+                    <small id="ifscCodeError" class="text-danger"></small>
+                  </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-6">
+                  <div class="form-group">
+                    <label for="isSalaryAccount">Salaried Account<span class="text-danger">*</span></label>
+                    <select class="form-select" id="isSalaryAccount" name="isSalaryAccount">
+                      <option value="">Select Project</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="text-center pt-2 d-print-none">
+                <button type="button" class="btn btn-info btn-sm"
+                  onclick="goToTab('tab-documents')"><strong>Next</strong></button>
+              </div>
+            </div>
+            <!-- ========== END ACCOUNTS ========== -->
+
+            <!-- ========== DOCUMENTS ========== -->
+            <div class="tab-pane fade" id="pane-documents" role="tabpanel">
+              <div id="docRows">
+                <div class="doc-row row align-items-end mb-3">
+                  <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="form-group">
+                      <label>Document Name</label>
+                      <select class="form-select" name="docName[]">
+                        <option value="">Select Document</option>
+                        <option value="AADHAAR">Aadhar Card</option>
+                        <option value="PAN">PAN Card</option>
+                        <option value="PHOTO">Passport Size Photo</option>
+                        <option value="RESUME">Resume/CV</option>
+                        <option value="EDUCATION">Educational Certificates</option>
+                        <option value="OFFER_LETTER">Offer Letter</option>
+                        <option value="JOINING_LETTER">Joining Letter</option>
+                        <option value="BANK_PASSBOOK">Bank Passbook / Cancelled Cheque</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="form-group">
+                      <label>Upload Image Of Document</label>
+                      <input type="file" name="docFile[]" class="form-control">
+                    </div>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="form-group">
+                      <label>Remarks</label>
+                      <input type="text" name="docRemarks[]" class="form-control" placeholder="Enter Remarks">
+                    </div>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-6">
+                    <div class="form-group d-flex gap-2 mt-4">
+                      <button type="button" class="btn btn-primary btn-sm" onclick="addDocRow()">Add</button>
+                      <button type="button" class="btn btn-danger btn-sm" onclick="removeDocRow(this)">Remove</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-center pt-2 d-print-none">
+                <button type="submit" id="submitBtn" class="btn btn-success btn-sm"><strong>Save</strong></button>
+              </div>
+            </div>
+            <!-- ========== END DOCUMENTS ========== -->
+
+          </div><!-- end tab-content -->
+        </div><!-- end card-body -->
+      </div><!-- end card -->
     </form>
   </div>
 </div>
@@ -555,198 +701,198 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const mobileInput = document.getElementById("contactNumber1");
     const errorMessage = document.getElementById("contactNumber1Error");
 
     mobileInput.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 10 digits
-        this.value = this.value.slice(0, 10);
+      // Maximum 10 digits
+      this.value = this.value.slice(0, 10);
 
-        const mobileNumber = this.value;
+      const mobileNumber = this.value;
 
-        // Empty field
-        if (mobileNumber === "") {
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-            errorMessage.textContent =
-                "Mobile number is required";
-            return;
-        }
+      // Empty field
+      if (mobileNumber === "") {
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+        errorMessage.textContent =
+          "Mobile number is required";
+        return;
+      }
 
-        // First digit must be 6,7, 8 or 9
-        if (!/^[6789]/.test(mobileNumber)) {
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-            errorMessage.textContent =
-                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
-            return;
-        }
+      // First digit must be 6,7, 8 or 9
+      if (!/^[6789]/.test(mobileNumber)) {
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+        errorMessage.textContent =
+          "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+        return;
+      }
 
-        // Must be exactly 10 digits
-        if (mobileNumber.length !== 10) {
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-            errorMessage.textContent =
-                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
-            return;
-        }
+      // Must be exactly 10 digits
+      if (mobileNumber.length !== 10) {
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+        errorMessage.textContent =
+          "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+        return;
+      }
 
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-        errorMessage.textContent = "";
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+      errorMessage.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const mobileInput2 = document.getElementById("contactNumber2");
     const errorMessage2 = document.getElementById("contactNumber2Error");
 
     mobileInput2.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 10 digits
-        this.value = this.value.slice(0, 10);
+      // Maximum 10 digits
+      this.value = this.value.slice(0, 10);
 
-        const mobileNumber = this.value;
+      const mobileNumber = this.value;
 
-        // Optional field
-        // If empty, remove validation error
-        if (mobileNumber === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            errorMessage2.textContent = "";
-            return;
-        }
-
-        // First digit must be 6,7, 8 or 9
-        if (!/^[6789]/.test(mobileNumber)) {
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            errorMessage2.textContent =
-                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
-
-            return;
-        }
-
-        // Must be exactly 10 digits
-        if (mobileNumber.length !== 10) {
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            errorMessage2.textContent =
-                "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
-
-            return;
-        }
-
-        // Valid mobile number
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      // If empty, remove validation error
+      if (mobileNumber === "") {
+        this.classList.remove("is-invalid", "is-valid");
         errorMessage2.textContent = "";
+        return;
+      }
+
+      // First digit must be 6,7, 8 or 9
+      if (!/^[6789]/.test(mobileNumber)) {
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        errorMessage2.textContent =
+          "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+
+        return;
+      }
+
+      // Must be exactly 10 digits
+      if (mobileNumber.length !== 10) {
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        errorMessage2.textContent =
+          "Enter valid 10 digit mobile number starting from 6,7, 8 or 9";
+
+        return;
+      }
+
+      // Valid mobile number
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      errorMessage2.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const heightInput = document.getElementById("height");
     const heightError = document.getElementById("heightError");
 
     heightInput.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 3 digits
-        this.value = this.value.slice(0, 3);
+      // Maximum 3 digits
+      this.value = this.value.slice(0, 3);
 
-        const height = this.value;
+      const height = this.value;
 
-        // Optional field
-        if (height === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            heightError.textContent = "";
-            return;
-        }
-
-        // Must be exactly 3 digits
-        if (!/^\d{3}$/.test(height)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            heightError.textContent =
-                "Enter a valid 3 digit height";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (height === "") {
+        this.classList.remove("is-invalid", "is-valid");
         heightError.textContent = "";
+        return;
+      }
+
+      // Must be exactly 3 digits
+      if (!/^\d{3}$/.test(height)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        heightError.textContent =
+          "Enter a valid 3 digit height";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      heightError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const weightInput = document.getElementById("weight");
     const weightError = document.getElementById("weightError");
 
     weightInput.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 3 digits
-        this.value = this.value.slice(0, 3);
+      // Maximum 3 digits
+      this.value = this.value.slice(0, 3);
 
-        const weight = this.value;
+      const weight = this.value;
 
-        // Optional field
-        if (weight === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            weightError.textContent = "";
-            return;
-        }
-
-        // Must contain exactly 2 or 3 digits
-        if (!/^\d{2,3}$/.test(weight)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            weightError.textContent =
-                "Enter a valid 2 or 3 digit weight";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (weight === "") {
+        this.classList.remove("is-invalid", "is-valid");
         weightError.textContent = "";
+        return;
+      }
+
+      // Must contain exactly 2 or 3 digits
+      if (!/^\d{2,3}$/.test(weight)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        weightError.textContent =
+          "Enter a valid 2 or 3 digit weight";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      weightError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
   document.getElementById("panNumber").addEventListener("input", function () {
@@ -756,13 +902,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
     if (pan.length > 0 && pan.length < 10) {
-        error.textContent = "PAN Number must contain exactly 10 characters.";
+      error.textContent = "PAN Number must contain exactly 10 characters.";
     } else if (pan.length === 10 && !panPattern.test(pan)) {
-        error.textContent = "Please enter a valid PAN Number.";
+      error.textContent = "Please enter a valid PAN Number.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
   document.getElementById("uanNumber").addEventListener("input", function () {
@@ -770,11 +916,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const error = document.getElementById("uanNumberError");
 
     if (uan.length > 0 && uan.length < 12) {
-        error.textContent = "UAN Number must contain exactly 12 digits.";
+      error.textContent = "UAN Number must contain exactly 12 digits.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
   document.getElementById("uidNumber").addEventListener("input", function () {
@@ -782,11 +928,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const error = document.getElementById("uidNumberError");
 
     if (uid.length > 0 && uid.length < 12) {
-        error.textContent = "UID Number must contain exactly 12 digits.";
+      error.textContent = "UID Number must contain exactly 12 digits.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
   document.getElementById("esicNumber").addEventListener("input", function () {
@@ -794,11 +940,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const error = document.getElementById("esicNumberError");
 
     if (esic.length > 0 && esic.length < 10) {
-        error.textContent = "ESIC Number must contain exactly 10 digits.";
+      error.textContent = "ESIC Number must contain exactly 10 digits.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
   document.getElementById("pfNumber").addEventListener("input", function () {
@@ -806,205 +952,205 @@ document.addEventListener("DOMContentLoaded", function () {
     const error = document.getElementById("pfNumberError");
 
     if (pf.length > 0 && pf.length < 5) {
-        error.textContent = "PF Number must contain at least 5 characters.";
+      error.textContent = "PF Number must contain at least 5 characters.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const emailInput = document.getElementById("emailId");
     const emailError = document.getElementById("emailIdError");
 
     emailInput.addEventListener("input", function () {
 
-        const email = this.value.trim();
+      const email = this.value.trim();
 
-        // Optional field
-        if (email === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            emailError.textContent = "";
-            return;
-        }
-
-        // Email validation
-        const emailPattern =
-            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-        if (!emailPattern.test(email)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            emailError.textContent =
-                "Enter a valid email address";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (email === "") {
+        this.classList.remove("is-invalid", "is-valid");
         emailError.textContent = "";
+        return;
+      }
+
+      // Email validation
+      const emailPattern =
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailPattern.test(email)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        emailError.textContent =
+          "Enter a valid email address";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      emailError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const officialEmailInput =
-        document.getElementById("officialEmail");
+      document.getElementById("officialEmail");
 
     const officialEmailError =
-        document.getElementById("officialEmailError");
+      document.getElementById("officialEmailError");
 
     officialEmailInput.addEventListener("input", function () {
 
-        const email = this.value.trim();
+      const email = this.value.trim();
 
-        // Optional field
-        if (email === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            officialEmailError.textContent = "";
-            return;
-        }
-
-        // Email validation
-        const emailPattern =
-            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-        if (!emailPattern.test(email)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            officialEmailError.textContent =
-                "Enter a valid official email address";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (email === "") {
+        this.classList.remove("is-invalid", "is-valid");
         officialEmailError.textContent = "";
+        return;
+      }
+
+      // Email validation
+      const emailPattern =
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailPattern.test(email)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        officialEmailError.textContent =
+          "Enter a valid official email address";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      officialEmailError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const presentPincode =
-        document.getElementById("presentPincode");
+      document.getElementById("presentPincode");
 
     const presentPincodeError =
-        document.getElementById("presentPincodeError");
+      document.getElementById("presentPincodeError");
 
     presentPincode.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 6 digits
-        this.value = this.value.slice(0, 6);
+      // Maximum 6 digits
+      this.value = this.value.slice(0, 6);
 
-        const pincode = this.value;
+      const pincode = this.value;
 
-        // Optional field
-        if (pincode === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            presentPincodeError.textContent = "";
-            return;
-        }
-
-        // Must be exactly 6 digits and cannot start with 0
-        if (!/^[1-9][0-9]{5}$/.test(pincode)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            presentPincodeError.textContent =
-                "Enter a valid 6 digit pincode";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (pincode === "") {
+        this.classList.remove("is-invalid", "is-valid");
         presentPincodeError.textContent = "";
+        return;
+      }
+
+      // Must be exactly 6 digits and cannot start with 0
+      if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        presentPincodeError.textContent =
+          "Enter a valid 6 digit pincode";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      presentPincodeError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
     const permanentPincode =
-        document.getElementById("permanentPincode");
+      document.getElementById("permanentPincode");
 
     const permanentPincodeError =
-        document.getElementById("permanentPincodeError");
+      document.getElementById("permanentPincodeError");
 
     permanentPincode.addEventListener("input", function () {
 
-        // Allow only numbers
-        this.value = this.value.replace(/\D/g, "");
+      // Allow only numbers
+      this.value = this.value.replace(/\D/g, "");
 
-        // Maximum 6 digits
-        this.value = this.value.slice(0, 6);
+      // Maximum 6 digits
+      this.value = this.value.slice(0, 6);
 
-        const pincode = this.value;
+      const pincode = this.value;
 
-        // Optional field
-        if (pincode === "") {
-            this.classList.remove("is-invalid", "is-valid");
-            permanentPincodeError.textContent = "";
-            return;
-        }
-
-        // Must be exactly 6 digits and cannot start with 0
-        if (!/^[1-9][0-9]{5}$/.test(pincode)) {
-
-            this.classList.remove("is-valid");
-            this.classList.add("is-invalid");
-
-            permanentPincodeError.textContent =
-                "Enter a valid 6 digit pincode";
-
-            return;
-        }
-
-        // Valid
-        this.classList.remove("is-invalid");
-        this.classList.add("is-valid");
-
+      // Optional field
+      if (pincode === "") {
+        this.classList.remove("is-invalid", "is-valid");
         permanentPincodeError.textContent = "";
+        return;
+      }
+
+      // Must be exactly 6 digits and cannot start with 0
+      if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+
+        this.classList.remove("is-valid");
+        this.classList.add("is-invalid");
+
+        permanentPincodeError.textContent =
+          "Enter a valid 6 digit pincode";
+
+        return;
+      }
+
+      // Valid
+      this.classList.remove("is-invalid");
+      this.classList.add("is-valid");
+
+      permanentPincodeError.textContent = "";
     });
 
-});
+  });
 </script>
 <script>
-document.getElementById("bankAccountNumber").addEventListener("input", function () {
+  document.getElementById("bankAccountNumber").addEventListener("input", function () {
     const accountNumber = this.value;
     const error = document.getElementById("bankAccountNumberError");
 
     if (accountNumber.length > 0 && accountNumber.length < 9) {
-        error.textContent = "Bank Account Number must contain at least 9 digits.";
+      error.textContent = "Bank Account Number must contain at least 9 digits.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
-document.getElementById("ifscCode").addEventListener("input", function () {
+  document.getElementById("ifscCode").addEventListener("input", function () {
     const ifscCode = this.value;
     const error = document.getElementById("ifscCodeError");
 
@@ -1012,302 +1158,356 @@ document.getElementById("ifscCode").addEventListener("input", function () {
     const ifscPattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
     if (ifscCode.length > 0 && ifscCode.length < 11) {
-        error.textContent = "IFSC Code must contain exactly 11 characters.";
+      error.textContent = "IFSC Code must contain exactly 11 characters.";
     } else if (ifscCode.length === 11 && !ifscPattern.test(ifscCode)) {
-        error.textContent = "Please enter a valid IFSC Code.";
+      error.textContent = "Please enter a valid IFSC Code.";
     } else {
-        error.textContent = "";
+      error.textContent = "";
     }
-});
+  });
 </script>
 <script>
-    function goToTab(tabId) {
-        const el = document.getElementById(tabId);
-        if (el) bootstrap.Tab.getOrCreateInstance(el).show();
-    }
+  function goToTab(tabId) {
+    const el = document.getElementById(tabId);
+    if (el) bootstrap.Tab.getOrCreateInstance(el).show();
+  }
 
-    document.getElementById('checkAddress').addEventListener('change', function () {
-        if (this.checked) {
-            document.getElementById('permanentAddress').value = document.getElementById('presentAddress').value;
-            document.getElementById('permanentCity').value = document.getElementById('presentCity').value;
-            document.getElementById('permanentState').value = document.getElementById('presentState').value;
-            document.getElementById('permanentPincode').value = document.getElementById('presentPincode').value;
+  document.getElementById('checkAddress').addEventListener('change', function () {
+    if (this.checked) {
+      document.getElementById('permanentAddress').value = document.getElementById('presentAddress').value;
+      document.getElementById('permanentCity').value = document.getElementById('presentCity').value;
+      document.getElementById('permanentState').value = document.getElementById('presentState').value;
+      document.getElementById('permanentPincode').value = document.getElementById('presentPincode').value;
+    }
+  });
+
+  document.getElementById('profileImage').addEventListener('change', function () {
+    if (this.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => document.getElementById('userPhoto').src = e.target.result;
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+
+  function addDocRow() {
+    const container = document.getElementById('docRows');
+    const clone = container.querySelector('.doc-row').cloneNode(true);
+    clone.querySelectorAll('input, select').forEach(el => el.value = '');
+    container.appendChild(clone);
+  }
+
+  function removeDocRow(btn) {
+    const rows = document.querySelectorAll('.doc-row');
+    if (rows.length > 1) btn.closest('.doc-row').remove();
+  }
+
+  // ===== FORM SUBMIT → API =====
+  document.getElementById('employeeForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const token = localStorage.getItem('authToken');
+    if (!token) { window.location.href = '/login/'; return; }
+
+    const g = id => (document.getElementById(id) || {}).value || '';
+    const gn = id => { const v = g(id); return v === '' ? null : v; };
+
+    // Validate required fields before sending
+    const required = [
+      ['employeeName', 'Employee Name', 'tab-basic'],
+      ['fatherName', "Father's Name", 'tab-basic'],
+      ['motherName', "Mother's Name", 'tab-basic'],
+      ['dob', 'Date of Birth', 'tab-basic'],
+      ['gender', 'Gender', 'tab-basic'],
+      ['doj', 'Date of Joining', 'tab-basic'],
+      ['maritalStatus', 'Marital Status', 'tab-basic'],
+      ['emailId', 'Email ID', 'tab-basic'],
+      ['panNumber', 'PAN Number', 'tab-basic'],
+      ['qualification', 'Qualification', 'tab-basic'],
+      ['contactNumber1', 'Contact Number', 'tab-basic'],
+      ['presentAddress', 'Present Address', 'tab-basic'],
+      ['presentCity', 'Present City', 'tab-basic'],
+      ['presentState', 'Present State', 'tab-basic'],
+      ['presentPincode', 'Present Pincode', 'tab-basic'],
+      ['relationName', 'Relationship Name', 'tab-basic'],
+      ['relationType', 'Relationship Type', 'tab-basic'],
+      ['parentMobile1', 'Parent Mobile', 'tab-basic'],
+      ['permanentAddress', 'Permanent Address', 'tab-basic'],
+      ['permanentCity', 'Permanent City', 'tab-basic'],
+      ['permanentState', 'Permanent State', 'tab-basic'],
+      ['permanentPincode', 'Permanent Pincode', 'tab-basic'],
+      ['empPassword', 'Password', 'tab-basic'],
+      ['empPassword2', 'Confirm Password', 'tab-basic'],
+
+      ['designationText', 'Branch Department Designation', 'tab-professional'],
+      ['grade', 'Grade', 'tab-professional'],
+      ['employmentType', 'Employment Type', 'tab-professional'],
+      ['reportingOfficer', 'Reporting Officer', 'tab-professional'],
+      ['deputedProject', 'Deputed Project', 'tab-professional'],
+      ['effectiveDate', 'Effective Date', 'tab-professional'],
+
+      ['bankName', 'Bank Name', 'tab-accounts'],
+      ['bankBranch', 'Bank Branch', 'tab-accounts'],
+      ['bankAccountNumber', 'Bank Account Number', 'tab-accounts'],
+      ['ifscCode', 'IFSC Code', 'tab-accounts'],
+      ['isSalaryAccount', 'Salaried Account', 'tab-accounts'],
+    ];
+    // Clear previous highlights and bind event listeners to clear error state upon interaction
+    required.forEach(([id]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('is-invalid');
+        if (!el.dataset.validationListener) {
+          const handler = () => el.classList.remove('is-invalid');
+          el.addEventListener('input', handler);
+          el.addEventListener('change', handler);
+          el.dataset.validationListener = 'true';
         }
+      }
     });
 
-    document.getElementById('profileImage').addEventListener('change', function () {
-        if (this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => document.getElementById('userPhoto').src = e.target.result;
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
+    const missing = [];
+    let firstTabToOpen = null;
+    let firstElementToFocus = null;
 
-    function addDocRow() {
-        const container = document.getElementById('docRows');
-        const clone = container.querySelector('.doc-row').cloneNode(true);
-        clone.querySelectorAll('input, select').forEach(el => el.value = '');
-        container.appendChild(clone);
+    for (const [id, label, tabId] of required) {
+      if (!g(id)) {
+        missing.push(label);
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('is-invalid');
+        }
+        if (!firstTabToOpen) {
+          firstTabToOpen = tabId;
+          firstElementToFocus = id;
+        }
+      }
     }
 
-    function removeDocRow(btn) {
-        const rows = document.querySelectorAll('.doc-row');
-        if (rows.length > 1) btn.closest('.doc-row').remove();
+    if (missing.length > 0) {
+      alert("The following required fields are missing:\n" + missing.map(m => "• " + m).join("\n"));
+      if (firstTabToOpen) {
+        goToTab(firstTabToOpen);
+      }
+      if (firstElementToFocus) {
+        const inputEl = document.getElementById(firstElementToFocus);
+        if (inputEl) {
+          inputEl.focus();
+        }
+      }
+      return;
+    }
+    if (g('empPassword') !== g('empPassword2')) {
+      alert('Passwords do not match.'); return;
+    }
+    if (!employeeRoleId) {
+      alert('Could not load roles from server. Please refresh and try again.'); return;
+    }
+    const bddVal = g('designationText').trim();
+    let branchVal = '';
+    let departmentVal = '';
+    let designationVal = '';
+
+    if (bddVal) {
+      let parts = [];
+      if (bddVal.includes('|')) {
+        parts = bddVal.split('|');
+      } else if (bddVal.includes('/')) {
+        parts = bddVal.split('/');
+      } else if (bddVal.includes(' - ')) {
+        parts = bddVal.split(' - ');
+      }
+
+      if (parts.length >= 3) {
+        branchVal = (parts[0] || '').trim();
+        departmentVal = (parts[1] || '').trim();
+        designationVal = (parts[2] || '').trim();
+      } else {
+        designationVal = bddVal;
+      }
     }
 
-    // ===== FORM SUBMIT → API =====
-    document.getElementById('employeeForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
+    const empName = g('employeeName').trim();
+    const nameParts = empName.split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '.';
 
-        const token = localStorage.getItem('authToken');
-        if (!token) { window.location.href = '/login/'; return; }
+    // Build payload matching serializer field names exactly
+    const payload = {
+      first_name: firstName,
+      last_name: lastName,
+      email: g('emailId'),
+      password: g('empPassword'),
+      password2: g('empPassword2'),
+      role: employeeRoleId,             // Employee role (fetched dynamically)
 
-        const g = id => (document.getElementById(id) || {}).value || '';
-        const gn = id => { const v = g(id); return v === '' ? null : v; };
+      father_name: g('fatherName'),
+      mother_name: g('motherName'),
+      date_of_birth: g('dob'),
+      gender: g('gender'),
+      date_of_joining: g('doj'),
+      height_cm: gn('height'),
+      weight_kg: gn('weight'),
+      blood_group: g('bloodGroup'),
+      marital_status: g('maritalStatus'),
 
-        // Validate required fields before sending
-        const required = [
-            ['employeeName', 'Employee Name (Basic Info)'],
-            ['fatherName', "Father's Name (Basic Info)"],
-            ['motherName', "Mother's Name (Basic Info)"],
-            ['dob', 'Date of Birth (Basic Info)'],
-            ['gender', 'Gender (Basic Info)'],
-            ['doj', 'Date of Joining (Basic Info)'],
-            ['bloodGroup', 'Blood Group (Basic Info)'],
-            ['maritalStatus', 'Marital Status (Basic Info)'],
-            ['emailId', 'Email ID (Basic Info)'],
-            ['contactNumber1', 'Contact Number (Basic Info)'],
-            ['presentAddress', 'Present Address (Basic Info)'],
-            ['presentCity', 'Present City (Basic Info)'],
-            ['presentState', 'Present State (Basic Info)'],
-            ['presentPincode', 'Present Pincode (Basic Info)'],
-            ['permanentAddress', 'Permanent Address (Basic Info)'],
-            ['permanentCity', 'Permanent City (Basic Info)'],
-            ['permanentState', 'Permanent State (Basic Info)'],
-            ['permanentPincode', 'Permanent Pincode (Basic Info)'],
-            ['relationName', 'Relationship Name (Basic Info)'],
-            ['relationType', 'Relationship Type (Basic Info)'],
-            ['parentMobile1', 'Parent Mobile (Basic Info)'],
-            ['empPassword', 'Password (Basic Info)'],
-            ['empPassword2', 'Confirm Password (Basic Info)'],
-            ['employmentType', 'Employment Type (Professional)'],
-            ['effectiveDate', 'Effective Date (Professional)'],
-        ];
-        for (const [id, label] of required) {
-            if (!g(id)) { alert(`Please fill: ${label}`); return; }
+      official_email: g('officialEmail'),
+      contact_number: g('contactNumber1'),
+      another_contact_number: g('contactNumber2'),
+
+      pan_number: g('panNumber'),
+      uid_number: g('uidNumber'),
+      una_number: g('uanNumber'),
+      esic_number: g('esicNumber'),
+      pf_number: g('pfNumber'),
+      qualification: g('qualification'),
+
+      present_address: g('presentAddress'),
+      present_city: g('presentCity'),
+      present_state: g('presentState'),
+      present_pincode: g('presentPincode'),
+      same_as_present_address: document.getElementById('checkAddress').checked,
+      permanent_address: g('permanentAddress'),
+      permanent_city: g('permanentCity'),
+      permanent_state: g('permanentState'),
+      permanent_pincode: g('permanentPincode'),
+
+      relationship_name: g('relationName'),
+      relationship_type: g('relationType') || 'OTHERS',
+      parent_mobile: g('parentMobile1'),
+      emergency_another_mobile: g('parentMobile2'),
+
+      branch: branchVal || null,
+      department: departmentVal || null,
+      designation: designationVal || null,
+      grade: g('grade'),
+      employment_type: g('employmentType'),
+      reporting_officer: gn('reportingOfficer') ? parseInt(gn('reportingOfficer')) : null,
+      deputed_project: g('deputedProject'),
+      effective_date: g('effectiveDate'),
+
+      bank_name: g('bankName'),
+      bank_branch: g('bankBranch'),
+      account_number: g('bankAccountNumber'),
+      ifsc_code: g('ifscCode'),
+      is_salary_account: g('isSalaryAccount') === 'true',
+    };
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    try {
+      const res = await fetch('/api/accounts/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token ' + token,
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const newEmpId = data.id;
+
+        // Upload profile photo if selected
+        const photoFile = document.getElementById('profileImage').files[0];
+        if (photoFile) {
+          const photoFd = new FormData();
+          photoFd.append('profile_photo', photoFile);
+          await fetch(`/api/accounts/employees/${newEmpId}/photo/`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token },
+            body: photoFd,
+          });
         }
-        if (g('empPassword') !== g('empPassword2')) {
-            alert('Passwords do not match.'); return;
-        }
-        if (!employeeRoleId) {
-            alert('Could not load roles from server. Please refresh and try again.'); return;
-        }
-        const bddVal = g('designationText').trim();
-        let branchVal = '';
-        let departmentVal = '';
-        let designationVal = '';
 
-        if (bddVal) {
-            let parts = [];
-            if (bddVal.includes('|')) {
-                parts = bddVal.split('|');
-            } else if (bddVal.includes('/')) {
-                parts = bddVal.split('/');
-            } else if (bddVal.includes(' - ')) {
-                parts = bddVal.split(' - ');
-            }
-            
-            if (parts.length >= 3) {
-                branchVal = (parts[0] || '').trim();
-                departmentVal = (parts[1] || '').trim();
-                designationVal = (parts[2] || '').trim();
-            } else {
-                designationVal = bddVal;
-            }
+        // Upload documents if any
+        const docRows = document.querySelectorAll('.doc-row');
+        for (const row of docRows) {
+          const docType = row.querySelector('select[name="docName[]"]').value;
+          const docFile = row.querySelector('input[name="docFile[]"]').files[0];
+          if (!docType || !docFile) continue;
+
+          const fd = new FormData();
+          fd.append('document_type', docType);
+          fd.append('document_file', docFile);
+          await fetch(`/api/accounts/employees/${newEmpId}/documents/`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Token ' + token },
+            body: fd,
+          });
         }
 
-        const empName = g('employeeName').trim();
-        const nameParts = empName.split(/\s+/);
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '.';
-
-        // Build payload matching serializer field names exactly
-        const payload = {
-            first_name:               firstName,
-            last_name:                lastName,
-            email:                    g('emailId'),
-            password:                 g('empPassword'),
-            password2:                g('empPassword2'),
-            role:                     employeeRoleId,             // Employee role (fetched dynamically)
-
-            father_name:              g('fatherName'),
-            mother_name:              g('motherName'),
-            date_of_birth:            g('dob'),
-            gender:                   g('gender'),
-            date_of_joining:          g('doj'),
-            height_cm:                gn('height'),
-            weight_kg:                gn('weight'),
-            blood_group:              g('bloodGroup'),
-            marital_status:           g('maritalStatus'),
-
-            official_email:           g('officialEmail'),
-            contact_number:           g('contactNumber1'),
-            another_contact_number:   g('contactNumber2'),
-
-            pan_number:               g('panNumber'),
-            uid_number:               g('uidNumber'),
-            una_number:               g('uanNumber'),
-            esic_number:              g('esicNumber'),
-            pf_number:                g('pfNumber'),
-            qualification:            g('qualification'),
-
-            present_address:          g('presentAddress'),
-            present_city:             g('presentCity'),
-            present_state:            g('presentState'),
-            present_pincode:          g('presentPincode'),
-            same_as_present_address:  document.getElementById('checkAddress').checked,
-            permanent_address:        g('permanentAddress'),
-            permanent_city:           g('permanentCity'),
-            permanent_state:          g('permanentState'),
-            permanent_pincode:        g('permanentPincode'),
-
-            relationship_name:        g('relationName'),
-            relationship_type:        g('relationType') || 'OTHERS',
-            parent_mobile:            g('parentMobile1'),
-            emergency_another_mobile: g('parentMobile2'),
-
-            branch:                   branchVal || null,
-            department:               departmentVal || null,
-            designation:              designationVal || null,
-            grade:                    g('grade'),
-            employment_type:          g('employmentType'),
-            reporting_officer:        gn('reportingOfficer') ? parseInt(gn('reportingOfficer')) : null,
-            deputed_project:          g('deputedProject'),
-            effective_date:           g('effectiveDate'),
-
-            bank_name:                g('bankName'),
-            bank_branch:              g('bankBranch'),
-            account_number:           g('bankAccountNumber'),
-            ifsc_code:                g('ifscCode'),
-            is_salary_account:        g('isSalaryAccount') === 'true',
-        };
-
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Saving...';
-
-        try {
-            const res = await fetch('/api/accounts/register/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Token ' + token,
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                const newEmpId = data.id;
-
-                // Upload profile photo if selected
-                const photoFile = document.getElementById('profileImage').files[0];
-                if (photoFile) {
-                    const photoFd = new FormData();
-                    photoFd.append('profile_photo', photoFile);
-                    await fetch(`/api/accounts/employees/${newEmpId}/photo/`, {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Token ' + token },
-                        body: photoFd,
-                    });
-                }
-
-                // Upload documents if any
-                const docRows = document.querySelectorAll('.doc-row');
-                for (const row of docRows) {
-                    const docType = row.querySelector('select[name="docName[]"]').value;
-                    const docFile = row.querySelector('input[name="docFile[]"]').files[0];
-                    if (!docType || !docFile) continue;
-
-                    const fd = new FormData();
-                    fd.append('document_type', docType);
-                    fd.append('document_file', docFile);
-                    await fetch(`/api/accounts/employees/${newEmpId}/documents/`, {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Token ' + token },
-                        body: fd,
-                    });
-                }
-
-                alert('Employee registered successfully! User ID: ' + data.user_id);
-                window.location.href = '/dashboard/';
-            } else {
-                // Format errors nicely
-                let msg = 'Validation errors:\n';
-                if (typeof data === 'object') {
-                    Object.entries(data).forEach(([field, errs]) => {
-                        const errText = Array.isArray(errs) ? errs.join(', ') : errs;
-                        msg += `• ${field}: ${errText}\n`;
-                    });
-                } else {
-                    msg = JSON.stringify(data, null, 2);
-                }
-                alert(msg);
-            }
-        } catch (err) {
-            alert('Network error: ' + err.message);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Save';
+        alert('Employee registered successfully! User ID: ' + data.user_id);
+        window.location.href = '/dashboard/';
+      } else {
+        // Format errors nicely
+        let msg = 'Validation errors:\n';
+        if (typeof data === 'object') {
+          Object.entries(data).forEach(([field, errs]) => {
+            const errText = Array.isArray(errs) ? errs.join(', ') : errs;
+            msg += `• ${field}: ${errText}\n`;
+          });
+        } else {
+          msg = JSON.stringify(data, null, 2);
         }
-    });
+        alert(msg);
+      }
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save';
+    }
+  });
 
-    function getCookie(name) {
-        const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-        return v ? v[2] : '';
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : '';
+  }
+
+  // Load Employee role ID and reporting officer dropdown on page load
+  let employeeRoleId = null;
+
+  async function loadDropdowns() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    const headers = { 'Authorization': 'Token ' + token };
+
+    const [rolesRes, employeesRes] = await Promise.all([
+      fetch('/api/accounts/roles/', { headers }),
+      fetch('/api/accounts/users/', { headers }),   // all users for reporting officer dropdown
+    ]);
+
+    if (rolesRes.ok) {
+      const data = await rolesRes.json();
+      const results = data.results || data;
+      const empRole = results.find(r => r.name === 'EMPLOYEE');
+      if (empRole) employeeRoleId = empRole.id;
     }
 
-    // Load Employee role ID and reporting officer dropdown on page load
-    let employeeRoleId = null;
-
-    async function loadDropdowns() {
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
-        const headers = { 'Authorization': 'Token ' + token };
-
-        const [rolesRes, employeesRes] = await Promise.all([
-            fetch('/api/accounts/roles/', { headers }),
-            fetch('/api/accounts/users/', { headers }),   // all users for reporting officer dropdown
-        ]);
-
-        if (rolesRes.ok) {
-            const data = await rolesRes.json();
-            const results = data.results || data;
-            const empRole = results.find(r => r.name === 'EMPLOYEE');
-            if (empRole) employeeRoleId = empRole.id;
-        }
-
-        if (employeesRes.ok) {
-            const data = await employeesRes.json();
-            // Use all pages
-            let allUsers = data.results || data;
-            let nextUrl = data.next || null;
-            while (nextUrl) {
-                const r = await fetch(nextUrl, { headers });
-                const d = await r.json();
-                allUsers = allUsers.concat(d.results || d);
-                nextUrl = d.next || null;
-            }
-            const sel = document.getElementById('reportingOfficer');
-            allUsers.forEach(u => {
-                const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.user_id;
-                sel.innerHTML += `<option value="${u.id}">${name} - ${u.user_id}</option>`;
-            });
-        }
+    if (employeesRes.ok) {
+      const data = await employeesRes.json();
+      // Use all pages
+      let allUsers = data.results || data;
+      let nextUrl = data.next || null;
+      while (nextUrl) {
+        const r = await fetch(nextUrl, { headers });
+        const d = await r.json();
+        allUsers = allUsers.concat(d.results || d);
+        nextUrl = d.next || null;
+      }
+      const sel = document.getElementById('reportingOfficer');
+      allUsers.forEach(u => {
+        const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.user_id;
+        sel.innerHTML += `<option value="${u.id}">${name} - ${u.user_id}</option>`;
+      });
     }
+  }
 
-    loadDropdowns();
+  loadDropdowns();
 </script>
 {% endblock %}

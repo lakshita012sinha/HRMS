@@ -26,6 +26,29 @@
     </ul>
 </div>
 
+<!-- File Preview Modal -->
+<div class="modal fade" id="fileModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">File Preview</h5>
+                <button id="fullscreenBtn" class="btn btn-sm btn-outline-primary ms-2 d-none" onclick="toggleFullscreen()">
+                    <i class="ri-fullscreen-line"></i>
+                </button>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="zoomControls" class="mb-2 text-center d-none">
+                    <button class="btn btn-sm btn-info" onclick="zoomIn()"><i class="ri-add-line"></i></button>
+                    <button class="btn btn-sm btn-info" onclick="zoomOut()"><i class="ri-subtract-line"></i></button>
+                    <button class="btn btn-sm btn-secondary" onclick="resetZoom()">Reset</button>
+                </div>
+                <div id="fileContainer" style="width:100%;height:75vh;max-height:calc(100vh - 160px);overflow:auto;text-align:center;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Reject Reason Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog">
@@ -98,7 +121,7 @@
                     <table id="leaveTable" class="display table table-hover table-bordered table-head-bg-secondary">
                         <thead>
                             <tr>
-                                <th colspan="11" class="text-center bg-light"><strong>TEAM LEAVE REQUESTS</strong></th>
+                                <th colspan="12" class="text-center bg-light"><strong>TEAM LEAVE REQUESTS</strong></th>
                             </tr>
                             <tr class="text-center">
                                 <th>#</th>
@@ -111,6 +134,7 @@
                                 <th>Reason</th>
                                 <th>Status</th>
                                 <th>Applied Date</th>
+                                <th>Document</th>
                                 <th class="d-print-none">Action</th>
                             </tr>
                         </thead>
@@ -129,6 +153,8 @@
 let dtInstance = null;
 let currentStatus = 'PENDING';
 let fetchedRequests = [];
+let scale = 1;
+let isFullscreen = false;
 
 function fmtDate(d) {
     if (!d) return '-';
@@ -186,7 +212,7 @@ function renderTable(requests) {
 
     const tbody = document.getElementById('leaveTableBody');
     if (!requests.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No leave requests found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-3">No leave requests found</td></tr>';
         document.getElementById('loadingState').classList.add('d-none');
         document.getElementById('tableWrapper').classList.remove('d-none');
         return;
@@ -237,6 +263,7 @@ function renderTable(requests) {
                 <td style="max-width:180px;white-space:normal;">${r.reason || '-'}</td>
                 <td>${statusBadge[r.status] || r.status}</td>
                 <td>${fmtDate(r.created_at)}</td>
+                <td>${r.document ? `<button class="btn btn-outline-primary btn-xs" onclick="previewDocument('${r.document}')"><i class="ri-eye-line"></i> View</button>` : ''}</td>
                 <td class="d-print-none">${actions}</td>
             </tr>`;
         }).join('');
@@ -244,7 +271,7 @@ function renderTable(requests) {
     document.getElementById('loadingState').classList.add('d-none');
     document.getElementById('tableWrapper').classList.remove('d-none');
 
-    dtInstance = $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: 10 }] });
+    dtInstance = $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: [10, 11] }] });
 }
 
 function showHistory(id) {
@@ -331,6 +358,58 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     loadLeaveRequests('PENDING');
+});
+
+// File preview helpers
+function previewDocument(fileUrl) {
+    if (!fileUrl) return;
+    const ext = fileUrl.split('.').pop().toLowerCase();
+    let type = 'image';
+    if (ext === 'pdf') {
+        type = 'pdf';
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+        type = 'image';
+    } else {
+        window.open(fileUrl, '_blank');
+        return;
+    }
+    openModal(type, fileUrl);
+}
+
+function openModal(type, fileUrl) {
+    const container = document.getElementById('fileContainer');
+    scale = 1;
+    container.innerHTML = '';
+    document.getElementById('zoomControls').classList.add('d-none');
+    document.getElementById('fullscreenBtn').classList.add('d-none');
+
+    if (type === 'image') {
+        document.getElementById('zoomControls').classList.remove('d-none');
+        document.getElementById('fullscreenBtn').classList.remove('d-none');
+        container.innerHTML = `<img id="previewImage" src="${fileUrl}" class="img-fluid" style="transform:scale(1);transition:transform .15s ease;cursor:zoom-in;">`;
+        const img = document.getElementById('previewImage');
+        img.addEventListener('wheel', e => { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); });
+        img.addEventListener('dblclick', () => { scale = scale === 1 ? 2 : 1; applyZoom(); });
+    } else if (type === 'pdf') {
+        container.innerHTML = `<iframe src="${fileUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+    }
+    new bootstrap.Modal(document.getElementById('fileModal')).show();
+}
+
+function zoomIn()    { if (scale < 4) { scale += 0.2; applyZoom(); } }
+function zoomOut()   { if (scale > 0.5) { scale -= 0.2; applyZoom(); } }
+function resetZoom() { scale = 1; applyZoom(); }
+function applyZoom() { const img = document.getElementById('previewImage'); if (img) img.style.transform = `scale(${scale})`; }
+function toggleFullscreen() {
+    const mc = document.querySelector('#fileModal .modal-content');
+    if (!document.fullscreenElement) { mc.requestFullscreen(); isFullscreen = true; }
+    else { document.exitFullscreen(); isFullscreen = false; }
+}
+
+document.getElementById('fileModal').addEventListener('hidden.bs.modal', () => {
+    document.getElementById('fileContainer').innerHTML = '';
+    scale = 1;
+    if (document.fullscreenElement) document.exitFullscreen();
 });
 </script>
 {% endblock %}

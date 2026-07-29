@@ -63,7 +63,7 @@
                 <div id="tableWrapper" class="table-responsive d-none">
                     <table id="leaveTable" class="display table table-hover table-bordered table-head-bg-secondary">
                         <thead>
-                            <tr><th colspan="9" class="text-center bg-light"><strong>APPLIED LEAVE LIST</strong></th></tr>
+                            <tr><th colspan="8" class="text-center bg-light"><strong>APPLIED LEAVE LIST</strong></th></tr>
                             <tr class="text-center">
                                 <th>#</th>
                                 <th>Leave Type</th>
@@ -73,7 +73,7 @@
                                 <th>Reason</th>
                                 <th>Status</th>
                                 <th>Applied Date</th>
-                                <th>Action</th>
+                                
                             </tr>
                         </thead>
                         <tbody id="leaveTableBody"></tbody>
@@ -121,12 +121,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const tbody = document.getElementById('leaveTableBody');
         if (!requests.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No leave requests found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No leave requests found</td></tr>';
         } else {
             tbody.innerHTML = requests.map((r, i) => {
-                const cancelBtn = r.status === 'PENDING'
-                    ? `<button class="btn btn-danger btn-xs" onclick="cancelLeave(${r.id}, this)"><i class="ri-close-line"></i> Cancel</button>`
-                    : '-';
+
                 return `<tr class="text-center">
                     <td>${i+1}</td>
                     <td>${r.leave_type_name || '-'}</td>
@@ -136,13 +134,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <td style="max-width:180px;white-space:normal;text-align:left;">${r.reason || '-'}</td>
                     <td>${statusBadge[r.status] || r.status}</td>
                     <td>${fmtDate(r.created_at)}</td>
-                    <td>${cancelBtn}</td>
+                    
                 </tr>`;
             }).join('');
         }
 
         document.getElementById('tableWrapper').classList.remove('d-none');
-        $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: 8 }] });
+        $('#leaveTable').DataTable({ pageLength: 10, destroy: true});
 
     } catch(e) {
         document.getElementById('loadingState').classList.add('d-none');

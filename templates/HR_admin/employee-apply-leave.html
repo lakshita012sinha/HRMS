@@ -43,7 +43,7 @@
             <div class="card-header">
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-4 col-md-6 col-sm-12">
-                        <label class="form-label">Select Employee</label>
+                        <label class="form-label">Select Employee<i class="ri-asterisk"></i></label>
                         <select class="form-select" id="empSelect">
                             <option value="">-- Select Employee --</option>
                         </select>
@@ -110,17 +110,17 @@
                         </div>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Leave Type</label>
+                        <label class="form-label">Leave Type<i class="ri-asterisk"></i></label>
                         <select id="leaveType" class="form-select">
                             <option value="">Select Leave Type</option>
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Leave From</label>
+                        <label class="form-label">Leave From<i class="ri-asterisk"></i></label>
                         <input type="date" id="leaveStart" class="form-control">
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Leave Upto</label>
+                        <label class="form-label">Leave Upto<i class="ri-asterisk"></i></label>
                         <input type="date" id="leaveEnd" class="form-control">
                     </div>
                     <div class="mb-2">
@@ -128,7 +128,7 @@
                         <input type="file" id="leaveFile" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Leave Reason</label>
+                        <label class="form-label">Leave Reason<i class="ri-asterisk"></i></label>
                         <textarea id="leaveReason" class="form-control" rows="3" placeholder="Enter leave reason"></textarea>
                     </div>
                     <button type="button" class="btn btn-primary btn-sm" id="submitLeaveBtn">
@@ -278,13 +278,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const payload = {
-            employee_id: parseInt(selectedEmpId),
-            leave_type:  parseInt(leaveTypeId),
-            start_date:  start,
-            end_date:    end,
-            reason:      reason
-        };
+        const formData = new FormData();
+        if (selectedEmpId) {
+            formData.append('employee_id', selectedEmpId);
+        }
+        formData.append('leave_type', leaveTypeId);
+        formData.append('start_date', start);
+        formData.append('end_date', end);
+        formData.append('reason', reason);
+        const fileEl = document.getElementById('leaveFile');
+        if (fileEl && fileEl.files[0]) {
+            formData.append('document', fileEl.files[0]);
+        }
 
         this.disabled = true;
         this.innerHTML = 'Submitting...';
@@ -292,8 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await fetch('/api/leave/apply-leave/', {
                 method: 'POST',
-                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers: { 'Authorization': 'Token ' + token },
+                body: formData
             });
             let data;
             const text = await res.text();

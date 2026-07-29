@@ -210,7 +210,8 @@ class ApplyLeaveView(APIView):
             end_date=end_date,
             total_days=total_days,
             reason=reason,
-            status='PENDING_MANAGER'
+            status='PENDING_MANAGER',
+            document=request.FILES.get('document')
         )
 
         # Notify reporting manager(s) and HR immediately

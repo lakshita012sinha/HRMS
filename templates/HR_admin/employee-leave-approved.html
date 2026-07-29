@@ -123,7 +123,7 @@
                     <table id="leaveTable" class="display table table-hover table-bordered table-head-bg-secondary">
                         <thead>
                             <tr>
-                                <th colspan="11" class="text-center bg-light"><strong id="tableTitle">PENDING LEAVE REQUESTS</strong></th>
+                                <th colspan="12" class="text-center bg-light"><strong id="tableTitle">PENDING LEAVE REQUESTS</strong></th>
                             </tr>
                             <tr class="text-center">
                                 <th>#</th>
@@ -136,6 +136,7 @@
                                 <th>Reason</th>
                                 <th>Status</th>
                                 <th>Applied Date</th>
+                                <th>Document</th>
                                 <th class="d-print-none">Action</th>
                             </tr>
                         </thead>
@@ -219,7 +220,7 @@ function renderTable(requests) {
 
     const tbody = document.getElementById('leaveTableBody');
     if (!requests.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">No leave requests found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-3">No leave requests found</td></tr>';
     } else {
         tbody.innerHTML = requests.map((r, i) => {
             let actions = '';
@@ -283,6 +284,7 @@ function renderTable(requests) {
                 <td style="max-width:180px;white-space:normal;">${r.reason || '-'}</td>
                 <td>${statusBadge[r.status] || r.status}</td>
                 <td>${fmtDate(r.created_at)}</td>
+                <td>${r.document ? `<button class="btn btn-outline-primary btn-xs" onclick="previewDocument('${r.document}')"><i class="ri-eye-line"></i> View</button>` : ''}</td>
                 <td class="d-print-none">${actions}</td>
             </tr>`;
         }).join('');
@@ -291,7 +293,7 @@ function renderTable(requests) {
     document.getElementById('loadingState').classList.add('d-none');
     document.getElementById('tableWrapper').classList.remove('d-none');
 
-    dtInstance = $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: 10 }] });
+    dtInstance = $('#leaveTable').DataTable({ pageLength: 10, destroy: true, columnDefs: [{ orderable: false, targets: [10, 11] }] });
 }
 
 function showHistory(id) {
@@ -379,6 +381,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadLeaveRequests('PENDING');
 });
+
+// File preview helper
+function previewDocument(fileUrl) {
+    if (!fileUrl) return;
+    const ext = fileUrl.split('.').pop().toLowerCase();
+    let type = 'image';
+    if (ext === 'pdf') {
+        type = 'pdf';
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+        type = 'image';
+    } else {
+        window.open(fileUrl, '_blank');
+        return;
+    }
+    openModal(type, fileUrl);
+}
 
 // File preview
 function openModal(type, fileUrl) {

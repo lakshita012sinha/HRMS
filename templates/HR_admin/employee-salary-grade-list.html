@@ -33,13 +33,13 @@
                 <div class="table-responsive">
                     <table id="gradeTable" class="display table table-hover table-bordered">
                         <thead>
-                            <tr><th colspan="9" class="text-center bg-light"><strong>Employee Salary Grade List</strong></th></tr>
+                            <tr><th colspan="8" class="text-center bg-light"><strong>Employee Salary Grade List</strong></th></tr>
                             <tr class="text-center">
                                 <th>#</th><th>Employee Name</th><th>Grade</th><th>Designation</th><th>YEarly CTC</th>
-                                <th>Monthly CTC</th><th>Status</th><th>Added On</th><th>Action</th>
+                                <th>Monthly CTC</th><th>Status</th><th>Added On</th>
                             </tr>
                         </thead>
-                        <tbody id="gradeBody"><tr><td colspan="9" class="text-center text-muted py-3">Loading...</td></tr></tbody>
+                        <tbody id="gradeBody"><tr><td colspan="8" class="text-center text-muted py-3">Loading...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -128,8 +128,8 @@ async function loadGrades(){
                 '<td>'+yearly+'</td>'+
                 '<td>'+monthly.toFixed(2)+'</td>'+
                 '<td><span class="badge '+(g.is_active?'bg-success':'bg-secondary')+'">'+(g.is_active?'Active':'Inactive')+'</span></td>'+
-                '<td>'+fmtDate(g.created_at)+'</td>'+
-                '<td><a href="/hr/salary-grade-add/?id='+g.id+'"><button class="btn btn-success btn-xs">Edit</button></a></td></tr>';
+                '<td>'+fmtDate(g.created_at)+'</td>';
+                
         }).join('');}
         if(dtInst){dtInst.destroy();dtInst=null;}
         dtInst=$('#gradeTable').DataTable({pageLength:25,destroy:true,columnDefs:[{orderable:false,targets:[5,7]}]});
