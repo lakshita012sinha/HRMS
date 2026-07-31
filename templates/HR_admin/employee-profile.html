@@ -344,20 +344,18 @@
     async function loadEmployeeList() {
         try {
             let allEmployees = [];
-            let url = '/api/accounts/employees/';
+            let url = buildEmployeeApiUrl();
             while (url) {
                 const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
-                if (!res.ok) {
-                    console.error('Failed to fetch employees:', res.status, res.statusText);
-                    break;
-                }
+                if (!res.ok) { console.error('Failed to fetch employees:', res.status, res.statusText); break; }
                 const data = await res.json();
                 if (Array.isArray(data)) { allEmployees = data; url = null; }
                 else { allEmployees = allEmployees.concat(data.results || []); url = data.next || null; }
             }
             const sel = document.getElementById('empSelect');
+            sel.innerHTML = '<option value="">Select</option>';
             if (!allEmployees.length) {
-                sel.innerHTML = '<option value="">No employees found</option>';
+                sel.innerHTML = '<option value="">No employees found for selected branch</option>';
                 return;
             }
             allEmployees.forEach(emp => {
@@ -487,6 +485,16 @@
         document.getElementById('loadingState').classList.add('d-none');
         document.getElementById('profileContent').classList.remove('d-none');
     }
+
+    // Re-load employee list when global branch filter changes
+    window.addEventListener('hrms:branchChanged', function() {
+        document.getElementById('profileContent').classList.add('d-none');
+        loadEmployeeList();
+    });
+    window.addEventListener('hrms:deptChanged', function() {
+        document.getElementById('profileContent').classList.add('d-none');
+        loadEmployeeList();
+    });
 
     loadEmployeeList();
 </script>

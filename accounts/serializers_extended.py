@@ -13,15 +13,20 @@ class BranchSerializer(serializers.ModelSerializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    branch_name = serializers.CharField(source='branch.name', read_only=True, default=None)
+
     class Meta:
         model = Department
-        fields = '__all__'
+        fields = ['id', 'name', 'code', 'branch', 'branch_name', 'description', 'created_at']
 
 
 class DesignationSerializer(serializers.ModelSerializer):
+    branch_name = serializers.CharField(source='branch.name', read_only=True, default=None)
+    department_name = serializers.CharField(source='department.name', read_only=True, default=None)
+
     class Meta:
         model = Designation
-        fields = '__all__'
+        fields = ['id', 'name', 'code', 'branch', 'branch_name', 'department', 'department_name', 'description', 'created_at']
 
 
 class EmergencyContactSerializer(serializers.ModelSerializer):

@@ -429,6 +429,12 @@ class MonthlyAttendanceView(APIView):
         # HR/Admin see all employees; others see only themselves
         if is_hr:
             employees = User.objects.filter(is_active=True).exclude(role__name__in=['ADMIN'])
+            # Branch-wise segregation: filter by branch query param if provided
+            branch_id = request.query_params.get('branch')
+            if branch_id:
+                employees = employees.filter(
+                    employee_profile__employment_details__branch_id=branch_id
+                )
         else:
             employees = User.objects.filter(id=request.user.id)
 

@@ -92,6 +92,7 @@
                                 </ul>
                             </div>
                         </li>
+
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#employeeService">
                                 <i class="ri-contacts-book-2-line"></i>
@@ -199,26 +200,24 @@
                     <div class="container-fluid">
 
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-                            <li class="nav-item topbar-user dropdown hidden-caret" title="Branch">
+                        <li class="nav-item topbar-user dropdown hidden-caret" title="Branch">
                                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                                     aria-expanded="false">
                                     <small class="profile-username">
                                         <small class="text-warning"><i class="ri-shape-line"
                                                 style="font-size:20px;"></i></small>
-                                        <span class="fw-bold text-warning" id="navBranch">Branch</span>
+                                        <span class="fw-bold text-warning" id="navBranch">All Branches</span>
                                     </small>
                                 </a>
                                 <div class="dropdown-menu quick-actions animated fadeIn quick-actions-warning">
-                                    <div class="quick-actions-header"><span class="title mb-1">Branch</span></div>
+                                    <div class="quick-actions-header"><span class="title mb-1">Filter by Branch</span></div>
                                     <div class="quick-actions-scroll scrollbar-outer">
                                         <div class="quick-actions-items">
                                             <div class="row m-0">
                                                 <div class="input-group my-2">
                                                     <span class="px-2 py-2">Branch: </span>
-                                                    <select class="form-select form-control-sm" name="branch"
-                                                        id="inputGroupSelect1">
-                                                        <option value="">Rajasthan</option>
-                                                        <option value="">Bihar</option>
+                                                    <select class="form-select form-control-sm" id="globalBranchSelect">
+                                                        <option value="">All Branches</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -232,20 +231,18 @@
                                     <small class="profile-username">
                                         <small class="text-info"><i class="ri-building-4-line"
                                                 style="font-size:20px;"></i></small>
-                                        <span class="fw-bold text-info" id="navDept">Department</span>
+                                        <span class="fw-bold text-info" id="navDept">All Departments</span>
                                     </small>
                                 </a>
                                 <div class="dropdown-menu quick-actions animated fadeIn quick-actions-info">
-                                    <div class="quick-actions-header"><span class="title mb-1">Department</span></div>
+                                    <div class="quick-actions-header"><span class="title mb-1">Filter by Department</span></div>
                                     <div class="quick-actions-scroll scrollbar-outer">
                                         <div class="quick-actions-items">
                                             <div class="row m-0">
                                                 <div class="input-group my-2">
                                                     <span class="px-2 py-2">Department: </span>
-                                                    <select class="form-select form-control-sm" name="department"
-                                                        id="inputGroupSelect02">
-                                                        <option value="">Rajasthan ULB</option>
-                                                        <option value="">Bihar ULB</option>
+                                                    <select class="form-select form-control-sm" id="globalDeptSelect">
+                                                        <option value="">All Departments</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -432,7 +429,165 @@
         document.getElementById('logoutIcon').addEventListener('click', function (e) { e.preventDefault(); doLogout(); });
     </script>
     <script src="{% static 'js/inactivity-logout.js' %}"></script>
+
+    <!-- ===== GLOBAL BRANCH HELPER FUNCTIONS ===== -->
+    <script>
+    /**
+     * Returns the currently selected branch ID from localStorage, or empty string.
+     */
+    function getActiveBranchId() {
+        try {
+            const b = JSON.parse(localStorage.getItem('hrms_selected_branch') || 'null');
+            return b && b.id ? String(b.id) : '';
+        } catch(e) { return ''; }
+    }
+
+    /**
+     * Returns the currently selected department ID, or empty string.
+     */
+    function getActiveDeptId() {
+        try {
+            const d = JSON.parse(localStorage.getItem('hrms_selected_department') || 'null');
+            return d && d.id ? String(d.id) : '';
+        } catch(e) { return ''; }
+    }
+
+    /**
+     * Builds the /api/accounts/employees/ URL with branch (and optionally dept) query params
+     * applied from the current global filter state.
+     * Extra params can be passed as an object e.g. {search: 'foo'}
+     */
+    function buildEmployeeApiUrl(extraParams) {
+        const params = new URLSearchParams();
+        const branchId = getActiveBranchId();
+        const deptId   = getActiveDeptId();
+        if (branchId) params.set('branch', branchId);
+        if (deptId)   params.set('department', deptId);
+        if (extraParams) {
+            Object.entries(extraParams).forEach(([k, v]) => { if (v) params.set(k, v); });
+        }
+        const qs = params.toString();
+        return '/api/accounts/employees/' + (qs ? '?' + qs : '');
+    }
+    </script>
+
     {% block extra_js %}{% endblock %}
+
+    <!-- ===== GLOBAL BRANCH / DEPARTMENT FILTER ===== -->
+    <script>
+    (function () {
+        const _token = localStorage.getItem('authToken');
+        if (!_token) return;
+        const _headers = { 'Authorization': 'Token ' + _token };
+
+        // Keys used across all pages
+        const BRANCH_KEY = 'hrms_selected_branch';     // stores {id, name}
+        const DEPT_KEY   = 'hrms_selected_department'; // stores {id, name}
+
+        const branchSel = document.getElementById('globalBranchSelect');
+        const deptSel   = document.getElementById('globalDeptSelect');
+        const navBranch = document.getElementById('navBranch');
+        const navDept   = document.getElementById('navDept');
+
+        function applyBranchLabel() {
+            try {
+                const b = JSON.parse(localStorage.getItem(BRANCH_KEY) || 'null');
+                navBranch.textContent = b ? b.name : 'All Branches';
+            } catch(e) { navBranch.textContent = 'All Branches'; }
+        }
+        function applyDeptLabel() {
+            try {
+                const d = JSON.parse(localStorage.getItem(DEPT_KEY) || 'null');
+                navDept.textContent = d ? d.name : 'All Departments';
+            } catch(e) { navDept.textContent = 'All Departments'; }
+        }
+
+        // Generic helper: fetch all pages from a paginated endpoint
+        async function _fetchAllPages(url) {
+            let results = [], next = url;
+            while (next) {
+                const res = await fetch(next, { headers: _headers });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (Array.isArray(data)) { results = results.concat(data); next = null; }
+                else { results = results.concat(data.results || []); next = data.next || null; }
+            }
+            return results;
+        }
+
+        // Load branches into global select
+        async function loadGlobalBranches() {
+            try {
+                const branches = await _fetchAllPages('/api/accounts/branches/');
+                branches.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.id;
+                    opt.textContent = b.name;
+                    branchSel.appendChild(opt);
+                });
+                // Restore saved selection
+                const saved = JSON.parse(localStorage.getItem(BRANCH_KEY) || 'null');
+                if (saved) branchSel.value = saved.id;
+                applyBranchLabel();
+                // Load departments for saved branch
+                await loadGlobalDepts(saved ? saved.id : null);
+            } catch(e) {}
+        }
+
+        // Load departments — filtered by branch if provided
+        async function loadGlobalDepts(branchId) {
+            const url = branchId
+                ? `/api/accounts/departments/?branch=${branchId}`
+                : '/api/accounts/departments/';
+            try {
+                const depts = await _fetchAllPages(url);
+                deptSel.innerHTML = '<option value="">All Departments</option>';
+                depts.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.name;
+                    deptSel.appendChild(opt);
+                });
+                const savedDept = JSON.parse(localStorage.getItem(DEPT_KEY) || 'null');
+                if (savedDept) deptSel.value = savedDept.id;
+                applyDeptLabel();
+            } catch(e) {}
+        }
+
+        // Branch selection change
+        branchSel.addEventListener('change', async function () {
+            const id = this.value;
+            const name = id ? this.options[this.selectedIndex].textContent : null;
+            if (id) {
+                localStorage.setItem(BRANCH_KEY, JSON.stringify({ id, name }));
+            } else {
+                localStorage.removeItem(BRANCH_KEY);
+            }
+            // Clear dept filter when branch changes
+            localStorage.removeItem(DEPT_KEY);
+            applyBranchLabel();
+            await loadGlobalDepts(id || null);
+            // Dispatch event so current page can react (e.g. employee-list)
+            window.dispatchEvent(new CustomEvent('hrms:branchChanged', { detail: { branchId: id, branchName: name } }));
+        });
+
+        // Department selection change
+        deptSel.addEventListener('change', function () {
+            const id = this.value;
+            const name = id ? this.options[this.selectedIndex].textContent : null;
+            if (id) {
+                localStorage.setItem(DEPT_KEY, JSON.stringify({ id, name }));
+            } else {
+                localStorage.removeItem(DEPT_KEY);
+            }
+            applyDeptLabel();
+            window.dispatchEvent(new CustomEvent('hrms:deptChanged', { detail: { deptId: id, deptName: name } }));
+        });
+
+        // Init
+        loadGlobalBranches();
+    })();
+    </script>
 </body>
 
 </html>

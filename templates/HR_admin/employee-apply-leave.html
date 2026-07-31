@@ -167,7 +167,7 @@ function showAlert(container, msg, type='danger') {
 
 async function loadEmployees() {
     try {
-        let all = [], url = '/api/accounts/employees/';
+        let all = [], url = buildEmployeeApiUrl();
         while (url) {
             const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
             if (!res.ok) break;
@@ -176,6 +176,7 @@ async function loadEmployees() {
             else { all = all.concat(data.results || []); url = data.next || null; }
         }
         const sel = document.getElementById('empSelect');
+        sel.innerHTML = '<option value="">-- Select Employee --</option>';
         all.forEach(emp => {
             const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
             sel.innerHTML += `<option value="${emp.id}" data-name="${name}">${name} (${emp.user_id})</option>`;
@@ -349,6 +350,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadEmployees();
     loadLeaveTypes();
+});
+
+// Reload employee list when global branch filter changes
+window.addEventListener('hrms:branchChanged', function() {
+    selectedEmpId = null;
+    document.getElementById('leaveSummaryBody').innerHTML =
+        '<tr><td colspan="4" class="text-center text-muted">Select an employee to view leave summary</td></tr>';
+    if (calendar) calendar.removeAllEvents();
+    loadEmployees();
+});
+window.addEventListener('hrms:deptChanged', function() {
+    selectedEmpId = null;
+    document.getElementById('leaveSummaryBody').innerHTML =
+        '<tr><td colspan="4" class="text-center text-muted">Select an employee to view leave summary</td></tr>';
+    if (calendar) calendar.removeAllEvents();
+    loadEmployees();
 });
 </script>
 {% endblock %}

@@ -231,9 +231,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        const res = await fetch('/api/accounts/employees/', {
-            headers: { 'Authorization': 'Token ' + token }
-        });
+        const url = buildEmployeeApiUrl();
+        const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
         if (res.ok) {
             const data = await res.json();
             const count = Array.isArray(data) ? data.length : (data.count || (data.results && data.results.length) || 0);
@@ -278,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // ── Birthdays ─────────────────────────────────────────────────────────────
     try {
-        const res = await fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + token } });
+        const res = await fetch(buildEmployeeApiUrl(), { headers: { 'Authorization': 'Token ' + token } });
         const data = res.ok ? await res.json() : [];
         const employees = Array.isArray(data) ? data : (data.results || []);
 
@@ -321,5 +320,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('monthBirthdayList').innerHTML  = monthBdays.length  ? monthBdays.join('')  : noData;
     } catch(e) { console.error(e); }
 });
+
+// Re-load dashboard stats when global branch filter changes
+window.addEventListener('hrms:branchChanged', function() { location.reload(); });
+window.addEventListener('hrms:deptChanged',   function() { location.reload(); });
 </script>
 {% endblock %}

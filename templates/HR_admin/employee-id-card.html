@@ -272,7 +272,7 @@
 
     async function loadEmployeeList() {
         try {
-            let all = [], url = '/api/accounts/employees/';
+            let all = [], url = buildEmployeeApiUrl();
             while (url) {
                 const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
                 if (!res.ok) break;
@@ -281,7 +281,8 @@
                 else { all = all.concat(data.results || []); url = data.next || null; }
             }
             const sel = document.getElementById('empSelect');
-            if (!all.length) { sel.innerHTML = '<option value="">No employees found</option>'; return; }
+            sel.innerHTML = '<option value="">Select</option>';
+            if (!all.length) { sel.innerHTML = '<option value="">No employees found for selected branch</option>'; return; }
             all.forEach(emp => {
                 const name = [(emp.first_name || ''), (emp.last_name || '')].join(' ').trim().toUpperCase();
                 const opt = document.createElement('option');
@@ -370,5 +371,15 @@
     }
 
     loadEmployeeList();
+
+    // Reload employee list when global branch filter changes
+    window.addEventListener('hrms:branchChanged', function() {
+        document.getElementById('cardContent').classList.add('d-none');
+        loadEmployeeList();
+    });
+    window.addEventListener('hrms:deptChanged', function() {
+        document.getElementById('cardContent').classList.add('d-none');
+        loadEmployeeList();
+    });
 </script>
 {% endblock %}

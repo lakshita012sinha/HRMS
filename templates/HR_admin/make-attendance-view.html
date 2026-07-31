@@ -152,7 +152,12 @@ async function loadAttendance() {
     document.getElementById('tableWrapper').classList.add('d-none');
 
     try {
-        const res = await fetch(`/api/attendance/monthly/?month=${month}&year=${year}`, {
+        // Append branch filter from global selection
+        const branchId = getActiveBranchId();
+        const params = new URLSearchParams({ month, year });
+        if (branchId) params.set('branch', branchId);
+
+        const res = await fetch(`/api/attendance/monthly/?${params.toString()}`, {
             headers: { 'Authorization': 'Token ' + token }
         });
         const text = await res.text();
@@ -295,6 +300,14 @@ document.getElementById('exportBtn').addEventListener('click', function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+});
+
+// When branch changes in navbar, re-load attendance for current month if loaded
+window.addEventListener('hrms:branchChanged', function() {
+    const wrapper = document.getElementById('tableWrapper');
+    if (wrapper && !wrapper.classList.contains('d-none')) {
+        loadAttendance();
+    }
 });
 </script>
 {% endblock %}

@@ -12,6 +12,10 @@
     #employeeTable_wrapper .dataTables_filter label { font-size: 0.875rem; }
     table.dataTable thead th { background: #f8f9fa; font-size: 0.82rem; }
     .table td { font-size: 0.82rem; vertical-align: middle; }
+    .filter-bar { background: #f8f9fa; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; }
+    .filter-bar .form-select { font-size: 0.85rem; }
+    .filter-bar label { font-size: 0.82rem; font-weight: 600; }
+    #activeBranchBadge { font-size: 0.78rem; }
 </style>
 {% endblock %}
 
@@ -32,33 +36,59 @@
         <div class="card">
             <div class="card-body">
 
-                <!-- Export button -->
-                <div class="d-print-none mb-3">
-                    <button class="btn btn-primary btn-sm" onclick="exportToExcel()">
-                        <i class="ri-download-2-line"></i> <strong>Export</strong>
-                    </button>
+                <!-- Branch / Department filter bar -->
+                <div class="filter-bar d-print-none d-flex flex-wrap align-items-end gap-3">
+                    <div>
+                        <label for="listBranchFilter">Branch</label>
+                        <select class="form-select form-select-sm" id="listBranchFilter" style="min-width:160px;">
+                            <option value="">All Branches</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="listDeptFilter">Department</label>
+                        <select class="form-select form-select-sm" id="listDeptFilter" style="min-width:180px;">
+                            <option value="">All Departments</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="listDesigFilter">Designation</label>
+                        <select class="form-select form-select-sm" id="listDesigFilter" style="min-width:180px;">
+                            <option value="">All Designations</option>
+                        </select>
+                    </div>
+                    <div class="ms-auto d-flex gap-2 align-items-end">
+                        <span id="activeBranchBadge" class="badge bg-warning text-dark d-none"></span>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">Clear Filters</button>
+                        <button class="btn btn-primary btn-sm" onclick="exportToExcel()">
+                            <i class="ri-download-2-line"></i> <strong>Export</strong>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="table-responsive" id="printableArea">
                     <table id="employeeTable" class="display table table-hover table-bordered w-100">
                         <thead>
                             <tr>
-                                <th colspan="9" class="text-center bg-light"><strong>Employees List</strong></th>
+                                <th colspan="10" class="text-center bg-light">
+                                    <strong>Employees List</strong>
+                                    <span id="tableFilterLabel" class="text-muted fw-normal ms-2" style="font-size:0.8rem;"></span>
+                                </th>
                             </tr>
                             <tr class="text-center">
                                 <th>#</th>
                                 <th>Employee Code</th>
                                 <th>Employee Name</th>
+                                <th>Branch</th>
+                                <th>Department</th>
                                 <th>Father Name</th>
                                 <th>Contact No.</th>
-                                <th>UID Number</th>
                                 <th>Reporting Officer</th>
                                 <th>Photo</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="employeeTableBody">
-                            <tr><td colspan="9" class="text-center text-muted py-4">Loading employees...</td></tr>
+                            <tr><td colspan="10" class="text-center text-muted py-4">Loading employees...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -74,24 +104,38 @@
 <script>
     let dtTable = null;
 
+    // ─── Build API URL with current filter state ───────────────────────────────
+    function buildEmployeeUrl() {
+        const branchId = document.getElementById('listBranchFilter').value;
+        const deptId   = document.getElementById('listDeptFilter').value;
+        const desigId  = document.getElementById('listDesigFilter').value;
+        const params   = new URLSearchParams();
+        if (branchId) params.set('branch', branchId);
+        if (deptId)   params.set('department', deptId);
+        if (desigId)  params.set('designation', desigId);
+        const qs = params.toString();
+        return '/api/accounts/employees/' + (qs ? '?' + qs : '');
+    }
+
+    // ─── Load employees with current filters ──────────────────────────────────
     async function loadEmployees() {
         const token = localStorage.getItem('authToken');
         if (!token) { window.location.href = '/login/'; return; }
 
+        const tbody = document.getElementById('employeeTableBody');
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">Loading...</td></tr>';
+
         try {
             let allEmployees = [];
-            let url = '/api/accounts/employees/';
+            let url = buildEmployeeUrl();
 
-            // Handle pagination — fetch all pages
             while (url) {
                 const res = await fetch(url, {
                     headers: { 'Authorization': 'Token ' + token }
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 const data = await res.json();
-
                 if (Array.isArray(data)) {
-                    // No pagination
                     allEmployees = data;
                     url = null;
                 } else {
@@ -100,12 +144,31 @@
                 }
             }
 
+            updateFilterLabel();
             renderTable(allEmployees);
         } catch (err) {
-            document.getElementById('employeeTableBody').innerHTML =
-                `<tr><td colspan="9" class="text-center text-danger py-3">
+            tbody.innerHTML =
+                `<tr><td colspan="10" class="text-center text-danger py-3">
                     <i class="ri-error-warning-line"></i> Error loading employees: ${err.message}
                 </td></tr>`;
+        }
+    }
+
+    function updateFilterLabel() {
+        const branchSel = document.getElementById('listBranchFilter');
+        const deptSel   = document.getElementById('listDeptFilter');
+        const badge     = document.getElementById('activeBranchBadge');
+        const label     = document.getElementById('tableFilterLabel');
+        const parts     = [];
+        if (branchSel.value) parts.push(branchSel.options[branchSel.selectedIndex].textContent);
+        if (deptSel.value)   parts.push(deptSel.options[deptSel.selectedIndex].textContent);
+        if (parts.length) {
+            badge.textContent = parts.join(' › ');
+            badge.classList.remove('d-none');
+            label.textContent = '— ' + parts.join(' › ');
+        } else {
+            badge.classList.add('d-none');
+            label.textContent = '';
         }
     }
 
@@ -113,7 +176,8 @@
         const tbody = document.getElementById('employeeTableBody');
 
         if (!employees.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No employees found. Register employees using Add New Employee.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No employees found for the selected filters.</td></tr>';
+            if (dtTable) { dtTable.destroy(); dtTable = null; }
             return;
         }
 
@@ -126,17 +190,19 @@
             const fullName   = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || '-';
             const fatherName = (profile.father_name   || '-').toUpperCase();
             const contact    = profile.contact_number || '-';
-            const uid        = profile.uid_number     || '-';
             const reporting  = employment.reporting_officer || '-';
+            const branch     = employment.branch      || '-';
+            const dept       = employment.department  || '-';
 
             return `
             <tr>
                 <td class="text-center">${i + 1}</td>
                 <td class="text-center">${emp.user_id || '-'}</td>
                 <td class="text-center">${fullName}</td>
+                <td class="text-center">${branch}</td>
+                <td class="text-center">${dept}</td>
                 <td class="text-center">${fatherName}</td>
                 <td class="text-center">${contact}</td>
-                <td class="text-center">${uid}</td>
                 <td class="text-center">${reporting}</td>
                 <td class="text-center">
                     <div class="avatar avatar-lg">
@@ -159,7 +225,7 @@
             pageLength: 50,
             lengthMenu: [10, 25, 50, 100],
             ordering: true,
-            columnDefs: [{ orderable: false, targets: [7, 8] }],
+            columnDefs: [{ orderable: false, targets: [8, 9] }],
             language: {
                 search: 'Search:',
                 lengthMenu: 'Show _MENU_ entries',
@@ -169,18 +235,30 @@
         });
     }
 
-    function viewEmployee(id) {
-        window.location.href = `/hr/employee-profile/${id}/`;
-    }
+    function viewEmployee(id) { window.location.href = `/hr/employee-profile/${id}/`; }
+    function editEmployee(id) { window.location.href = `/hr/employee-edit/${id}/`; }
 
-    function editEmployee(id) {
-        window.location.href = `/hr/employee-edit/${id}/`;
+    function clearFilters() {
+        document.getElementById('listBranchFilter').value = '';
+        document.getElementById('listDeptFilter').value = '';
+        document.getElementById('listDesigFilter').value = '';
+        localStorage.removeItem('hrms_selected_branch');
+        localStorage.removeItem('hrms_selected_department');
+        // Also sync global navbar selects
+        const g = document.getElementById('globalBranchSelect');
+        const gd = document.getElementById('globalDeptSelect');
+        if (g) g.value = '';
+        if (gd) gd.value = '';
+        const nb = document.getElementById('navBranch');
+        const nd = document.getElementById('navDept');
+        if (nb) nb.textContent = 'All Branches';
+        if (nd) nd.textContent = 'All Departments';
+        loadEmployees();
     }
 
     function exportToExcel() {
         if (!dtTable) return;
-        // Simple CSV export
-        const rows = [['#', 'Employee Code', 'Employee Name', 'Father Name', 'Contact No.', 'UID Number', 'Reporting Officer']];
+        const rows = [['#', 'Employee Code', 'Employee Name', 'Branch', 'Department', 'Father Name', 'Contact No.', 'Reporting Officer']];
         $('#employeeTable tbody tr').each(function(i, row) {
             const cells = $(row).find('td');
             if (cells.length > 1) {
@@ -192,6 +270,7 @@
                     $(cells[4]).text().trim(),
                     $(cells[5]).text().trim(),
                     $(cells[6]).text().trim(),
+                    $(cells[7]).text().trim(),
                 ]);
             }
         });
@@ -203,6 +282,156 @@
         a.click();
     }
 
-    loadEmployees();
+    // ─── Populate page-level filter dropdowns ─────────────────────────────────
+    async function initFilters() {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        const headers = { 'Authorization': 'Token ' + token };
+
+        // Branches
+        try {
+            const res = await fetch('/api/accounts/branches/', { headers });
+            if (res.ok) {
+                const data = await res.json();
+                const branches = data.results || data;
+                const sel = document.getElementById('listBranchFilter');
+                branches.forEach(b => {
+                    sel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+                });
+                // Restore from global localStorage
+                const saved = JSON.parse(localStorage.getItem('hrms_selected_branch') || 'null');
+                if (saved) sel.value = saved.id;
+            }
+        } catch(e) {}
+
+        // Departments (filtered by current branch)
+        await reloadDeptFilter();
+        // Designations
+        await reloadDesigFilter();
+
+        // Load employees with restored filters
+        loadEmployees();
+    }
+
+    async function reloadDeptFilter() {
+        const token = localStorage.getItem('authToken');
+        const headers = { 'Authorization': 'Token ' + token };
+        const branchId = document.getElementById('listBranchFilter').value;
+        const baseUrl = branchId
+            ? `/api/accounts/departments/?branch=${branchId}`
+            : '/api/accounts/departments/';
+        try {
+            // Fetch all pages
+            let depts = [], nextUrl = baseUrl;
+            while (nextUrl) {
+                const res = await fetch(nextUrl, { headers });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (Array.isArray(data)) { depts = depts.concat(data); nextUrl = null; }
+                else { depts = depts.concat(data.results || []); nextUrl = data.next || null; }
+            }
+            const sel = document.getElementById('listDeptFilter');
+            const curr = sel.value;
+            sel.innerHTML = '<option value="">All Departments</option>';
+            depts.forEach(d => {
+                sel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            });
+            if (curr) sel.value = curr;
+            const saved = JSON.parse(localStorage.getItem('hrms_selected_department') || 'null');
+            if (saved && !curr) sel.value = saved.id;
+        } catch(e) {}
+    }
+
+    async function reloadDesigFilter() {
+        const token = localStorage.getItem('authToken');
+        const headers = { 'Authorization': 'Token ' + token };
+        const branchId = document.getElementById('listBranchFilter').value;
+        const deptId   = document.getElementById('listDeptFilter').value;
+        const params   = new URLSearchParams();
+        if (branchId) params.set('branch', branchId);
+        if (deptId)   params.set('department', deptId);
+        const baseUrl = `/api/accounts/designations/?${params.toString()}`;
+        try {
+            // Fetch all pages
+            let desigs = [], nextUrl = baseUrl;
+            while (nextUrl) {
+                const res = await fetch(nextUrl, { headers });
+                if (!res.ok) break;
+                const data = await res.json();
+                if (Array.isArray(data)) { desigs = desigs.concat(data); nextUrl = null; }
+                else { desigs = desigs.concat(data.results || []); nextUrl = data.next || null; }
+            }
+            const sel = document.getElementById('listDesigFilter');
+            const curr = sel.value;
+            sel.innerHTML = '<option value="">All Designations</option>';
+            desigs.forEach(d => {
+                sel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            });
+            if (curr) sel.value = curr;
+        } catch(e) {}
+    }
+
+    // ─── Filter change handlers ────────────────────────────────────────────────
+    document.getElementById('listBranchFilter').addEventListener('change', async function () {
+        // Persist to global storage and sync navbar
+        const id = this.value;
+        const name = id ? this.options[this.selectedIndex].textContent : null;
+        if (id) {
+            localStorage.setItem('hrms_selected_branch', JSON.stringify({ id, name }));
+        } else {
+            localStorage.removeItem('hrms_selected_branch');
+        }
+        localStorage.removeItem('hrms_selected_department');
+        document.getElementById('listDeptFilter').value = '';
+        document.getElementById('listDesigFilter').value = '';
+        // Sync global navbar selects
+        const g = document.getElementById('globalBranchSelect');
+        if (g) { g.value = id; }
+        const nb = document.getElementById('navBranch');
+        if (nb) nb.textContent = name || 'All Branches';
+        await reloadDeptFilter();
+        await reloadDesigFilter();
+        loadEmployees();
+    });
+
+    document.getElementById('listDeptFilter').addEventListener('change', async function () {
+        const id = this.value;
+        const name = id ? this.options[this.selectedIndex].textContent : null;
+        if (id) {
+            localStorage.setItem('hrms_selected_department', JSON.stringify({ id, name }));
+        } else {
+            localStorage.removeItem('hrms_selected_department');
+        }
+        const gd = document.getElementById('globalDeptSelect');
+        if (gd) gd.value = id;
+        const nd = document.getElementById('navDept');
+        if (nd) nd.textContent = name || 'All Departments';
+        await reloadDesigFilter();
+        loadEmployees();
+    });
+
+    document.getElementById('listDesigFilter').addEventListener('change', function () {
+        loadEmployees();
+    });
+
+    // ─── React to global navbar branch/dept changes ───────────────────────────
+    window.addEventListener('hrms:branchChanged', async function (e) {
+        const { branchId } = e.detail;
+        document.getElementById('listBranchFilter').value = branchId || '';
+        document.getElementById('listDeptFilter').value = '';
+        document.getElementById('listDesigFilter').value = '';
+        await reloadDeptFilter();
+        await reloadDesigFilter();
+        loadEmployees();
+    });
+
+    window.addEventListener('hrms:deptChanged', function (e) {
+        const { deptId } = e.detail;
+        document.getElementById('listDeptFilter').value = deptId || '';
+        reloadDesigFilter().then(loadEmployees);
+    });
+
+    // Init on page load
+    initFilters();
 </script>
 {% endblock %}

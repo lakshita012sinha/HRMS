@@ -226,7 +226,7 @@ function showAlert(msg, type='danger') {
 // Load employees into dropdown
 async function loadEmployees() {
     try {
-        let all = [], url = '/api/accounts/employees/';
+        let all = [], url = buildEmployeeApiUrl();
         while (url) {
             const res = await fetch(url, { headers: { 'Authorization': 'Token ' + token } });
             if (!res.ok) break;
@@ -235,6 +235,7 @@ async function loadEmployees() {
             else { all = all.concat(data.results || []); url = data.next || null; }
         }
         const sel = document.getElementById('empSelect');
+        sel.innerHTML = '<option value="">-- Select Employee --</option>';
         all.forEach(emp => {
             const name = [(emp.first_name||''),(emp.last_name||'')].join(' ').trim().toUpperCase();
             sel.innerHTML += `<option value="${emp.id}" data-emp='${JSON.stringify(emp)}'>${name} (${emp.user_id})</option>`;
@@ -306,5 +307,9 @@ document.getElementById('submitBtn').addEventListener('click', async function() 
 });
 
 document.addEventListener('DOMContentLoaded', loadEmployees);
+
+// Reload on branch change
+window.addEventListener('hrms:branchChanged', loadEmployees);
+window.addEventListener('hrms:deptChanged',   loadEmployees);
 </script>
 {% endblock %}

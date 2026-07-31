@@ -144,7 +144,7 @@
   async function loadEmployees() {
     const token = localStorage.getItem('authToken');
     const headers = token ? { 'Authorization': 'Token ' + token } : {};
-    let url = '/api/accounts/employees/';
+    let url = buildEmployeeApiUrl();
     allEmployeesData = [];
 
     try {
@@ -311,6 +311,10 @@
       e.preventDefault();
       applyFilters();
     });
+
+    // Reload on branch change
+    window.addEventListener('hrms:branchChanged', loadEmployees);
+    window.addEventListener('hrms:deptChanged',   loadEmployees);
   });
 </script>
 {% endblock %}

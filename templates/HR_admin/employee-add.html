@@ -465,8 +465,6 @@
                     <label for="branch">Branch<span class="text-danger">*</span></label>
                     <select class="form-select" id="branch" name="branch" required>
                       <option value="">Select Branch</option>
-                      <option value="">Rajasthan</option>
-                      <option value="">Bihar</option>
                     </select>
                   </div>
                 </div>
@@ -475,8 +473,6 @@
                     <label for="department">Department<span class="text-danger">*</span></label>
                     <select class="form-select" id="department" name="department" required>
                       <option value="">Select Department</option>
-                      <option value="">Rajasthan ULB</option>
-                      <option value="">Bihar ULB</option>
                     </select>
                   </div>
                 </div>
@@ -485,9 +481,6 @@
                     <label for="designation">Designation<span class="text-danger">*</span></label>
                     <select class="form-select" id="designation" name="designation" required>
                       <option value="">Select Designation</option>
-                      <option value="">Field Officer</option>
-                      <option value="">Team Leader</option>
-                      <option value="">Manager</option>
                     </select>
                   </div>
                 </div>
@@ -1238,7 +1231,9 @@
       ['empPassword', 'Password', 'tab-basic'],
       ['empPassword2', 'Confirm Password', 'tab-basic'],
 
-      ['designationText', 'Branch Department Designation', 'tab-professional'],
+      ['branch', 'Branch', 'tab-professional'],
+      ['department', 'Department', 'tab-professional'],
+      ['designation', 'Designation', 'tab-professional'],
       ['grade', 'Grade', 'tab-professional'],
       ['employmentType', 'Employment Type', 'tab-professional'],
       ['reportingOfficer', 'Reporting Officer', 'tab-professional'],
@@ -1302,29 +1297,9 @@
     if (!employeeRoleId) {
       alert('Could not load roles from server. Please refresh and try again.'); return;
     }
-    const bddVal = g('designationText').trim();
-    let branchVal = '';
-    let departmentVal = '';
-    let designationVal = '';
-
-    if (bddVal) {
-      let parts = [];
-      if (bddVal.includes('|')) {
-        parts = bddVal.split('|');
-      } else if (bddVal.includes('/')) {
-        parts = bddVal.split('/');
-      } else if (bddVal.includes(' - ')) {
-        parts = bddVal.split(' - ');
-      }
-
-      if (parts.length >= 3) {
-        branchVal = (parts[0] || '').trim();
-        departmentVal = (parts[1] || '').trim();
-        designationVal = (parts[2] || '').trim();
-      } else {
-        designationVal = bddVal;
-      }
-    }
+    const branchVal = g('branch') ? parseInt(g('branch')) : null;
+    const departmentVal = g('department') ? parseInt(g('department')) : null;
+    const designationVal = g('designation') ? parseInt(g('designation')) : null;
 
     const empName = g('employeeName').trim();
     const nameParts = empName.split(/\s+/);
@@ -1479,9 +1454,10 @@
 
     const [rolesRes, employeesRes] = await Promise.all([
       fetch('/api/accounts/roles/', { headers }),
-      fetch('/api/accounts/users/', { headers }),   // all users for reporting officer dropdown
+      fetch('/api/accounts/users/', { headers }),
     ]);
 
+    // Roles → capture EMPLOYEE role id
     if (rolesRes.ok) {
       const data = await rolesRes.json();
       const results = data.results || data;
@@ -1489,9 +1465,9 @@
       if (empRole) employeeRoleId = empRole.id;
     }
 
+    // Reporting officer dropdown
     if (employeesRes.ok) {
       const data = await employeesRes.json();
-      // Use all pages
       let allUsers = data.results || data;
       let nextUrl = data.next || null;
       while (nextUrl) {
@@ -1506,7 +1482,87 @@
         sel.innerHTML += `<option value="${u.id}">${name} - ${u.user_id}</option>`;
       });
     }
+
+    // Branch dropdown — fetch ALL pages
+    const branches = await fetchAllPages('/api/accounts/branches/', headers);
+    const branchSel = document.getElementById('branch');
+    branches.forEach(b => {
+      branchSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+    });
+
+    // Load all departments and designations initially (no branch filter)
+    await loadDepartments(null);
   }
+
+  // Helper: fetch ALL pages from a paginated API endpoint
+  async function fetchAllPages(url, headers) {
+    let results = [];
+    let nextUrl = url;
+    while (nextUrl) {
+      const res = await fetch(nextUrl, { headers });
+      if (!res.ok) break;
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        results = results.concat(data);
+        nextUrl = null;
+      } else {
+        results = results.concat(data.results || []);
+        nextUrl = data.next || null;
+      }
+    }
+    return results;
+  }
+
+  // Load departments — pass branchId to filter, or null for all
+  async function loadDepartments(branchId) {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': 'Token ' + token };
+    const url = branchId
+      ? `/api/accounts/departments/?branch=${branchId}`
+      : '/api/accounts/departments/';
+    const deptSel = document.getElementById('department');
+    const currentDept = deptSel.value;
+    deptSel.innerHTML = '<option value="">Select Department</option>';
+    const depts = await fetchAllPages(url, headers);
+    depts.forEach(d => {
+      deptSel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+    });
+    // Restore previous selection if still present
+    if (currentDept) deptSel.value = currentDept;
+    // When departments change, reload designations
+    await loadDesignations(branchId, deptSel.value || null);
+  }
+
+  // Load designations — filter by branch and/or department, fetching ALL pages
+  async function loadDesignations(branchId, deptId) {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': 'Token ' + token };
+    const params = new URLSearchParams();
+    if (branchId) params.set('branch', branchId);
+    if (deptId) params.set('department', deptId);
+    const url = `/api/accounts/designations/?${params.toString()}`;
+    const desigSel = document.getElementById('designation');
+    const currentDesig = desigSel.value;
+    desigSel.innerHTML = '<option value="">Select Designation</option>';
+    const desigs = await fetchAllPages(url, headers);
+    desigs.forEach(d => {
+      desigSel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+    });
+    if (currentDesig) desigSel.value = currentDesig;
+  }
+
+  // Cascade: branch change → reload departments (branch-filtered) + designations
+  document.getElementById('branch').addEventListener('change', async function () {
+    const branchId = this.value || null;
+    await loadDepartments(branchId);
+  });
+
+  // Cascade: department change → reload designations (dept-filtered)
+  document.getElementById('department').addEventListener('change', async function () {
+    const branchId = document.getElementById('branch').value || null;
+    const deptId = this.value || null;
+    await loadDesignations(branchId, deptId);
+  });
 
   loadDropdowns();
 </script>

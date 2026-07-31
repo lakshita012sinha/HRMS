@@ -23,31 +23,49 @@ class Branch(models.Model):
 
 
 class Department(models.Model):
-    """Department model"""
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=20, unique=True)
+    """Department model — optionally scoped to a branch"""
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20)
+    branch = models.ForeignKey(
+        'Branch', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='departments', help_text="Leave blank for cross-branch department"
+    )
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
+        if self.branch:
+            return f"{self.name} ({self.branch.name})"
         return self.name
-    
+
     class Meta:
         db_table = 'departments'
+        unique_together = [('name', 'branch')]
 
 
 class Designation(models.Model):
-    """Designation model"""
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=20, unique=True)
+    """Designation model — optionally scoped to a branch/department"""
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20)
+    branch = models.ForeignKey(
+        'Branch', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='designations', help_text="Leave blank for cross-branch designation"
+    )
+    department = models.ForeignKey(
+        'Department', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='designations', help_text="Leave blank for cross-department designation"
+    )
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
+        if self.branch:
+            return f"{self.name} ({self.branch.name})"
         return self.name
-    
+
     class Meta:
         db_table = 'designations'
+        unique_together = [('name', 'branch')]
 
 
 class EmployeeProfile(models.Model):

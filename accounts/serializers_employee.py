@@ -132,42 +132,34 @@ class CompleteEmployeeRegistrationSerializer(serializers.Serializer):
         
         branch_val = validated_data.pop('branch', None)
         branch_obj = None
-        if branch_val:
+        if branch_val is not None:
             branch_val_str = str(branch_val).strip()
             if branch_val_str:
                 if branch_val_str.isdigit():
                     branch_obj = Branch.objects.filter(id=int(branch_val_str)).first()
                 if not branch_obj:
-                    branch_obj, _ = Branch.objects.get_or_create(
-                        name=branch_val_str,
-                        defaults={'code': branch_val_str[:20].upper()}
-                    )
+                    # fallback: match by name
+                    branch_obj = Branch.objects.filter(name__iexact=branch_val_str).first()
 
         dept_val = validated_data.pop('department', None)
         dept_obj = None
-        if dept_val:
+        if dept_val is not None:
             dept_val_str = str(dept_val).strip()
             if dept_val_str:
                 if dept_val_str.isdigit():
                     dept_obj = Department.objects.filter(id=int(dept_val_str)).first()
                 if not dept_obj:
-                    dept_obj, _ = Department.objects.get_or_create(
-                        name=dept_val_str,
-                        defaults={'code': dept_val_str[:20].upper()}
-                    )
+                    dept_obj = Department.objects.filter(name__iexact=dept_val_str).first()
 
         desig_val = validated_data.pop('designation', None)
         desig_obj = None
-        if desig_val:
+        if desig_val is not None:
             desig_val_str = str(desig_val).strip()
             if desig_val_str:
                 if desig_val_str.isdigit():
                     desig_obj = Designation.objects.filter(id=int(desig_val_str)).first()
                 if not desig_obj:
-                    desig_obj, _ = Designation.objects.get_or_create(
-                        name=desig_val_str,
-                        defaults={'code': desig_val_str[:20].upper()}
-                    )
+                    desig_obj = Designation.objects.filter(name__iexact=desig_val_str).first()
 
         employment_data = {
             'branch': branch_obj,
@@ -337,13 +329,17 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                 reporting = f"{ro.first_name} {ro.last_name} - {ro.user_id}".strip()
             return {
                 'branch': emp.branch.name if emp.branch else None,
+                'branch_id': emp.branch.id if emp.branch else None,
                 'department': emp.department.name if emp.department else None,
+                'department_id': emp.department.id if emp.department else None,
                 'designation': emp.designation.name if emp.designation else None,
+                'designation_id': emp.designation.id if emp.designation else None,
                 'employment_type': emp.employment_type,
                 'effective_date': emp.effective_date,
                 'grade': emp.grade,
                 'deputed_project': emp.deputed_project,
                 'reporting_officer': reporting,
+                'reporting_officer_id': emp.reporting_officer.id if emp.reporting_officer else None,
             }
         except:
             return None

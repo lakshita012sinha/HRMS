@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import logout
+from django.db import models as dj_models
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -188,13 +189,47 @@ class BranchListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
 class DepartmentListCreateView(generics.ListCreateAPIView):
+    serializer_class = DepartmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Department.objects.all().order_by('name')
+        branch = self.request.query_params.get('branch')
+        if branch:
+            # Return departments that belong to this branch OR are cross-branch (branch=None)
+            qs = qs.filter(dj_models.Q(branch_id=branch) | dj_models.Q(branch__isnull=True))
+        return qs
+
+
+class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class DesignationListCreateView(generics.ListCreateAPIView):
+    serializer_class = DesignationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Designation.objects.all().order_by('name')
+        branch = self.request.query_params.get('branch')
+        department = self.request.query_params.get('department')
+        if branch:
+            qs = qs.filter(dj_models.Q(branch_id=branch) | dj_models.Q(branch__isnull=True))
+        if department:
+            qs = qs.filter(dj_models.Q(department_id=department) | dj_models.Q(department__isnull=True))
+        return qs
+
+
+class DesignationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Designation.objects.all()
     serializer_class = DesignationSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -218,6 +253,16 @@ class EmployeeListAPIView(generics.ListAPIView):
                 Q(last_name__icontains=search) |
                 Q(user_id__icontains=search)
             )
+        # Branch-wise segregation
+        branch = self.request.query_params.get('branch')
+        if branch:
+            qs = qs.filter(employee_profile__employment_details__branch_id=branch)
+        department = self.request.query_params.get('department')
+        if department:
+            qs = qs.filter(employee_profile__employment_details__department_id=department)
+        designation = self.request.query_params.get('designation')
+        if designation:
+            qs = qs.filter(employee_profile__employment_details__designation_id=designation)
         return qs
 
 

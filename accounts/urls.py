@@ -5,9 +5,12 @@ from .views import (
     UserProfileView, UserListView, UserDetailView,
     RoleListCreateView, RoleDetailView,
     PermissionListCreateView, PermissionDetailView,
-    BranchListCreateView, DepartmentListCreateView, DesignationListCreateView,
+    BranchListCreateView, BranchDetailView,
+    DepartmentListCreateView, DepartmentDetailView,
+    DesignationListCreateView, DesignationDetailView,
     EmployeeDetailAPIView, EmployeeListAPIView, PastEmployeeListView, PastEmployeeDetailView,
-    EmployeeDocumentUploadView, EmployeePhotoUploadView, EmployeeSoftDeleteView, PromotionListCreateView, IncrementListCreateView, TransferListCreateView
+    EmployeeDocumentUploadView, EmployeePhotoUploadView, EmployeeSoftDeleteView,
+    PromotionListCreateView, IncrementListCreateView, TransferListCreateView
 )
 
 urlpatterns = [
@@ -45,8 +48,11 @@ urlpatterns = [
     
     # Organization structure
     path('branches/', BranchListCreateView.as_view(), name='branch-list'),
+    path('branches/<int:pk>/', BranchDetailView.as_view(), name='branch-detail'),
     path('departments/', DepartmentListCreateView.as_view(), name='department-list'),
+    path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='department-detail'),
     path('designations/', DesignationListCreateView.as_view(), name='designation-list'),
+    path('designations/<int:pk>/', DesignationDetailView.as_view(), name='designation-detail'),
     path('promotions/', PromotionListCreateView.as_view(), name='promotion-list'),
     path('increments/', IncrementListCreateView.as_view(), name='increment-list'),
     path('transfers/', TransferListCreateView.as_view(), name='transfer-list'),
