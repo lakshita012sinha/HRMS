@@ -489,15 +489,9 @@
                     <label for="grade">Grade<span class="text-danger">*</span></label>
                     <select class="form-select" id="grade" name="grade">
                       <option value="">Select Grade</option>
-                      <option>M</option>
-                      <option>M1</option>
-                      <option>E1</option>
-                      <option>E1-Jaipur</option>
-                      <option>E2-Jaipur</option>
-                      <option>F</option>
-                      <option>F1</option>
-                      <option>E</option>
                     </select>
+                    <small id="gradeRangeHint" class="text-muted"></small>
+                    <small id="gradeCTCError" class="text-danger d-none"></small>
                   </div>
                 </div>
                 <div class="col-lg-4 col-md-4 col-sm-6">
@@ -1300,6 +1294,20 @@
     const branchVal = g('branch') ? parseInt(g('branch')) : null;
     const departmentVal = g('department') ? parseInt(g('department')) : null;
     const designationVal = g('designation') ? parseInt(g('designation')) : null;
+    const gradeLevelId = g('grade') ? parseInt(g('grade')) : null;
+
+    // ── CTC validation against selected grade range ────────────────
+    if (gradeLevelId) {
+      const gradeOpt = document.querySelector(`#grade option[value="${gradeLevelId}"]`);
+      if (gradeOpt) {
+        const minCTC = parseFloat(gradeOpt.dataset.min);
+        const maxCTC = gradeOpt.dataset.max ? parseFloat(gradeOpt.dataset.max) : null;
+        const err = document.getElementById('gradeCTCError');
+        // If you have a monthly CTC field in the future, validate here.
+        // Currently we just clear any old error since CTC is set in payroll.
+        err.classList.add('d-none');
+      }
+    }
 
     const empName = g('employeeName').trim();
     const nameParts = empName.split(/\s+/);
@@ -1354,7 +1362,8 @@
       branch: branchVal || null,
       department: departmentVal || null,
       designation: designationVal || null,
-      grade: g('grade'),
+      grade: '',           // legacy field — auto-filled by backend from grade_level
+      grade_level: gradeLevelId,
       employment_type: g('employmentType'),
       reporting_officer: gn('reportingOfficer') ? parseInt(gn('reportingOfficer')) : null,
       deputed_project: g('deputedProject'),
@@ -1446,6 +1455,7 @@
 
   // Load Employee role ID and reporting officer dropdown on page load
   let employeeRoleId = null;
+  let gradesList = [];   // cache for CTC validation
 
   async function loadDropdowns() {
     const token = localStorage.getItem('authToken');
@@ -1492,6 +1502,9 @@
 
     // Load all departments and designations initially (no branch filter)
     await loadDepartments(null);
+
+    // ── Load grade levels from master ──────────────────────────────
+    await loadGradeLevels();
   }
 
   // Helper: fetch ALL pages from a paginated API endpoint
@@ -1562,6 +1575,33 @@
     const branchId = document.getElementById('branch').value || null;
     const deptId = this.value || null;
     await loadDesignations(branchId, deptId);
+  });
+
+  // ── Grade level loader ─────────────────────────────────────────────
+  async function loadGradeLevels() {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': 'Token ' + token };
+    const grades = await fetchAllPages('/api/accounts/grade-levels/', headers);
+    gradesList = grades;  // cache for CTC validation
+    const sel = document.getElementById('grade');
+    sel.innerHTML = '<option value="">Select Grade</option>';
+    grades.forEach(g => {
+      sel.innerHTML += `<option value="${g.id}" data-min="${g.min_ctc}" data-max="${g.max_ctc || ''}"
+        data-range="${g.ctc_range}">${g.name} — ${g.ctc_range}</option>`;
+    });
+  }
+
+  // Show CTC range hint when grade is selected
+  document.getElementById('grade').addEventListener('change', function () {
+    const opt   = this.options[this.selectedIndex];
+    const hint  = document.getElementById('gradeRangeHint');
+    const err   = document.getElementById('gradeCTCError');
+    if (this.value) {
+      hint.textContent = 'Range: ' + (opt.dataset.range || '');
+      err.classList.add('d-none');
+    } else {
+      hint.textContent = '';
+    }
   });
 
   loadDropdowns();

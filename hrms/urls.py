@@ -47,6 +47,7 @@ urlpatterns = [
     path('hr/employee-payslip/', TemplateView.as_view(template_name='HR_admin/employee-payslip.html'), name='employee-payslip'),
     path('hr/salary-grade-list/', TemplateView.as_view(template_name='HR_admin/employee-salary-grade-list.html'), name='salary-grade-list'),
     path('hr/salary-grade-add/', TemplateView.as_view(template_name='HR_admin/employee-salary-grade-add.html'), name='salary-grade-add'),
+    path('hr/grade-master/', TemplateView.as_view(template_name='HR_admin/grade-master.html'), name='grade-master'),
     path('hr/employee-apply-leave/', TemplateView.as_view(template_name='HR_admin/employee-apply-leave.html'), name='employee-apply-leave'),
     path('hr/employee-leave-approved/', TemplateView.as_view(template_name='HR_admin/employee-leave-approved.html'), name='employee-leave-approved'),
     path('hr/make-attendance/', TemplateView.as_view(template_name='HR_admin/make-attendance-view.html'), name='make-attendance'),

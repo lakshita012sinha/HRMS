@@ -10,7 +10,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.db import transaction
 from .models import User, Role, Permission
-from .models_extended import Branch, Department, Designation, Promotion, Increment, Transfer
+from .models_extended import Branch, Department, Designation, Promotion, Increment, Transfer, GradePayLevel
 from .models_past_employees import PastEmployee
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, LoginSerializer,
@@ -18,7 +18,7 @@ from .serializers import (
     ChangePasswordSerializer, RoleSerializer, PermissionSerializer
 )
 from .serializers_employee import CompleteEmployeeRegistrationSerializer, EmployeeDetailSerializer
-from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer, PromotionSerializer, IncrementSerializer, TransferSerializer
+from .serializers_extended import BranchSerializer, DepartmentSerializer, DesignationSerializer, PromotionSerializer, IncrementSerializer, TransferSerializer, GradePayLevelSerializer
 from .serializers_update import EmployeeUpdateSerializer
 from .serializers_past_employees import PastEmployeeSerializer, DeleteEmployeeSerializer
 
@@ -232,6 +232,28 @@ class DesignationListCreateView(generics.ListCreateAPIView):
 class DesignationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Designation.objects.all()
     serializer_class = DesignationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+# ── Grade / Pay Level Master ──────────────────────────────────────────────────
+
+class GradePayLevelListCreateView(generics.ListCreateAPIView):
+    """List active grades (default) or all grades; HR/Admin can create new ones."""
+    serializer_class = GradePayLevelSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = GradePayLevel.objects.all().order_by('min_ctc')
+        # ?all=1 returns inactive too (for management page)
+        if self.request.query_params.get('all') != '1':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class GradePayLevelDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or deactivate a grade."""
+    queryset = GradePayLevel.objects.all()
+    serializer_class = GradePayLevelSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 

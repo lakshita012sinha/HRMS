@@ -5,8 +5,9 @@
 
 {% block extra_css %}
 <style>
+    /* ── Table layout ───────────────────────────────────────────────── */
     #attendanceTable .sticky-col { position: sticky; left: 0; background: white; z-index: 2; }
-    #attendanceTable .cell-text  { font-weight: bold; font-size: 11px; }
+    #attendanceTable .cell-text  { font-weight: bold; font-size: 11px; pointer-events: none; }
     .table > tbody > tr > .present          { background: #d4edda; }
     .table > tbody > tr > .half_day_present { background: #9be9ad; }
     .table > tbody > tr > .absent           { background: #f7c9cd; }
@@ -14,9 +15,57 @@
     .table > tbody > tr > .leave            { background: #c2cdf7; }
     .table > tbody > tr > .sunday           { background: #bbbbbb; }
     .table > tbody > tr > .not_marked       { background: #f8f9fa; }
-    .att-cell { cursor: pointer; min-width: 36px; }
+    .att-cell { cursor: pointer; min-width: 36px; user-select: none; }
     .att-cell:hover { opacity: 0.75; }
     .day-header.sunday-col { background: #bbbbbb !important; }
+
+    /* ── Bulk-select state ──────────────────────────────────────────── */
+    body.bulk-mode .att-cell { cursor: cell; }
+    body.bulk-mode .att-cell:hover { outline: 2px dashed #0d6efd; outline-offset: -2px; opacity: 1; }
+    .att-cell.bulk-selected {
+        outline: 3px solid #0d6efd !important;
+        outline-offset: -3px;
+        position: relative;
+    }
+    .att-cell.bulk-selected::after {
+        content: '✓';
+        position: absolute;
+        top: 0; right: 1px;
+        font-size: 9px;
+        color: #0d6efd;
+        font-weight: 900;
+        pointer-events: none;
+    }
+
+    /* ── Bulk toolbar (floating bottom bar) ────────────────────────── */
+    #bulkToolbar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: #1e1e2e;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        z-index: 1050;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.35);
+        border-top: 3px solid #0d6efd;
+        transition: transform 0.25s ease;
+    }
+    #bulkToolbar.hidden { transform: translateY(110%); }
+    #bulkToolbar .toolbar-label { font-size: 13px; font-weight: 600; min-width: 120px; }
+    #bulkToolbar .btn-mark { min-width: 115px; font-size: 12px; font-weight: 600; }
+    #bulkSelCount { font-size: 13px; background: #0d6efd; border-radius: 20px; padding: 2px 10px; }
+
+    /* ── Bulk-mode toggle button ────────────────────────────────────── */
+    #bulkToggleBtn { transition: all 0.2s; }
+    #bulkToggleBtn.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+
+    /* ── Select-all column header checkbox ─────────────────────────── */
+    .col-select-header { min-width: 28px !important; cursor: pointer; }
+    .row-select-cb { display: none; width: 14px; height: 14px; cursor: pointer; }
+    body.bulk-mode .row-select-cb { display: inline-block; }
 </style>
 {% endblock %}
 
@@ -32,14 +81,13 @@
     </ul>
 </div>
 
-<div class="mb-2">
-    <small><strong class="text-danger">Note: Click any day cell to change attendance status. Changes are saved immediately.</strong></small>
+<div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+    <small><strong class="text-danger">Note: Click any day cell to change attendance. Enable Bulk Mode to select multiple cells at once.</strong></small>
 </div>
 
 <div class="row">
     <div class="col-md-12">
         <div class="card card-stats card-round">
-
             <div class="card-header">
                 <div id="alertArea"></div>
                 <div class="row g-2 align-items-end mb-3">
@@ -48,7 +96,22 @@
                         <input type="month" class="form-control" id="monthPicker">
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-info btn-sm" id="showBtn"><i class="ri-search-line"></i> Show</button>
+                        <button class="btn btn-info btn-sm" id="showBtn">
+                            <i class="ri-search-line"></i> Show
+                        </button>
+                    </div>
+                    <div class="col-auto ms-md-2">
+                        <button class="btn btn-outline-primary btn-sm" id="bulkToggleBtn">
+                            <i class="ri-checkbox-multiple-line"></i> Bulk Mode
+                        </button>
+                    </div>
+                    <div class="col-auto d-none" id="bulkSelectAllWrap">
+                        <button class="btn btn-outline-secondary btn-sm" id="selectAllBtn">
+                            <i class="ri-check-double-line"></i> Select All
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm ms-1" id="clearSelBtn">
+                            <i class="ri-close-line"></i> Clear
+                        </button>
                     </div>
                 </div>
 
@@ -77,22 +140,24 @@
                 <div id="tableWrapper" class="d-none">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span id="tableCaption" class="fw-bold text-muted"></span>
-                        <button class="btn btn-primary btn-sm" id="exportBtn"><i class="ri-download-2-line"></i> Export</button>
+                        <button class="btn btn-primary btn-sm" id="exportBtn">
+                            <i class="ri-download-2-line"></i> Export
+                        </button>
                     </div>
                     <div class="table-responsive">
-                        <table id="attendanceTable" class="table table-bordered table-sm" style="font-size:12px; white-space:nowrap;">
+                        <table id="attendanceTable" class="table table-bordered table-sm"
+                               style="font-size:12px; white-space:nowrap;">
                             <thead id="attHead"></thead>
                             <tbody id="attBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<!-- Status picker modal -->
+<!-- ── Single-cell status picker modal (existing, unchanged) ── -->
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
@@ -114,52 +179,115 @@
         </div>
     </div>
 </div>
+
+<!-- ── Bulk status picker modal ── -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2" style="background:#1e1e2e; color:#fff;">
+                <h6 class="modal-title">
+                    <i class="ri-checkbox-multiple-line"></i>
+                    Bulk Mark — <span id="bulkModalCount">0</span> cells
+                </h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-2">
+                <p class="text-muted small mb-2">Choose a status to apply to all selected cells:</p>
+                <div class="d-grid gap-1">
+                    <button class="btn btn-success btn-sm"  onclick="applyBulkStatus('PRESENT')">Present (P)</button>
+                    <button class="btn btn-sm" style="background:#9be9ad" onclick="applyBulkStatus('HALF_DAY')">Half Day (HDP)</button>
+                    <button class="btn btn-danger btn-sm"   onclick="applyBulkStatus('ABSENT')">Absent (A)</button>
+                    <button class="btn btn-warning btn-sm"  onclick="applyBulkStatus('HOLIDAY')">Holiday (H)</button>
+                    <button class="btn btn-sm" style="background:#c2cdf7" onclick="applyBulkStatus('LEAVE')">Leave (L)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Floating bulk toolbar ── -->
+<div id="bulkToolbar" class="hidden">
+    <span class="toolbar-label"><i class="ri-checkbox-multiple-line me-1"></i> Bulk Mode</span>
+    <span id="bulkSelCount">0 selected</span>
+    <button class="btn btn-success btn-sm btn-mark"  onclick="applyBulkStatus('PRESENT')">✓ Present (P)</button>
+    <button class="btn btn-sm btn-mark" style="background:#9be9ad; color:#000;" onclick="applyBulkStatus('HALF_DAY')">½ Half Day</button>
+    <button class="btn btn-danger btn-sm btn-mark"   onclick="applyBulkStatus('ABSENT')">✗ Absent (A)</button>
+    <button class="btn btn-warning btn-sm btn-mark"  onclick="applyBulkStatus('HOLIDAY')">H Holiday</button>
+    <button class="btn btn-sm btn-mark" style="background:#c2cdf7; color:#000;" onclick="applyBulkStatus('LEAVE')">L Leave</button>
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-outline-light btn-sm" id="tbSelectAll">Select All</button>
+        <button class="btn btn-outline-warning btn-sm" id="tbClearSel">Clear</button>
+        <button class="btn btn-outline-danger btn-sm" id="tbExitBulk">Exit Bulk</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const STATUS_MAP = {
-    'P':'PRESENT','HDP':'HALF_DAY','A':'ABSENT','H':'HOLIDAY','L':'LEAVE','OFF':'WEEKEND',''  :''
-};
+/* ═══════════════════════════════════════════════════════════════════
+   CONSTANTS & STATE
+═══════════════════════════════════════════════════════════════════ */
+const DAY_NAMES  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const LABEL_MAP  = { PRESENT:'P', HALF_DAY:'HDP', ABSENT:'A', HOLIDAY:'H', LEAVE:'L', WEEKEND:'OFF' };
 const CLASS_MAP  = { P:'present', HDP:'half_day_present', A:'absent', H:'holiday', L:'leave', OFF:'sunday', '':'not_marked' };
 
-let currentData = null;
-let statusModal;
+let currentData  = null;
+let statusModal  = null;
+let bulkStatusModal = null;
 
+// Bulk-select state
+let bulkMode     = false;                // is bulk mode ON?
+let selectedCells = new Set();          // Set of "empId|dateStr" keys
+
+/* ═══════════════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════════════ */
 function showAlert(msg, type='danger') {
     document.getElementById('alertArea').innerHTML =
         `<div class="alert alert-${type} alert-dismissible fade show py-2 mb-2">${msg}
          <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
 }
 
-// Set default month to current
+function cellKey(empId, dateStr) { return `${empId}|${dateStr}`; }
+
+function updateBulkCount() {
+    const n = selectedCells.size;
+    document.getElementById('bulkSelCount').textContent = `${n} selected`;
+    document.getElementById('bulkModalCount').textContent = n;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEFAULT MONTH
+═══════════════════════════════════════════════════════════════════ */
 (function() {
     const now = new Date();
-    const m = String(now.getMonth()+1).padStart(2,'0');
+    const m   = String(now.getMonth()+1).padStart(2,'0');
     document.getElementById('monthPicker').value = `${now.getFullYear()}-${m}`;
 })();
 
 document.getElementById('showBtn').addEventListener('click', loadAttendance);
 
+/* ═══════════════════════════════════════════════════════════════════
+   LOAD ATTENDANCE (existing logic, unchanged)
+═══════════════════════════════════════════════════════════════════ */
 async function loadAttendance() {
     const val = document.getElementById('monthPicker').value;
     if (!val) { showAlert('Please select a month.'); return; }
     const [year, month] = val.split('-');
 
+    // Clear any existing selection when reloading
+    clearSelection();
+
     document.getElementById('loadingState').classList.remove('d-none');
     document.getElementById('tableWrapper').classList.add('d-none');
 
     try {
-        // Append branch filter from global selection
         const branchId = getActiveBranchId();
-        const params = new URLSearchParams({ month, year });
+        const params   = new URLSearchParams({ month, year });
         if (branchId) params.set('branch', branchId);
 
-        const res = await fetch(`/api/attendance/monthly/?${params.toString()}`, {
-            headers: { 'Authorization': 'Token ' + token }
-        });
+        const res  = await fetch(`/api/attendance/monthly/?${params.toString()}`,
+            { headers: { 'Authorization': 'Token ' + token } });
         const text = await res.text();
         let data;
         try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
@@ -174,19 +302,23 @@ async function loadAttendance() {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   RENDER TABLE
+═══════════════════════════════════════════════════════════════════ */
 function renderTable(data) {
     const { month, year, days_in_month, employees } = data;
     const monthName = new Date(year, month-1, 1).toLocaleString('default', { month:'long' });
-
     document.getElementById('tableCaption').textContent =
         `Employee Attendance — ${monthName} ${year}`;
 
-    // Build header
+    // Header
     const dayHeaders = Array.from({length: days_in_month}, (_, i) => {
-        const d = i + 1;
+        const d   = i + 1;
         const dow = new Date(year, month-1, d).getDay();
-        const isSun = dow === 0;
-        return `<th class="text-center day-header${isSun?' sunday-col':''}" style="min-width:36px;">${d}<br><small>${DAY_NAMES[dow]}</small></th>`;
+        const sun = dow === 0;
+        return `<th class="text-center day-header${sun?' sunday-col':''}" style="min-width:36px;">
+                    ${d}<br><small>${DAY_NAMES[dow]}</small>
+                </th>`;
     }).join('');
 
     document.getElementById('attHead').innerHTML = `
@@ -203,18 +335,22 @@ function renderTable(data) {
             <th>Present</th><th>Absent</th><th>Holiday</th><th>Sunday</th><th>Leave</th><th>Pay Days</th>
         </tr>`;
 
-    // Build body
+    // Body
     document.getElementById('attBody').innerHTML = employees.map((emp, idx) => {
         const cells = Array.from({length: days_in_month}, (_, i) => {
-            const d = i + 1;
-            const label = emp.days[d] || '';
-            const cls   = CLASS_MAP[label] || 'not_marked';
-            const dow   = new Date(year, month-1, d).getDay();
-            const isSun = dow === 0;
-            const clickable = !isSun && label !== 'H';
-            return `<td class="text-center att-cell ${cls}" 
-                        data-emp="${emp.employee_id}" data-date="${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}"
-                        ${clickable ? `onclick="openStatusModal(${emp.employee_id},'${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}',this)"` : ''}>
+            const d       = i + 1;
+            const label   = emp.days[d] || '';
+            const cls     = CLASS_MAP[label] || 'not_marked';
+            const dow     = new Date(year, month-1, d).getDay();
+            const isSun   = dow === 0;
+            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            // Cells that can be interacted with (not Sunday)
+            const canMark = !isSun;
+            return `<td class="text-center att-cell ${cls}"
+                        data-emp="${emp.employee_id}"
+                        data-date="${dateStr}"
+                        data-sun="${isSun ? '1' : '0'}"
+                        ${canMark ? `onclick="onCellClick(event, ${emp.employee_id}, '${dateStr}', this)"` : ''}>
                         <div class="cell-text">${label || '-'}</div>
                     </td>`;
         }).join('');
@@ -236,7 +372,23 @@ function renderTable(data) {
     document.getElementById('tableWrapper').classList.remove('d-none');
 }
 
-function openStatusModal(empId, dateStr, cell) {
+/* ═══════════════════════════════════════════════════════════════════
+   CELL CLICK — routes to single or bulk mode
+═══════════════════════════════════════════════════════════════════ */
+function onCellClick(event, empId, dateStr, cell) {
+    if (cell.dataset.sun === '1') return;   // never interact with Sunday
+
+    if (bulkMode) {
+        toggleCellSelection(empId, dateStr, cell);
+    } else {
+        openStatusModal(empId, dateStr, cell);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SINGLE-CELL MODAL (existing, unchanged)
+═══════════════════════════════════════════════════════════════════ */
+function openStatusModal(empId, dateStr) {
     document.getElementById('smEmpId').value = empId;
     document.getElementById('smDate').value  = dateStr;
     document.getElementById('statusModalTitle').textContent = `Mark — ${dateStr}`;
@@ -246,68 +398,226 @@ function openStatusModal(empId, dateStr, cell) {
 async function markStatus(statusVal) {
     const empId   = document.getElementById('smEmpId').value;
     const dateStr = document.getElementById('smDate').value;
-
     statusModal.hide();
 
     try {
         const res = await fetch('/api/attendance/bulk-mark/', {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ employee_id: parseInt(empId), date: dateStr, status: statusVal })
+            body:    JSON.stringify({ employee_id: parseInt(empId), date: dateStr, status: statusVal })
         });
         const text = await res.text();
         let data;
         try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
         if (!res.ok) throw new Error(data.error || JSON.stringify(data));
 
-        // Update cell in place
-        const cell = document.querySelector(`td[data-emp="${empId}"][data-date="${dateStr}"]`);
-        if (cell) {
-            const label = LABEL_MAP[statusVal] || '';
-            const cls   = CLASS_MAP[label] || 'not_marked';
-            // Remove old status classes
-            Object.values(CLASS_MAP).forEach(c => cell.classList.remove(c));
-            cell.classList.add(cls);
-            cell.querySelector('.cell-text').textContent = label || '-';
-        }
+        updateCellUI(empId, dateStr, statusVal);
         showAlert('Attendance updated.', 'success');
     } catch(e) {
         showAlert('Error: ' + e.message);
     }
 }
 
-// Export to CSV
+/* ═══════════════════════════════════════════════════════════════════
+   BULK SELECT
+═══════════════════════════════════════════════════════════════════ */
+function toggleBulkMode() {
+    bulkMode = !bulkMode;
+    document.body.classList.toggle('bulk-mode', bulkMode);
+
+    const btn  = document.getElementById('bulkToggleBtn');
+    const wrap = document.getElementById('bulkSelectAllWrap');
+    const bar  = document.getElementById('bulkToolbar');
+
+    btn.classList.toggle('active', bulkMode);
+    btn.innerHTML = bulkMode
+        ? '<i class="ri-checkbox-multiple-line"></i> Exit Bulk'
+        : '<i class="ri-checkbox-multiple-line"></i> Bulk Mode';
+    wrap.classList.toggle('d-none', !bulkMode);
+
+    if (!bulkMode) {
+        clearSelection();
+        bar.classList.add('hidden');
+    }
+}
+
+function toggleCellSelection(empId, dateStr, cell) {
+    const key = cellKey(empId, dateStr);
+    if (selectedCells.has(key)) {
+        selectedCells.delete(key);
+        cell.classList.remove('bulk-selected');
+    } else {
+        selectedCells.add(key);
+        cell.classList.add('bulk-selected');
+    }
+    updateBulkCount();
+    // Show / hide floating toolbar
+    const bar = document.getElementById('bulkToolbar');
+    if (selectedCells.size > 0) {
+        bar.classList.remove('hidden');
+    } else {
+        bar.classList.add('hidden');
+    }
+}
+
+function selectAllCells() {
+    if (!currentData) return;
+    selectedCells.clear();
+    document.querySelectorAll('#attBody .att-cell').forEach(cell => {
+        if (cell.dataset.sun === '1') return;      // skip Sundays
+        const empId   = cell.dataset.emp;
+        const dateStr = cell.dataset.date;
+        selectedCells.add(cellKey(empId, dateStr));
+        cell.classList.add('bulk-selected');
+    });
+    updateBulkCount();
+    document.getElementById('bulkToolbar').classList.remove('hidden');
+}
+
+function clearSelection() {
+    selectedCells.clear();
+    document.querySelectorAll('#attBody .att-cell.bulk-selected')
+             .forEach(c => c.classList.remove('bulk-selected'));
+    updateBulkCount();
+    document.getElementById('bulkToolbar').classList.add('hidden');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   APPLY BULK STATUS
+═══════════════════════════════════════════════════════════════════ */
+async function applyBulkStatus(statusVal) {
+    if (selectedCells.size === 0) {
+        showAlert('No cells selected. Click cells to select them first.', 'warning');
+        return;
+    }
+
+    // Close the modal if it was open
+    try { bulkStatusModal.hide(); } catch(_) {}
+
+    // Build records array
+    const records = [];
+    selectedCells.forEach(key => {
+        const [empId, dateStr] = key.split('|');
+        records.push({ employee_id: parseInt(empId), date: dateStr, status: statusVal });
+    });
+
+    // Optimistic UI — update cells immediately
+    const previousStates = new Map();
+    records.forEach(r => {
+        const cell = document.querySelector(
+            `td[data-emp="${r.employee_id}"][data-date="${r.date}"]`);
+        if (cell) {
+            // Save current state for possible rollback
+            const prevLabel = cell.querySelector('.cell-text').textContent.trim();
+            const prevClass = [...cell.classList].find(c => Object.values(CLASS_MAP).includes(c)) || 'not_marked';
+            previousStates.set(cellKey(r.employee_id, r.date), { prevLabel, prevClass, cell });
+            updateCellUI(r.employee_id, r.date, statusVal);
+        }
+    });
+
+    try {
+        const res = await fetch('/api/attendance/bulk-mark/', {
+            method:  'POST',
+            headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ records })
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch(_) { throw new Error(text.substring(0,200)); }
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+        const saved  = data.saved  ? data.saved.length  : 0;
+        const errors = data.errors ? data.errors.length : 0;
+        let msg = `✓ ${saved} record(s) saved.`;
+        if (errors > 0) msg += ` ⚠ ${errors} failed.`;
+        showAlert(msg, errors > 0 ? 'warning' : 'success');
+
+        // Rollback any that failed
+        if (data.errors && data.errors.length > 0) {
+            data.errors.forEach(err => {
+                const item = err.item;
+                if (!item) return;
+                const key  = cellKey(item.employee_id, item.date);
+                const prev = previousStates.get(key);
+                if (prev) {
+                    prev.cell.querySelector('.cell-text').textContent = prev.prevLabel;
+                    Object.values(CLASS_MAP).forEach(c => prev.cell.classList.remove(c));
+                    prev.cell.classList.add(prev.prevClass);
+                }
+            });
+        }
+
+        // Deselect all and exit bulk mode after successful bulk save
+        clearSelection();
+
+    } catch(e) {
+        showAlert('Error: ' + e.message);
+        // Full rollback on network/server error
+        previousStates.forEach(({ prevLabel, prevClass, cell }) => {
+            cell.querySelector('.cell-text').textContent = prevLabel;
+            Object.values(CLASS_MAP).forEach(c => cell.classList.remove(c));
+            cell.classList.add(prevClass);
+        });
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHARED — update one cell's visual state
+═══════════════════════════════════════════════════════════════════ */
+function updateCellUI(empId, dateStr, statusVal) {
+    const cell = document.querySelector(
+        `td[data-emp="${empId}"][data-date="${dateStr}"]`);
+    if (!cell) return;
+    const label = LABEL_MAP[statusVal] || '';
+    const cls   = CLASS_MAP[label]     || 'not_marked';
+    Object.values(CLASS_MAP).forEach(c => cell.classList.remove(c));
+    cell.classList.add(cls);
+    cell.querySelector('.cell-text').textContent = label || '-';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EXPORT (existing, unchanged)
+═══════════════════════════════════════════════════════════════════ */
 document.getElementById('exportBtn').addEventListener('click', function() {
     if (!currentData) return;
     const { month, year, days_in_month, employees } = currentData;
     const monthName = new Date(year, month-1, 1).toLocaleString('default', { month:'long' });
 
     let csv = `Employee Attendance - ${monthName} ${year}\n`;
-    const dayHeaders = Array.from({length: days_in_month}, (_, i) => i+1).join(',');
-    csv += `#,Code,Name,${dayHeaders},Present,Absent,Holiday,Sunday,Leave,Pay Days\n`;
-
+    csv += `#,Code,Name,${Array.from({length: days_in_month}, (_, i) => i+1).join(',')},Present,Absent,Holiday,Sunday,Leave,Pay Days\n`;
     employees.forEach((emp, idx) => {
         const days = Array.from({length: days_in_month}, (_, i) => emp.days[i+1] || '').join(',');
         csv += `${idx+1},${emp.user_id},"${emp.name}",${days},${emp.present},${emp.absent},${emp.holiday},${emp.sunday},${emp.leave},${emp.pay_days}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
     a.download = `attendance_${monthName}_${year}.csv`;
     a.click();
 });
 
+/* ═══════════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
-    statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+    statusModal     = new bootstrap.Modal(document.getElementById('statusModal'));
+    bulkStatusModal = new bootstrap.Modal(document.getElementById('bulkStatusModal'));
+
+    document.getElementById('bulkToggleBtn').addEventListener('click', toggleBulkMode);
+    document.getElementById('selectAllBtn').addEventListener('click', selectAllCells);
+    document.getElementById('clearSelBtn').addEventListener('click', clearSelection);
+    document.getElementById('tbSelectAll').addEventListener('click', selectAllCells);
+    document.getElementById('tbClearSel').addEventListener('click', clearSelection);
+    document.getElementById('tbExitBulk').addEventListener('click', function() {
+        if (bulkMode) toggleBulkMode();
+    });
 });
 
-// When branch changes in navbar, re-load attendance for current month if loaded
+// Branch change reloads the table
 window.addEventListener('hrms:branchChanged', function() {
     const wrapper = document.getElementById('tableWrapper');
-    if (wrapper && !wrapper.classList.contains('d-none')) {
-        loadAttendance();
-    }
+    if (wrapper && !wrapper.classList.contains('d-none')) loadAttendance();
 });
 </script>
 {% endblock %}

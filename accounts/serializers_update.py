@@ -61,6 +61,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     designation = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     grade = serializers.CharField(required=False, allow_blank=True)
+    grade_level = serializers.IntegerField(required=False, allow_null=True)
     employment_type = serializers.CharField(required=False)
     reporting_officer = serializers.IntegerField(required=False, allow_null=True)
     deputed_project = serializers.CharField(required=False, allow_blank=True)
@@ -85,7 +86,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'present_pincode', 'same_as_present_address', 'permanent_address',
             'permanent_city', 'permanent_state', 'permanent_pincode',
             'relationship_name', 'relationship_type', 'parent_mobile', 'emergency_another_mobile',
-            'branch', 'department', 'designation', 'grade', 'employment_type',
+            'branch', 'department', 'designation', 'grade', 'grade_level', 'employment_type',
             'reporting_officer', 'deputed_project', 'effective_date',
             'bank_name', 'bank_branch', 'account_number', 'ifsc_code', 'is_salary_account'
         ]
@@ -201,8 +202,24 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             employment_fields['designation'] = desig_obj
         if 'grade' in validated_data:
             employment_fields['grade'] = validated_data.pop('grade')
+        if 'grade_level' in validated_data:
+            gl_id = validated_data.pop('grade_level')
+            if gl_id:
+                from .models_extended import GradePayLevel
+                try:
+                    gl = GradePayLevel.objects.get(id=gl_id)
+                    employment_fields['grade_level'] = gl
+                    # Sync legacy text field if not explicitly provided
+                    if 'grade' not in employment_fields:
+                        employment_fields['grade'] = gl.name
+                except GradePayLevel.DoesNotExist:
+                    pass
+            else:
+                employment_fields['grade_level'] = None
         if 'employment_type' in validated_data:
             employment_fields['employment_type'] = validated_data.pop('employment_type')
+        if 'grade_level' in validated_data and 'grade_level' not in employment_fields:
+            validated_data.pop('grade_level')  # already processed above
         if 'reporting_officer' in validated_data:
             officer_id = validated_data.pop('reporting_officer')
             if officer_id:

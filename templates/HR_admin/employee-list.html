@@ -80,6 +80,7 @@
                                 <th>Employee Name</th>
                                 <th>Branch</th>
                                 <th>Department</th>
+                                <th>Grade</th>
                                 <th>Father Name</th>
                                 <th>Contact No.</th>
                                 <th>Reporting Officer</th>
@@ -193,6 +194,9 @@
             const reporting  = employment.reporting_officer || '-';
             const branch     = employment.branch      || '-';
             const dept       = employment.department  || '-';
+            const gradeDisplay = employment.grade_level
+              ? employment.grade_level.name
+              : (employment.grade || '-');
 
             return `
             <tr>
@@ -201,6 +205,7 @@
                 <td class="text-center">${fullName}</td>
                 <td class="text-center">${branch}</td>
                 <td class="text-center">${dept}</td>
+                <td class="text-center">${gradeDisplay}</td>
                 <td class="text-center">${fatherName}</td>
                 <td class="text-center">${contact}</td>
                 <td class="text-center">${reporting}</td>

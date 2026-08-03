@@ -1,6 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Role, Permission
+from .models_extended import GradePayLevel
+
+
+@admin.register(GradePayLevel)
+class GradePayLevelAdmin(admin.ModelAdmin):
+    list_display  = ['name', 'min_ctc', 'max_ctc', 'description', 'is_active', 'created_at']
+    list_filter   = ['is_active']
+    search_fields = ['name']
+    ordering      = ['min_ctc']
 
 
 @admin.register(User)

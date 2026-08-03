@@ -7,6 +7,37 @@ from .choices import (
 )
 from .encrypted_fields import EncryptedCharField
 
+class GradePayLevel(models.Model):
+    """Dynamic Grade / Pay Level master — replaces the hardcoded GRADE_CHOICES."""
+    name        = models.CharField(max_length=50, unique=True,
+                                   help_text="Grade label, e.g. E1, E2, M")
+    min_ctc     = models.DecimalField(max_digits=12, decimal_places=2,
+                                      help_text="Minimum monthly CTC (₹)")
+    max_ctc     = models.DecimalField(max_digits=12, decimal_places=2,
+                                      null=True, blank=True,
+                                      help_text="Maximum monthly CTC (₹). Leave blank for 'no upper limit' (e.g. E5)")
+    description = models.TextField(blank=True)
+    is_active   = models.BooleanField(default=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.max_ctc:
+            return f"{self.name} (₹{self.min_ctc:,.0f} – ₹{self.max_ctc:,.0f})"
+        return f"{self.name} (Above ₹{self.min_ctc:,.0f})"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.max_ctc is not None and self.max_ctc < self.min_ctc:
+            raise ValidationError("Maximum CTC cannot be less than Minimum CTC.")
+
+    class Meta:
+        db_table = 'grade_pay_levels'
+        ordering = ['min_ctc']
+        verbose_name = 'Grade / Pay Level'
+        verbose_name_plural = 'Grade / Pay Levels'
+
+
 class Branch(models.Model):
     """Branch model"""
     name = models.CharField(max_length=100, unique=True)
@@ -149,7 +180,13 @@ class EmploymentDetails(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     designation = models.ForeignKey(Designation, on_delete=models.SET_NULL, null=True, blank=True)
+    # Legacy text grade kept for backward compatibility — new FK below is the source of truth
     grade = models.CharField(max_length=20, choices=GRADE_CHOICES, blank=True)
+    grade_level = models.ForeignKey(
+        GradePayLevel, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='employment_details',
+        help_text="Grade / Pay Level from master table"
+    )
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES)
     reporting_officer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     deputed_project = models.CharField(max_length=100, choices=PROJECT_CHOICES, blank=True)

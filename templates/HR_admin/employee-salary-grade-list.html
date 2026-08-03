@@ -123,7 +123,7 @@ async function loadGrades(){
             const yearly=(monthly*12).toFixed(2);
             return '<tr class="text-center"><td>'+(i+1)+'</td>'+
                 '<td class="text-start">'+(g.employee_name||'-').toUpperCase()+'</td>'+
-                '<td>'+(g.grade||'-')+'</td>'+
+                '<td>'+(g.grade_level_name ? g.grade_level_name+' <small class="text-muted">('+g.grade+')</small>' : (g.grade||'-'))+'</td>'+
                 '<td>'+(g.designation||'-')+'</td>'+
                 '<td>'+yearly+'</td>'+
                 '<td>'+monthly.toFixed(2)+'</td>'+

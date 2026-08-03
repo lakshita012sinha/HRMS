@@ -493,14 +493,134 @@ class MonthlyAttendanceView(APIView):
 
 
 class BulkMarkAttendanceView(APIView):
-    """HR marks/updates attendance for one employee on one date"""
+    """HR marks/updates attendance with validation for holidays, leaves, and weekends.
+
+    Accepts two formats:
+    1. Single record (existing):
+       { "employee_id": 1, "date": "2026-07-01", "status": "PRESENT", "remarks": "" }
+
+    2. Bulk records (new):
+       { "records": [
+           { "employee_id": 1, "date": "2026-07-01", "status": "PRESENT" },
+           { "employee_id": 2, "date": "2026-07-02", "status": "ABSENT" },
+           ...
+         ]
+       }
+    
+    Validation Rules:
+    - Warns if marking attendance on a holiday (but allows HR override)
+    - Warns if employee has an approved leave on that date (but allows HR override)
+    - Warns if marking attendance on a weekend/Sunday (but allows HR override)
+    - All warnings are returned in the response for HR to review
+    """
     permission_classes = [permissions.IsAuthenticated]
+
+    def _validate_attendance_date(self, employee, att_date, att_status):
+        """
+        Validate attendance date against holidays, leaves, and weekends.
+        Returns dict with 'valid' boolean and 'warnings' list.
+        """
+        warnings = []
+        
+        # Check if it's a Sunday (weekend)
+        if att_date.weekday() == 6 and att_status not in ['WEEKEND', 'HOLIDAY']:
+            warnings.append(f'Date {att_date} is a Sunday (weekend)')
+        
+        # Check if it's a declared holiday
+        if Holiday.objects.filter(date=att_date).exists():
+            holiday = Holiday.objects.get(date=att_date)
+            if att_status not in ['HOLIDAY', 'LEAVE']:
+                warnings.append(f'Date {att_date} is a holiday: {holiday.holiday_name}')
+        
+        # Check if employee has an approved leave on this date
+        from leave_management.models import LeaveRequest
+        approved_leaves = LeaveRequest.objects.filter(
+            employee=employee,
+            status='APPROVED',
+            start_date__lte=att_date,
+            end_date__gte=att_date
+        )
+        if approved_leaves.exists():
+            leave = approved_leaves.first()
+            if att_status not in ['LEAVE']:
+                warnings.append(
+                    f'Employee has approved {leave.leave_type.name} leave from '
+                    f'{leave.start_date} to {leave.end_date}'
+                )
+        
+        return {'valid': True, 'warnings': warnings}
 
     @transaction.atomic
     def post(self, request):
         if not request.user.role or request.user.role.name not in ['HR', 'ADMIN']:
             return Response({'error': 'Only HR and Admin can mark attendance'}, status=status.HTTP_403_FORBIDDEN)
 
+        # ── Bulk format ──────────────────────────────────────────────────────
+        records_raw = request.data.get('records')
+        if records_raw is not None:
+            if not isinstance(records_raw, list) or len(records_raw) == 0:
+                return Response({'error': 'records must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
+
+            saved = []
+            errors = []
+            warnings_list = []
+            
+            for item in records_raw:
+                serializer = BulkAttendanceSerializer(data=item)
+                if not serializer.is_valid():
+                    errors.append({'item': item, 'errors': serializer.errors})
+                    continue
+
+                employee_id = serializer.validated_data['employee_id']
+                att_date    = serializer.validated_data['date']
+                att_status  = serializer.validated_data['status']
+                remarks     = serializer.validated_data.get('remarks', '')
+
+                try:
+                    employee = User.objects.get(id=employee_id)
+                except User.DoesNotExist:
+                    errors.append({'item': item, 'errors': f'Employee {employee_id} not found'})
+                    continue
+
+                # Validate attendance date
+                validation = self._validate_attendance_date(employee, att_date, att_status)
+                if validation['warnings']:
+                    warnings_list.append({
+                        'employee_id': employee_id,
+                        'employee_name': employee.get_full_name(),
+                        'date': str(att_date),
+                        'status': att_status,
+                        'warnings': validation['warnings']
+                    })
+
+                # Update or create attendance (HR can override)
+                att, created = Attendance.objects.update_or_create(
+                    employee=employee, date=att_date,
+                    defaults={'status': att_status, 'remarks': remarks}
+                )
+                saved.append({
+                    'employee_id': employee_id,
+                    'employee_name': employee.get_full_name(),
+                    'date': str(att_date),
+                    'status': att_status,
+                    'action': 'created' if created else 'updated'
+                })
+
+            if errors and not saved:
+                return Response({'error': 'All records failed', 'details': errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            response_data = {
+                'message': f'{len(saved)} attendance record(s) saved.',
+                'saved': saved,
+            }
+            if errors:
+                response_data['errors'] = errors
+            if warnings_list:
+                response_data['warnings'] = warnings_list
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        # ── Single-record format (existing, backward-compatible) ──────────────
         serializer = BulkAttendanceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -514,11 +634,25 @@ class BulkMarkAttendanceView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Employee not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        att, _ = Attendance.objects.update_or_create(
+        # Validate attendance date
+        validation = self._validate_attendance_date(employee, att_date, att_status)
+        
+        # Update or create attendance (HR can override)
+        att, created = Attendance.objects.update_or_create(
             employee=employee, date=att_date,
             defaults={'status': att_status, 'remarks': remarks}
         )
-        return Response({'message': 'Attendance marked', 'attendance': AttendanceSerializer(att).data})
+        
+        response_data = {
+            'message': 'Attendance marked successfully',
+            'attendance': AttendanceSerializer(att).data,
+            'action': 'created' if created else 'updated'
+        }
+        
+        if validation['warnings']:
+            response_data['warnings'] = validation['warnings']
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class AttendanceReportSummaryView(APIView):

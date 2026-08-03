@@ -1,9 +1,64 @@
 from rest_framework import serializers
 from .models_extended import (
-    Branch, Department, Designation, EmployeeProfile,
+    GradePayLevel, Branch, Department, Designation, EmployeeProfile,
     EmergencyContact, EmploymentDetails, BankDetails, EmployeeDocument, Promotion, Increment, Transfer
 )
 from .models import User
+
+
+class GradePayLevelSerializer(serializers.ModelSerializer):
+    ctc_range = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GradePayLevel
+        fields = ['id', 'name', 'min_ctc', 'max_ctc', 'description', 'is_active', 'created_at', 'ctc_range']
+        read_only_fields = ['created_at']
+
+    def get_ctc_range(self, obj):
+        if obj.max_ctc:
+            return f"₹{int(obj.min_ctc):,} – ₹{int(obj.max_ctc):,}"
+        return f"Above ₹{int(obj.min_ctc):,}"
+
+    def validate(self, attrs):
+        min_ctc = attrs.get('min_ctc', getattr(self.instance, 'min_ctc', None))
+        max_ctc = attrs.get('max_ctc', getattr(self.instance, 'max_ctc', None))
+        if max_ctc is not None and min_ctc is not None and max_ctc < min_ctc:
+            raise serializers.ValidationError({"max_ctc": "Maximum CTC cannot be less than Minimum CTC."})
+        # Overlap check — exclude self on update
+        qs = GradePayLevel.objects.all()
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        for existing in qs:
+            e_min = existing.min_ctc
+            e_max = existing.max_ctc
+            # Ranges overlap when one starts before the other ends
+            if e_max is None:
+                existing_end = None
+            else:
+                existing_end = e_max
+            new_end = max_ctc  # None means infinite
+
+            # Check overlap: two ranges [a,b] and [c,d] overlap when a<=d and c<=b
+            # Handle None (infinite) max
+            new_start = min_ctc
+            ex_start = e_min
+
+            start_max = max(new_start, ex_start)
+            if new_end is None and existing_end is None:
+                overlap = True
+            elif new_end is None:
+                overlap = new_start <= existing_end
+            elif existing_end is None:
+                overlap = ex_start <= new_end
+            else:
+                overlap = new_start <= existing_end and ex_start <= new_end
+
+            if overlap:
+                raise serializers.ValidationError(
+                    f"CTC range overlaps with existing grade '{existing.name}' "
+                    f"({existing.min_ctc} – {existing.max_ctc or '∞'})."
+                )
+        return attrs
 
 
 class BranchSerializer(serializers.ModelSerializer):
@@ -36,9 +91,12 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
 
 
 class EmploymentDetailsSerializer(serializers.ModelSerializer):
+    grade_level_detail = GradePayLevelSerializer(source='grade_level', read_only=True)
+
     class Meta:
         model = EmploymentDetails
-        fields = ['branch', 'department', 'designation', 'grade', 'employment_type',
+        fields = ['branch', 'department', 'designation', 'grade', 'grade_level',
+                  'grade_level_detail', 'employment_type',
                   'reporting_officer', 'deputed_project', 'effective_date']
 
 

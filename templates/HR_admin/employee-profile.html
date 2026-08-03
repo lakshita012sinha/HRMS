@@ -445,10 +445,13 @@
 
         // Professional tab
         const bdd = `${val(employment.branch)} | ${val(employment.department)} | ${val(employment.designation)}`;
+        const gradeDisplay = employment.grade_level
+          ? `${employment.grade_level.name} <small class="text-muted">(${employment.grade_level.ctc_range})</small>`
+          : val(employment.grade);
         document.getElementById('professionalTableBody').innerHTML = `
             <tr class="text-center">
                 <td>${bdd}</td>
-                <td>${val(employment.grade)}</td>
+                <td>${gradeDisplay}</td>
                 <td>${val(employment.employment_type)}</td>
                 <td>${val(employment.reporting_officer)}</td>
                 <td>${formatDate(employment.effective_date)}</td>

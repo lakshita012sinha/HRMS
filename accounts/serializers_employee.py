@@ -82,6 +82,7 @@ class CompleteEmployeeRegistrationSerializer(serializers.Serializer):
     department = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     designation = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     grade = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    grade_level = serializers.IntegerField(required=False, allow_null=True)
     employment_type = serializers.ChoiceField(
         choices=['PROBATION', 'TRAINEE', 'PERMANENT', 'UNDER NOTICE'],
         required=True
@@ -166,11 +167,25 @@ class CompleteEmployeeRegistrationSerializer(serializers.Serializer):
             'department': dept_obj,
             'designation': desig_obj,
             'grade': validated_data.pop('grade', ''),
+            'grade_level': None,
             'employment_type': validated_data.pop('employment_type'),
             'reporting_officer': reporting_officer,
             'deputed_project': validated_data.pop('deputed_project', ''),
             'effective_date': validated_data.pop('effective_date'),
         }
+
+        # Resolve grade_level FK
+        grade_level_id = validated_data.pop('grade_level', None)
+        if grade_level_id:
+            from .models_extended import GradePayLevel
+            try:
+                gl = GradePayLevel.objects.get(id=grade_level_id)
+                employment_data['grade_level'] = gl
+                # Also back-fill the legacy text field with the grade name
+                if not employment_data['grade']:
+                    employment_data['grade'] = gl.name
+            except GradePayLevel.DoesNotExist:
+                pass
         
         bank_data = {
             'bank_name': validated_data.pop('bank_name'),
@@ -327,6 +342,19 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             if emp.reporting_officer:
                 ro = emp.reporting_officer
                 reporting = f"{ro.first_name} {ro.last_name} - {ro.user_id}".strip()
+            grade_detail = None
+            if emp.grade_level:
+                gl = emp.grade_level
+                grade_detail = {
+                    'id': gl.id,
+                    'name': gl.name,
+                    'min_ctc': str(gl.min_ctc),
+                    'max_ctc': str(gl.max_ctc) if gl.max_ctc else None,
+                    'ctc_range': (
+                        f"₹{int(gl.min_ctc):,} – ₹{int(gl.max_ctc):,}"
+                        if gl.max_ctc else f"Above ₹{int(gl.min_ctc):,}"
+                    ),
+                }
             return {
                 'branch': emp.branch.name if emp.branch else None,
                 'branch_id': emp.branch.id if emp.branch else None,
@@ -337,6 +365,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                 'employment_type': emp.employment_type,
                 'effective_date': emp.effective_date,
                 'grade': emp.grade,
+                'grade_level_id': emp.grade_level.id if emp.grade_level else None,
+                'grade_level': grade_detail,
                 'deputed_project': emp.deputed_project,
                 'reporting_officer': reporting,
                 'reporting_officer_id': emp.reporting_officer.id if emp.reporting_officer else None,
