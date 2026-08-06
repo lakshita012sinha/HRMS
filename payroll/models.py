@@ -20,11 +20,11 @@ class SalaryStructure(models.Model):
     )
     
     # Auto-calculated fields based on CTC
-    # Basic salary = 46.95% of CTC
+    # Basic salary = 50% of Gross Salary
     basic_salary = models.DecimalField(
-        max_digits=10, decimal_places=2, 
+        max_digits=10, decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="46.95% of CTC (Auto-calculated)"
+        help_text="50% of Gross Salary (Auto-calculated)"
     )
     
     # HRA = 40% of basic salary
@@ -41,11 +41,11 @@ class SalaryStructure(models.Model):
         help_text="Conveyance Allowance - 20% of basic (Auto-calculated)"
     )
     
-    # CCA = 13-15% of basic salary (default 15.74%)
+    # CCA = Gross − (Basic + HRA + CA + Bonus + Mobile)  — balancing component
     cca = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, 
-        validators=[MinValueValidator(Decimal('0.00'))], 
-        help_text="Communication/Clothing Allowance - 15.74% of basic (Auto-calculated)"
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="City Compensatory Allowance — balancing component (Auto-calculated)"
     )
     
     # Bonus = 20% of basic salary
@@ -70,11 +70,11 @@ class SalaryStructure(models.Model):
         help_text="Employee PF - 12% of basic (Auto-calculated)"
     )
     
-    # Employer PF = 13% of basic salary (deducted from CTC)
+    # Employer PF = 12% of basic salary
     pf_employer = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, 
-        validators=[MinValueValidator(Decimal('0.00'))], 
-        help_text="Employer PF - 13% of basic (Auto-calculated, deducted from CTC)"
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Employer PF - 12% of basic (Auto-calculated, deducted from CTC)"
     )
     
     # ESI calculations (only for salary <= 21000)
@@ -105,70 +105,86 @@ class SalaryStructure(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
-        """Auto-calculate salary components based on CTC
-        
-        Formula: CTC = Gross Salary + Employer PF + Employer ESI
-        Where: Gross = Basic + HRA + CA + CCA + Bonus + Mobile
-        
-        Components calculated from CTC:
-        - Basic = 46.95% of CTC
-        - HRA = 40% of Basic
-        - CA = 20% of Basic
-        - Bonus = 20% of Basic
-        - Mobile = 500 (fixed)
-        - CCA = Auto-adjusted to balance equation
-        
-        Employer contributions (from employee salary):
-        - Employer PF = 13% of Basic Salary
-        - Employer ESI = 3.25% of Gross Salary (only if Gross <= 21000)
-        
-        Employee deductions:
-        - Employee PF = 12% of Basic
-        - Employee ESI = 0.75% of Gross (only if Gross <= 21000)
+        """Auto-calculate salary components from CTC using the following rules:
+
+        CTC = Gross Salary + Employer PF + Employer ESI
+
+        Gross Salary = Basic + HRA + CA + Bonus + Mobile + CCA
+        Basic  = 50% of Gross
+        HRA    = 40% of Basic  (= 20% of Gross)
+        CA     = 20% of Basic  (= 10% of Gross)
+        Bonus  = 20% of Basic  (= 10% of Gross)
+        Mobile = ₹500 (fixed)
+        CCA    = Gross − (Basic + HRA + CA + Bonus + Mobile)  ← balancing component
+
+        PF:
+          Employee PF = 12% × Basic
+          Employer PF = 12% × Basic
+
+        ESI (only when Gross ≤ ESI_WAGE_LIMIT = 21,000):
+          Employee ESI = 0.75% × Gross
+          Employer ESI = 3.25% × Gross
+
+        Deriving Gross from CTC:
+          CTC = Gross × (1 + 0.12×0.5)  [+ Employer ESI if applicable]
+              = Gross × 1.06             (if Gross > 21,000 — no ESI)
+              = Gross × 1.0925           (if Gross ≤ 21,000 — ESI applies)
         """
-        # Iterative calculation to handle CCA dependency
-        # CCA depends on Employer ESI, which depends on Gross
-        
-        for iteration in range(5):  # Max 5 iterations for convergence
-            # Step 1: Calculate basic salary as percentage of CTC
-            self.basic_salary = self.ctc_monthly * Decimal('0.4695')
-            
-            # Step 2: Calculate fixed allowances based on basic salary
-            self.hra = self.basic_salary * Decimal('0.40')
-            self.ca = self.basic_salary * Decimal('0.20')
-            self.bonus = self.basic_salary * Decimal('0.20')
-            
-            # Step 3: Mobile is always 500
-            self.mobile = Decimal('500')
-            
-            # Step 4: Calculate employee PF (12% of basic)
-            self.pf_employee = self.basic_salary * Decimal('0.12')
-            
-            # Step 5: Calculate employer PF (13% of basic salary)
-            self.pf_employer = self.basic_salary * Decimal('0.13')
-            
-            # Step 6: Calculate gross salary without CCA
-            gross_without_cca = (self.basic_salary + self.hra + self.ca + 
-                                self.bonus + self.mobile)
-            
-            # Step 7: Calculate ESI based on gross salary
-            # ESI is only applicable if gross <= 21000
-            if gross_without_cca <= Decimal('21000'):
-                self.esi_employee = gross_without_cca * Decimal('0.0075')
-                # Employer ESI = 3.25% of Gross Salary (when applicable)
-                self.esi_employer = gross_without_cca * Decimal('0.0325')
-            else:
-                self.esi_employee = Decimal('0.00')
-                self.esi_employer = Decimal('0.00')
-            
-            # Step 8: Calculate CCA to balance the CTC equation
-            # CTC = Basic + HRA + CA + Bonus + Mobile + CCA + Employer PF + Employer ESI
-            # CCA = CTC - (Basic + HRA + CA + Bonus + Mobile + Employer PF + Employer ESI)
-            components_without_cca = (self.basic_salary + self.hra + self.ca + 
-                                      self.bonus + self.mobile + self.pf_employer + 
-                                      self.esi_employer)
-            self.cca = self.ctc_monthly - components_without_cca
-        
+        ESI_WAGE_LIMIT = Decimal('21000.00')
+        R = Decimal('0.01')  # rounding quantum
+
+        # ── Step 1: Determine whether ESI applies by first estimating Gross ────
+        # Estimate without ESI: Gross ≈ CTC / 1.06
+        gross_estimate = (self.ctc_monthly / Decimal('1.06')).quantize(R)
+        esi_applies = gross_estimate <= ESI_WAGE_LIMIT
+
+        # If ESI might apply, refine with the ESI divisor
+        if esi_applies:
+            gross_estimate = (self.ctc_monthly / Decimal('1.0925')).quantize(R)
+            # Edge case: after ESI divisor the gross might flip above the limit
+            # In that case fall back to no-ESI divisor
+            if gross_estimate > ESI_WAGE_LIMIT:
+                esi_applies = False
+                gross_estimate = (self.ctc_monthly / Decimal('1.06')).quantize(R)
+
+        gross = gross_estimate
+
+        # ── Step 2: Derive all components from Gross ────────────────────────────
+        basic = (gross * Decimal('0.50')).quantize(R)
+        hra   = (basic * Decimal('0.40')).quantize(R)
+        ca    = (basic * Decimal('0.20')).quantize(R)
+        bonus = (basic * Decimal('0.20')).quantize(R)
+        mobile = Decimal('500.00')
+
+        # CCA is the balancing component so Gross = Basic + HRA + CA + Bonus + Mobile + CCA
+        cca = (gross - basic - hra - ca - bonus - mobile).quantize(R)
+        if cca < Decimal('0.00'):
+            cca = Decimal('0.00')
+
+        # ── Step 3: PF ────────────────────────────────────────────────────────────
+        pf_employee = (basic * Decimal('0.12')).quantize(R)
+        pf_employer = (basic * Decimal('0.12')).quantize(R)
+
+        # ── Step 4: ESI ──────────────────────────────────────────────────────────
+        if esi_applies:
+            esi_employee = (gross * Decimal('0.0075')).quantize(R)
+            esi_employer = (gross * Decimal('0.0325')).quantize(R)
+        else:
+            esi_employee = Decimal('0.00')
+            esi_employer = Decimal('0.00')
+
+        # ── Assign ───────────────────────────────────────────────────────────────
+        self.basic_salary = basic
+        self.hra          = hra
+        self.ca           = ca
+        self.cca          = cca
+        self.bonus        = bonus
+        self.mobile       = mobile
+        self.pf_employee  = pf_employee
+        self.pf_employer  = pf_employer
+        self.esi_employee = esi_employee
+        self.esi_employer = esi_employer
+
         super().save(*args, **kwargs)
     
     def calculate_gross_salary(self):

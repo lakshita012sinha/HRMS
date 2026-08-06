@@ -550,3 +550,50 @@ from django.shortcuts import redirect
 def browser_logout(request):
     logout(request)
     return redirect('login')
+
+
+class MyTeamView(APIView):
+    """Return all direct subordinates of the currently logged-in reporting officer."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .models_extended import EmploymentDetails
+        user = request.user
+
+        # Find everyone whose reporting_officer is this user
+        subordinates = User.objects.filter(
+            employee_profile__employment_details__reporting_officer=user,
+            is_active=True
+        ).select_related(
+            'employee_profile__employment_details__designation',
+            'employee_profile__employment_details__department',
+            'employee_profile__employment_details__branch',
+        ).order_by('first_name', 'last_name')
+
+        team = []
+        for emp in subordinates:
+            try:
+                ed = emp.employee_profile.employment_details
+                ep = emp.employee_profile
+                designation = ed.designation.name if ed.designation else ''
+                department  = ed.department.name  if ed.department  else ''
+                branch      = ed.branch.name      if ed.branch      else ''
+                contact     = ep.contact_number   if ep.contact_number else ''
+                photo       = ep.profile_photo.url if ep.profile_photo else None
+            except Exception:
+                designation = department = branch = contact = ''
+                photo = None
+
+            team.append({
+                'id':          emp.id,
+                'user_id':     emp.user_id,
+                'name':        f"{emp.first_name} {emp.last_name}".strip().upper(),
+                'email':       emp.email,
+                'designation': designation,
+                'department':  department,
+                'branch':      branch,
+                'contact':     contact,
+                'photo':       photo,
+            })
+
+        return Response(team, status=status.HTTP_200_OK)

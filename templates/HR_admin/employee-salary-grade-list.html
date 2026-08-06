@@ -101,11 +101,13 @@ function openAddModal(){
 }
 
 async function toggleGradeStatus(id,val){
+    const token = localStorage.getItem('authToken') || '';
     try{await fetch('/api/payroll/salary-grades/'+id+'/',{method:'PATCH',headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify({is_active:val==='true'})});}
     catch(e){console.error(e);}
 }
 
 async function loadGrades(){
+    const token = localStorage.getItem('authToken') || '';
     try{
         let all=[], url='/api/payroll/salary-structures/';
         while(url){
@@ -121,15 +123,17 @@ async function loadGrades(){
         else{tbody.innerHTML=gradeData.map(function(g,i){
             const monthly=parseFloat(g.ctc_monthly||0);
             const yearly=(monthly*12).toFixed(2);
+            const gradeDisplay = g.grade_level_name
+                ? g.grade_level_name + (g.grade_level_range ? ' <small class="text-muted d-block">(' + g.grade_level_range + ')</small>' : '')
+                : (g.grade || '-');
             return '<tr class="text-center"><td>'+(i+1)+'</td>'+
                 '<td class="text-start">'+(g.employee_name||'-').toUpperCase()+'</td>'+
-                '<td>'+(g.grade_level_name ? g.grade_level_name+' <small class="text-muted">('+g.grade+')</small>' : (g.grade||'-'))+'</td>'+
+                '<td>'+gradeDisplay+'</td>'+
                 '<td>'+(g.designation||'-')+'</td>'+
                 '<td>'+yearly+'</td>'+
                 '<td>'+monthly.toFixed(2)+'</td>'+
                 '<td><span class="badge '+(g.is_active?'bg-success':'bg-secondary')+'">'+(g.is_active?'Active':'Inactive')+'</span></td>'+
                 '<td>'+fmtDate(g.created_at)+'</td>';
-                
         }).join('');}
         if(dtInst){dtInst.destroy();dtInst=null;}
         dtInst=$('#gradeTable').DataTable({pageLength:25,destroy:true,columnDefs:[{orderable:false,targets:[5,7]}]});
@@ -170,6 +174,7 @@ document.addEventListener('DOMContentLoaded',function(){
         const url=id?'/api/payroll/salary-grades/'+id+'/':'/api/payroll/salary-grades/';
         const method=id?'PUT':'POST';
         this.disabled=true;
+        const token = localStorage.getItem('authToken') || '';
         try{
             const res=await fetch(url,{method:method,headers:{'Authorization':'Token '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await res.json();

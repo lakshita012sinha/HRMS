@@ -1,0 +1,163 @@
+{% extends 'hrms_user/base_user.html' %}
+{% load static %}
+
+{% block title %}My Team - HRMS User{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>
+    .avatar-team {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 1px solid #ddd;
+    }
+    .avatar-placeholder {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #6861CE;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <h4 class="fw-bold mb-3">My Team</h4>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="/user/dashboard/"><i class="ri-home-3-line"></i></a></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>Employee</span></li>
+        <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+        <li class="nav-item"><span>My Team</span></li>
+    </ul>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div id="alertArea"></div>
+                <div class="d-print-none mb-3">
+                    <button class="btn btn-primary btn-sm" onclick="exportToCSV()">
+                        <i class="ri-download-2-line"></i> <strong>Export</strong>
+                    </button>
+                    <span class="ms-3 text-muted" id="teamCount"></span>
+                </div>
+                <div class="table-responsive">
+                    <table id="teamTable" class="display table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th colspan="7" class="text-center bg-light"><strong>Team Members</strong></th>
+                            </tr>
+                            <tr class="text-center">
+                                <th>#</th>
+                                <th>Photo</th>
+                                <th>Employee Code</th>
+                                <th>Employee Name</th>
+                                <th>Designation</th>
+                                <th>Contact No.</th>
+                                <th>Email ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamBody">
+                            <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+let teamData = [];
+let dtInst = null;
+
+function showAlert(msg, type) {
+    type = type || 'danger';
+    document.getElementById('alertArea').innerHTML =
+        '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' +
+        msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+function getInitials(name) {
+    return (name || '?').split(' ').slice(0, 2).map(function(w) { return w[0]; }).join('').toUpperCase();
+}
+
+async function loadTeam() {
+    const TOKEN = localStorage.getItem('authToken') || '';
+    try {
+        const res = await fetch('/api/accounts/my-team/', {
+            headers: { 'Authorization': 'Token ' + TOKEN }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        teamData = await res.json();
+
+        const tbody = document.getElementById('teamBody');
+        const countEl = document.getElementById('teamCount');
+
+        if (!teamData.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No team members found.</td></tr>';
+            countEl.textContent = '';
+            return;
+        }
+
+        countEl.textContent = teamData.length + ' member' + (teamData.length !== 1 ? 's' : '');
+
+        tbody.innerHTML = teamData.map(function(m, i) {
+            const photoHtml = m.photo
+                ? '<img src="' + m.photo + '" class="avatar-team" alt="' + m.name + '">'
+                : '<div class="avatar-placeholder mx-auto">' + getInitials(m.name) + '</div>';
+
+            return '<tr class="text-center">' +
+                '<td>' + (i + 1) + '</td>' +
+                '<td>' + photoHtml + '</td>' +
+                '<td>' + (m.user_id || '-') + '</td>' +
+                '<td class="text-start fw-semibold">' + (m.name || '-') + '</td>' +
+                '<td>' + (m.designation || '-') + '</td>' +
+                '<td>' + (m.contact || '-') + '</td>' +
+                '<td>' + (m.email || '-') + '</td>' +
+                '</tr>';
+        }).join('');
+
+        if (dtInst) { dtInst.destroy(); dtInst = null; }
+        dtInst = $('#teamTable').DataTable({
+            pageLength: 25,
+            destroy: true,
+            columnDefs: [{ orderable: false, targets: [1] }]
+        });
+
+    } catch(e) {
+        showAlert('Failed to load team: ' + e.message);
+    }
+}
+
+function exportToCSV() {
+    if (!teamData.length) return;
+    let csv = '#,Employee Code,Employee Name,Designation,Contact No.,Email ID\n';
+    teamData.forEach(function(m, i) {
+        csv += (i + 1) + ',' + (m.user_id || '') + ',' + (m.name || '') + ',' +
+               (m.designation || '') + ',' + (m.contact || '') + ',' + (m.email || '') + '\n';
+    });
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'my_team.csv';
+    a.click();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTeam();
+});
+</script>
+{% endblock %}

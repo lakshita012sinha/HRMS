@@ -12,34 +12,56 @@ class SalaryStructureSerializer(serializers.ModelSerializer):
     net_salary = serializers.SerializerMethodField()
     total_employer_cost = serializers.SerializerMethodField()
     ctc_breakdown = serializers.SerializerMethodField()
-    
+    grade_level_name = serializers.SerializerMethodField()
+    grade_level_range = serializers.SerializerMethodField()
+
     class Meta:
         model = SalaryStructure
         fields = ['id', 'employee', 'employee_id', 'employee_name', 'ctc_monthly',
-                  'grade', 'designation',
+                  'grade', 'designation', 'grade_level_name', 'grade_level_range',
                   'basic_salary', 'hra', 'ca', 'cca', 'bonus', 'mobile',
                   'pf_employee', 'pf_employer', 'esi_employee', 'esi_employer',
                   'other_deductions', 'gross_salary', 'employee_deductions',
-                  'net_salary', 'total_employer_cost', 'ctc_breakdown', 'is_active', 
+                  'net_salary', 'total_employer_cost', 'ctc_breakdown', 'is_active',
                   'effective_from', 'created_at', 'updated_at']
         read_only_fields = ['basic_salary', 'hra', 'ca', 'cca', 'bonus',
                            'pf_employee', 'pf_employer', 'esi_employee', 'esi_employer',
-                           'created_at', 'updated_at']    
+                           'created_at', 'updated_at']
+
+    def _get_grade_level(self, obj):
+        """Return GradePayLevel from employee's EmploymentDetails (source of truth)."""
+        try:
+            return obj.employee.employee_profile.employment_details.grade_level
+        except Exception:
+            return None
+
+    def get_grade_level_name(self, obj):
+        gl = self._get_grade_level(obj)
+        return gl.name if gl else (obj.grade or None)
+
+    def get_grade_level_range(self, obj):
+        gl = self._get_grade_level(obj)
+        if gl:
+            if gl.max_ctc:
+                return f"₹{int(gl.min_ctc):,} – ₹{int(gl.max_ctc):,}"
+            return f"Above ₹{int(gl.min_ctc):,}"
+        return None
+
     def get_gross_salary(self, obj):
         return float(obj.calculate_gross_salary())
-    
+
     def get_employee_deductions(self, obj):
         return float(obj.calculate_employee_deductions())
-    
+
     def get_net_salary(self, obj):
         return float(obj.calculate_net_salary())
-    
+
     def get_total_employer_cost(self, obj):
         return float(obj.calculate_total_employer_cost())
-    
+
     def get_ctc_breakdown(self, obj):
         return obj.get_ctc_breakdown()
-    
+
     def validate_employee(self, value):
         """Check if employee already has a salary structure"""
         if self.instance is None:  # Only for create
@@ -48,12 +70,47 @@ class SalaryStructureSerializer(serializers.ModelSerializer):
                     "Active salary structure already exists for this employee"
                 )
         return value
-    
+
     def validate_ctc_monthly(self, value):
         """Validate CTC amount"""
         if value <= 0:
             raise serializers.ValidationError("CTC must be greater than 0")
         return value
+
+    def validate(self, attrs):
+        """Validate monthly CTC is within the employee's assigned grade range."""
+        ctc_monthly = attrs.get('ctc_monthly')
+        # On partial update ctc_monthly might not be in attrs; fall back to instance
+        if ctc_monthly is None and self.instance:
+            ctc_monthly = self.instance.ctc_monthly
+
+        employee = attrs.get('employee') or (self.instance.employee if self.instance else None)
+
+        grade_level = None
+        try:
+            grade_level = employee.employee_profile.employment_details.grade_level
+        except Exception:
+            pass
+
+        if grade_level and ctc_monthly is not None:
+            if ctc_monthly < grade_level.min_ctc:
+                raise serializers.ValidationError({
+                    'ctc_monthly': (
+                        f"Monthly CTC ₹{ctc_monthly:,.2f} is below the minimum "
+                        f"for grade {grade_level.name} "
+                        f"(₹{grade_level.min_ctc:,.0f} – "
+                        f"{'₹' + f'{grade_level.max_ctc:,.0f}' if grade_level.max_ctc else 'no upper limit'})."
+                    )
+                })
+            if grade_level.max_ctc is not None and ctc_monthly > grade_level.max_ctc:
+                raise serializers.ValidationError({
+                    'ctc_monthly': (
+                        f"Monthly CTC ₹{ctc_monthly:,.2f} exceeds the maximum "
+                        f"for grade {grade_level.name} "
+                        f"(₹{grade_level.min_ctc:,.0f} – ₹{grade_level.max_ctc:,.0f})."
+                    )
+                })
+        return attrs
 
 
 class SalarySerializer(serializers.ModelSerializer):
@@ -116,7 +173,7 @@ class CTCSalaryStructureSerializer(serializers.Serializer):
     effective_from = serializers.DateField(required=True)
     grade = serializers.CharField(required=False, allow_blank=True, default='')
     designation = serializers.CharField(required=False, allow_blank=True, default='')
-    
+
     def validate_employee(self, value):
         """Check if employee exists"""
         try:
@@ -124,12 +181,46 @@ class CTCSalaryStructureSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Employee not found")
         return value
-    
+
     def validate_ctc_monthly(self, value):
         """Validate CTC amount"""
         if value <= 0:
             raise serializers.ValidationError("CTC must be greater than 0")
         return value
+
+    def validate(self, attrs):
+        """Validate monthly CTC is within the employee's assigned grade range."""
+        from accounts.models_extended import GradePayLevel
+        ctc_monthly = attrs.get('ctc_monthly')
+        employee_id = attrs.get('employee')
+
+        # Resolve grade_level from employee's EmploymentDetails
+        grade_level = None
+        try:
+            user = User.objects.get(id=employee_id)
+            grade_level = user.employee_profile.employment_details.grade_level
+        except Exception:
+            pass
+
+        if grade_level and ctc_monthly is not None:
+            if ctc_monthly < grade_level.min_ctc:
+                raise serializers.ValidationError({
+                    'ctc_monthly': (
+                        f"Monthly CTC ₹{ctc_monthly:,.2f} is below the minimum "
+                        f"for grade {grade_level.name} "
+                        f"(₹{grade_level.min_ctc:,.0f} – "
+                        f"{'₹' + f'{grade_level.max_ctc:,.0f}' if grade_level.max_ctc else 'no upper limit'})."
+                    )
+                })
+            if grade_level.max_ctc is not None and ctc_monthly > grade_level.max_ctc:
+                raise serializers.ValidationError({
+                    'ctc_monthly': (
+                        f"Monthly CTC ₹{ctc_monthly:,.2f} exceeds the maximum "
+                        f"for grade {grade_level.name} "
+                        f"(₹{grade_level.min_ctc:,.0f} – ₹{grade_level.max_ctc:,.0f})."
+                    )
+                })
+        return attrs
 
 
 class GenerateSalarySerializer(serializers.Serializer):

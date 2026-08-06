@@ -11,7 +11,8 @@ from .views import (
     GradePayLevelListCreateView, GradePayLevelDetailView,
     EmployeeDetailAPIView, EmployeeListAPIView, PastEmployeeListView, PastEmployeeDetailView,
     EmployeeDocumentUploadView, EmployeePhotoUploadView, EmployeeSoftDeleteView,
-    PromotionListCreateView, IncrementListCreateView, TransferListCreateView
+    PromotionListCreateView, IncrementListCreateView, TransferListCreateView,
+    MyTeamView,
 )
 
 urlpatterns = [
@@ -60,4 +61,5 @@ urlpatterns = [
     path('promotions/', PromotionListCreateView.as_view(), name='promotion-list'),
     path('increments/', IncrementListCreateView.as_view(), name='increment-list'),
     path('transfers/', TransferListCreateView.as_view(), name='transfer-list'),
+    path('my-team/', MyTeamView.as_view(), name='my-team'),
 ]

@@ -71,6 +71,7 @@
                             <div class="collapse" id="empMenu">
                                 <ul class="nav nav-collapse">
                                     <li><a href="/user/my-profile/"><span class="sub-item">My Profile</span></a></li>
+                                    <li id="myTeamLi" style="display:none;"><a href="/user/my-team/"><span class="sub-item">My Team</span></a></li>
                                 </ul>
                             </div>
                         </li>
@@ -255,6 +256,12 @@
                     teamLeaveLi.innerHTML = `<a href="/user/team-leaves/"><span class="sub-item">Team Leave Requests</span></a>`;
                     leaveMenuCollapse.appendChild(teamLeaveLi);
                 }
+            }
+
+            // Show My Team link for reporting officers (users who have subordinates)
+            if (data.has_subordinates || data.is_manager || data.role_name === 'MANAGER' || data.role_name === 'HR' || data.role_name === 'ADMIN') {
+                const myTeamLi = document.getElementById('myTeamLi');
+                if (myTeamLi) myTeamLi.style.display = '';
             }
         }
 

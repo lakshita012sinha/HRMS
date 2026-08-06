@@ -414,17 +414,17 @@
         const mob   = parseFloat(sal.mobile || 0);
         const gross = parseFloat(sal.gross_salary || 0);
 
-        // Entitled = full-month salary recalculated from CTC
+        // Entitled = full-month salary recalculated from CTC using new formula
+        // New rules: Basic = 50% × Gross,  Gross = CTC / (1.06 or 1.0925)
         const ctc       = parseFloat(sal.ctc_monthly || 0);
-        const eBasic    = ctc * 0.4695;
+        let eGross      = ctc / 1.06;    // Assume no ESI first
+        if (eGross <= 21000) eGross = ctc / 1.0925;  // If Gross ≤ 21k, ESI applies
+        const eBasic    = eGross * 0.50;
         const eHRA      = eBasic * 0.40;
         const eCA       = eBasic * 0.20;
         const eBonus    = eBasic * 0.20;
         const eMob      = 500;
-        const ePFEmp    = eBasic * 0.13;
-        const eESIEmp   = (eBasic + eHRA + eCA + eBonus + eMob) <= 21000 ? (eBasic + eHRA + eCA + eBonus + eMob) * 0.0325 : 0;
-        const eCCA      = ctc - (eBasic + eHRA + eCA + eBonus + eMob + ePFEmp + eESIEmp);
-        const eGross    = eBasic + eHRA + eCA + eCCA + eBonus + eMob;
+        const eCCA      = Math.max(0, eGross - eBasic - eHRA - eCA - eBonus - eMob);
 
         // Entitled column (E)
         document.getElementById('psBasicE').textContent  = fmt(eBasic);

@@ -44,15 +44,8 @@
                                 <label class="form-label">Grade</label>
                                 <select class="form-select" id="grade">
                                     <option value="">Select Grade</option>
-                                    <option value="M">M</option>
-                                    <option value="M1">M1</option>
-                                    <option value="E1">E1</option>
-                                    <option value="E1-Jaipur">E1-Jaipur</option>
-                                    <option value="E2-Jaipur">E2-Jaipur</option>
-                                    <option value="F">F</option>
-                                    <option value="F1">F1</option>
-                                    <option value="E">E</option>
                                 </select>
+                                <small id="gradeRangeHint" class="text-muted"></small>
                             </div>
                         </div>
                     </div>
@@ -72,6 +65,7 @@
                             <div class="form-group">
                                 <label class="form-label">Monthly CTC</label>
                                 <input type="number" class="form-control" id="monthlyCTC" placeholder="Enter Monthly CTC" min="0" step="0.01">
+                                <small id="monthlyCTCHint" class="text-danger"></small>
                             </div>
                         </div>
                     </div>
@@ -94,8 +88,13 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', async function() {
+
+const TOKEN = localStorage.getItem('authToken') || '';
 const urlParams = new URLSearchParams(window.location.search);
-const editId = urlParams.get('id');  // salary structure id
+const editId = urlParams.get('id');
+
+let gradesMaster = [];
 
 function showAlert(msg, type) {
     type = type || 'danger';
@@ -105,11 +104,143 @@ function showAlert(msg, type) {
     window.scrollTo(0, 0);
 }
 
+/* ── load Grade dropdown from master API ─────────────────────────── */
+async function loadGradeMaster() {
+    try {
+        const res = await fetch('/api/accounts/grade-levels/', {
+            headers: { 'Authorization': 'Token ' + TOKEN }
+        });
+        if (!res.ok) return;
+        gradesMaster = await res.json();
+        const gSel = document.getElementById('grade');
+        // Clear and rebuild using createElement to avoid HTML encoding issues
+        gSel.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select Grade';
+        gSel.appendChild(placeholder);
+        gradesMaster.forEach(function(g) {
+            const opt = document.createElement('option');
+            opt.value = g.name;
+            opt.dataset.id  = g.id;
+            opt.dataset.min = g.min_ctc;
+            opt.dataset.max = g.max_ctc || '';
+            opt.dataset.range = g.ctc_range;
+            opt.textContent = g.name + ' — ' + g.ctc_range;
+            gSel.appendChild(opt);
+        });
+    } catch(e) { console.error('Grade master load error:', e); }
+}
+
+/* ── update range hint when grade manually changed ───────────────── */
+document.getElementById('grade').addEventListener('change', function() {
+    const opt  = this.options[this.selectedIndex];
+    const hint = document.getElementById('gradeRangeHint');
+    hint.textContent = (this.value && opt.dataset.range) ? 'Range: ' + opt.dataset.range : '';
+    // Re-validate CTC if already entered
+    const monthly = parseFloat(document.getElementById('monthlyCTC').value) || 0;
+    if (monthly > 0) checkMonthlyCTCRange(monthly);
+    else clearMonthlyCTCError();
+});
+
+/* ── auto-fetch employee details when employee is selected ──────── */
+document.getElementById('employeeSelect').addEventListener('change', async function() {
+    const empId = this.value;
+    if (!empId) {
+        // Clear fields on de-select
+        document.getElementById('designation').value         = '';
+        document.getElementById('grade').value               = '';
+        document.getElementById('gradeRangeHint').textContent = '';
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/accounts/employees/' + empId + '/', {
+            headers: { 'Authorization': 'Token ' + TOKEN }
+        });
+        if (!res.ok) return;
+        const emp = await res.json();
+        const employment = emp.employment_details || {};
+
+        // ── Fill designation ────────────────────────────────────────
+        const desigSel  = document.getElementById('designation');
+        const desigName = employment.designation || '';
+        let found = false;
+        for (let i = 0; i < desigSel.options.length; i++) {
+            if (desigSel.options[i].value === desigName) {
+                desigSel.value = desigName;
+                found = true;
+                break;
+            }
+        }
+        if (!found && desigName) {
+            desigSel.innerHTML += '<option value="' + desigName + '">' + desigName + '</option>';
+            desigSel.value = desigName;
+        }
+
+        // ── Fill grade from grade_level FK (preferred) or legacy text ──
+        const gradeSel  = document.getElementById('grade');
+        const gradeHint = document.getElementById('gradeRangeHint');
+        const gl        = employment.grade_level;   // object: {id, name, ctc_range, min_ctc, max_ctc}
+
+        gradeSel.value        = '';
+        gradeHint.textContent = '';
+
+        if (gl && gl.id) {
+            // Match option by data-id (most reliable) or by name (case-insensitive fallback)
+            let matched = false;
+            for (let i = 0; i < gradeSel.options.length; i++) {
+                const opt = gradeSel.options[i];
+                if (parseInt(opt.dataset.id) === parseInt(gl.id)) {
+                    gradeSel.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                // Fallback: match by name (trimmed, case-insensitive)
+                const glNameNorm = (gl.name || '').trim().toUpperCase();
+                for (let i = 0; i < gradeSel.options.length; i++) {
+                    if (gradeSel.options[i].value.trim().toUpperCase() === glNameNorm) {
+                        gradeSel.selectedIndex = i;
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            if (matched) {
+                const selOpt = gradeSel.options[gradeSel.selectedIndex];
+                gradeHint.textContent = selOpt.dataset.range ? 'Range: ' + selOpt.dataset.range : (gl.ctc_range ? 'Range: ' + gl.ctc_range : '');
+            } else {
+                gradeHint.textContent = gl.ctc_range ? 'Range: ' + gl.ctc_range : '';
+            }
+        } else if (employment.grade) {
+            // Legacy text grade — try to match by value
+            for (let i = 0; i < gradeSel.options.length; i++) {
+                if (gradeSel.options[i].value.trim().toUpperCase() === employment.grade.trim().toUpperCase()) {
+                    gradeSel.selectedIndex = i;
+                    const selOpt = gradeSel.options[i];
+                    gradeHint.textContent = selOpt.dataset.range ? 'Range: ' + selOpt.dataset.range : '';
+                    break;
+                }
+            }
+        }
+
+        // ── CTC fields: do NOT auto-fill — HR enters manually ──────
+        // Clear any stale values so HR starts fresh for this employee
+        document.getElementById('monthlyCTC').value = '';
+        document.getElementById('yearlyCTC').value  = '';
+        document.getElementById('breakdownSection').style.setProperty('display', 'none', 'important');
+
+    } catch(e) { console.error('Employee fetch error:', e); }
+});
+
+/* ── load all dropdowns ──────────────────────────────────────────── */
 async function loadDropdowns() {
     try {
         const [eRes, dRes] = await Promise.all([
-            fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + token } }),
-            fetch('/api/accounts/designations/', { headers: { 'Authorization': 'Token ' + token } })
+            fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + TOKEN } }),
+            fetch('/api/accounts/designations/', { headers: { 'Authorization': 'Token ' + TOKEN } })
         ]);
         const emps = await eRes.json();
         const eSel = document.getElementById('employeeSelect');
@@ -119,7 +250,7 @@ async function loadDropdowns() {
         });
         if (dRes.ok) {
             const depts = await dRes.json();
-            const dSel = document.getElementById('designation');
+            const dSel  = document.getElementById('designation');
             (Array.isArray(depts) ? depts : (depts.results || [])).forEach(function(d) {
                 dSel.innerHTML += '<option value="' + d.name + '">' + d.name + '</option>';
             });
@@ -129,67 +260,138 @@ async function loadDropdowns() {
 
 async function loadRecord(id) {
     try {
-        const res = await fetch('/api/payroll/salary-structures/' + id + '/', { headers: { 'Authorization': 'Token ' + token } });
+        const res = await fetch('/api/payroll/salary-structures/' + id + '/', { headers: { 'Authorization': 'Token ' + TOKEN } });
         if (!res.ok) throw new Error('Not found');
         const s = await res.json();
-        document.getElementById('pageTitle').textContent = 'Edit Employee Salary Grade';
+        document.getElementById('pageTitle').textContent       = 'Edit Employee Salary Grade';
         document.getElementById('breadcrumbLabel').textContent = 'Edit Grade Pay';
+
+        // Set employee, then trigger change to auto-fill designation + grade
         document.getElementById('employeeSelect').value = s.employee || '';
-        document.getElementById('monthlyCTC').value = s.ctc_monthly || '';
-        document.getElementById('yearlyCTC').value = parseFloat(s.ctc_monthly || 0) * 12;
-        document.getElementById('breakdownSection').style.display = 'block';
+        document.getElementById('employeeSelect').dispatchEvent(new Event('change'));
+
+        // After the async change handler runs, override CTC with the saved value
+        // (use a small delay to let the async handler complete)
+        setTimeout(function() {
+            const m = parseFloat(s.ctc_monthly || 0);
+            if (m > 0) {
+                document.getElementById('monthlyCTC').value = m.toFixed(2);
+                document.getElementById('yearlyCTC').value  = (m * 12).toFixed(2);
+                document.getElementById('breakdownSection').style.removeProperty('display');
+            }
+        }, 800);
     } catch(e) { showAlert('Failed to load: ' + e.message); }
+}
+
+/* ── helper: get selected grade range bounds ─────────────────────── */
+function getSelectedGradeRange() {
+    const gradeSel = document.getElementById('grade');
+    const opt = gradeSel.options[gradeSel.selectedIndex];
+    if (!opt || !opt.dataset.min) return null;
+    return {
+        min: parseFloat(opt.dataset.min),
+        max: opt.dataset.max ? parseFloat(opt.dataset.max) : null,
+        range: opt.dataset.range || ''
+    };
+}
+
+/* ── validate monthly CTC against selected grade range ──────────── */
+function validateMonthlyCTC(monthly) {
+    const bounds = getSelectedGradeRange();
+    if (!bounds) return true;  // no grade selected — allow any value
+    if (monthly < bounds.min) return false;
+    if (bounds.max !== null && monthly > bounds.max) return false;
+    return true;
 }
 
 // Auto-calculate monthly from yearly
 document.getElementById('yearlyCTC').addEventListener('input', function() {
     const yearly = parseFloat(this.value) || 0;
-    if (yearly > 0) document.getElementById('monthlyCTC').value = (yearly / 12).toFixed(2);
+    if (yearly > 0) {
+        const monthly = yearly / 12;
+        document.getElementById('monthlyCTC').value = monthly.toFixed(2);
+        checkMonthlyCTCRange(monthly);
+    } else {
+        clearMonthlyCTCError();
+    }
 });
 
 // Auto-calculate yearly from monthly
 document.getElementById('monthlyCTC').addEventListener('input', function() {
     const monthly = parseFloat(this.value) || 0;
-    if (monthly > 0) document.getElementById('yearlyCTC').value = (monthly * 12).toFixed(2);
+    if (monthly > 0) {
+        document.getElementById('yearlyCTC').value = (monthly * 12).toFixed(2);
+        checkMonthlyCTCRange(monthly);
+    } else {
+        clearMonthlyCTCError();
+    }
     document.getElementById('breakdownSection').style.removeProperty('display');
 });
 
-document.addEventListener('DOMContentLoaded', async function() {
-    await loadDropdowns();
-    if (editId) loadRecord(editId);
+function checkMonthlyCTCRange(monthly) {
+    const bounds = getSelectedGradeRange();
+    const field  = document.getElementById('monthlyCTC');
+    const hint   = document.getElementById('monthlyCTCHint');
+    if (!bounds) { clearMonthlyCTCError(); return; }
+    if (!validateMonthlyCTC(monthly)) {
+        field.classList.add('is-invalid');
+        if (hint) hint.textContent = 'Monthly CTC must be within the grade range: ' + bounds.range;
+    } else {
+        field.classList.remove('is-invalid');
+        if (hint) hint.textContent = '';
+    }
+}
 
-    document.getElementById('submitBtn').addEventListener('click', async function() {
-        const empId = document.getElementById('employeeSelect').value;
+function clearMonthlyCTCError() {
+    document.getElementById('monthlyCTC').classList.remove('is-invalid');
+    const hint = document.getElementById('monthlyCTCHint');
+    if (hint) hint.textContent = '';
+}
+
+/* ── init ────────────────────────────────────────────────────────── */
+await loadGradeMaster();   // grades FIRST — options must exist before employee selection
+await loadDropdowns();     // employees + designations
+if (editId) await loadRecord(editId);
+
+document.getElementById('submitBtn').addEventListener('click', async function() {
+        const empId   = document.getElementById('employeeSelect').value;
         const monthly = document.getElementById('monthlyCTC').value;
 
         if (!empId) { showAlert('Please select an Employee.'); return; }
         if (!monthly || parseFloat(monthly) <= 0) { showAlert('Monthly CTC is required.'); return; }
 
-        const today = new Date().toISOString().split('T')[0];
+        // Validate monthly CTC is within the selected grade range
+        const monthlyVal = parseFloat(monthly);
+        const bounds = getSelectedGradeRange();
+        if (bounds && !validateMonthlyCTC(monthlyVal)) {
+            showAlert('Monthly CTC ₹' + monthlyVal.toLocaleString('en-IN') + ' is outside the selected grade range: ' + bounds.range + '. Please enter a value within this range.');
+            document.getElementById('monthlyCTC').classList.add('is-invalid');
+            return;
+        }
+
+        const today   = new Date().toISOString().split('T')[0];
         const payload = {
-            employee: parseInt(empId),
-            ctc_monthly: parseFloat(monthly),
+            employee:      parseInt(empId),
+            ctc_monthly:   parseFloat(monthly),
             effective_from: today,
-            grade: document.getElementById('grade').value,
-            designation: document.getElementById('designation').value
+            grade:         document.getElementById('grade').value,
+            designation:   document.getElementById('designation').value
         };
 
         // Check if employee already has a salary structure
         let url, method;
         if (editId) {
-            url = '/api/payroll/salary-structures/' + editId + '/';
+            url    = '/api/payroll/salary-structures/' + editId + '/';
             method = 'PATCH';
         } else {
-            // Check for existing structure
-            const checkRes = await fetch('/api/payroll/salary-structures/?employee=' + empId, { headers: { 'Authorization': 'Token ' + token } });
+            const checkRes  = await fetch('/api/payroll/salary-structures/?employee=' + empId, { headers: { 'Authorization': 'Token ' + TOKEN } });
             const checkData = await checkRes.json();
-            const existing = Array.isArray(checkData) ? checkData : (checkData.results || []);
+            const existing  = Array.isArray(checkData) ? checkData : (checkData.results || []);
             if (existing.length > 0) {
-                // Update existing
-                url = '/api/payroll/salary-structures/' + existing[0].id + '/';
+                url    = '/api/payroll/salary-structures/' + existing[0].id + '/';
                 method = 'PATCH';
             } else {
-                url = '/api/payroll/create-ctc-structure/';
+                url    = '/api/payroll/create-ctc-structure/';
                 method = 'POST';
             }
         }
@@ -199,18 +401,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         try {
             const res = await fetch(url, {
-                method: method,
-                headers: { 'Authorization': 'Token ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                method:  method,
+                headers: { 'Authorization': 'Token ' + TOKEN, 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload)
             });
             const text = await res.text();
-            var data; try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
+            var data; try { data = JSON.parse(text); } catch(e2) { data = { error: text }; }
 
             if (res.ok) {
                 showAlert(editId ? 'Salary structure updated.' : 'Salary structure created. All components will be auto-calculated when generating payslip.', 'success');
                 setTimeout(function() { window.location.href = '/hr/salary-grade-list/'; }, 1500);
             } else {
-                showAlert(data.error || data.employee && data.employee[0] ? (data.error || data.employee[0]) : (data.detail || JSON.stringify(data)));
+                showAlert(data.error || (data.employee && data.employee[0]) || data.detail || JSON.stringify(data));
             }
         } catch(e) {
             showAlert('Error: ' + e.message);
@@ -218,7 +420,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             this.disabled = false;
             this.innerHTML = '<strong>Submit</strong>';
         }
-    });
-});
+    }); // end submitBtn click
+
+}); // end DOMContentLoaded
 </script>
 {% endblock %}
