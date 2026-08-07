@@ -4,12 +4,91 @@ from rest_framework.views import APIView
 from django.db import transaction
 from django.utils import timezone
 from datetime import datetime
+from decimal import Decimal
 from .models import SalaryStructure, Salary
 from .serializers import (
     SalaryStructureSerializer, SalarySerializer,
     GenerateSalarySerializer, MarkSalaryPaidSerializer, CTCSalaryStructureSerializer
 )
 from accounts.models import User
+
+
+# ── Shared payroll calculation helper ─────────────────────────────────────────
+
+def _compute_earned(ss, pay_days, total_days):
+    """
+    Return a dict of all earned salary figures for a given pay_days / total_days ratio.
+
+    Rules:
+    - If pay_days == total_days  →  Earned = Entitled (exact copy, no rounding drift).
+    - If pay_days <  total_days  →  Earned = Entitled × (pay_days / total_days), rounded to 2dp.
+    - PF and ESI are re-derived from the *earned* basic / gross so the percentages
+      remain correct after proration (not just prorated from the structure totals).
+    - CTC = Gross + Employer PF + Employer ESI  (both contributions are inside CTC).
+    """
+    R = Decimal('0.01')
+    D = Decimal
+
+    pay_days   = D(str(pay_days))
+    total_days = D(str(total_days))
+    full_month = pay_days >= total_days   # treat ≥ as full to handle rounding edge cases
+
+    # Entitled (full-month) values from the salary structure
+    entitled_gross = ss.calculate_gross_salary()   # Basic+HRA+CA+CCA+Bonus+Mobile
+    esi_wage_limit = D('21000.00')
+
+    if full_month:
+        # Exact copy — no arithmetic drift
+        basic  = ss.basic_salary
+        hra    = ss.hra
+        ca     = ss.ca
+        cca    = ss.cca
+        bonus  = ss.bonus
+        mobile = ss.mobile
+        gross  = entitled_gross
+        other  = ss.other_deductions
+    else:
+        ratio  = pay_days / total_days
+        basic  = (ss.basic_salary * ratio).quantize(R)
+        hra    = (ss.hra          * ratio).quantize(R)
+        ca     = (ss.ca           * ratio).quantize(R)
+        cca    = (ss.cca          * ratio).quantize(R)
+        bonus  = (ss.bonus        * ratio).quantize(R)
+        mobile = (ss.mobile       * ratio).quantize(R)
+        gross  = (basic + hra + ca + cca + bonus + mobile).quantize(R)
+        other  = (ss.other_deductions * ratio).quantize(R)
+
+    # PF — always 12% of earned basic
+    pf_employee = (basic * D('0.12')).quantize(R)
+    pf_employer = (basic * D('0.12')).quantize(R)
+
+    # ESI — 0.75% / 3.25% of earned gross, only when gross ≤ ESI limit
+    if gross <= esi_wage_limit:
+        esi_employee = (gross * D('0.0075')).quantize(R)
+        esi_employer = (gross * D('0.0325')).quantize(R)
+    else:
+        esi_employee = D('0.00')
+        esi_employer = D('0.00')
+
+    total_deductions = pf_employee + esi_employee + other
+    net_salary       = gross - total_deductions
+
+    return {
+        'basic_salary':    basic,
+        'hra':             hra,
+        'ca':              ca,
+        'cca':             cca,
+        'bonus':           bonus,
+        'mobile':          mobile,
+        'gross_salary':    gross,
+        'pf_employee':     pf_employee,
+        'pf_employer':     pf_employer,
+        'esi_employee':    esi_employee,
+        'esi_employer':    esi_employer,
+        'other_deductions': other,
+        'total_deductions': total_deductions,
+        'net_salary':      net_salary,
+    }
 
 
 class CreateCTCSalaryStructureView(APIView):
@@ -219,45 +298,33 @@ class GenerateSalaryView(APIView):
             )
         
         # Calculate salary components from salary structure
-        ctc_monthly = salary_structure.ctc_monthly
-        basic_salary = salary_structure.basic_salary
-        hra = salary_structure.hra
-        ca = salary_structure.ca
-        cca = salary_structure.cca
-        bonus = salary_structure.bonus
-        mobile = salary_structure.mobile
-        gross_salary = salary_structure.calculate_gross_salary()
-        
-        pf_employee = salary_structure.pf_employee
-        pf_employer = salary_structure.pf_employer
-        esi_employee = salary_structure.esi_employee
-        esi_employer = salary_structure.esi_employer
-        other_deductions = salary_structure.other_deductions
-        total_deductions = salary_structure.calculate_employee_deductions()
-        
-        net_salary = gross_salary - total_deductions
-        
+        # Use helper with full month (days_in_month = days_in_month → ratio=1.0)
+        import calendar as cal
+        days_in_month = cal.monthrange(year, month)[1]
+        computed = _compute_earned(salary_structure, days_in_month, days_in_month)
+
         # Create salary record
         salary = Salary.objects.create(
             employee=employee,
             month=month,
             year=year,
-            ctc_monthly=ctc_monthly,
-            basic_salary=basic_salary,
-            hra=hra,
-            ca=ca,
-            cca=cca,
-            bonus=bonus,
-            mobile=mobile,
-            gross_salary=gross_salary,
-            pf_employee=pf_employee,
-            pf_employer=pf_employer,
-            esi_employee=esi_employee,
-            esi_employer=esi_employer,
-            other_deductions=other_deductions,
-            total_deductions=total_deductions,
-            net_salary=net_salary,
-            status='GENERATED'
+            ctc_monthly=salary_structure.ctc_monthly,
+            basic_salary=computed['basic_salary'],
+            hra=computed['hra'],
+            ca=computed['ca'],
+            cca=computed['cca'],
+            bonus=computed['bonus'],
+            mobile=computed['mobile'],
+            gross_salary=computed['gross_salary'],
+            pf_employee=computed['pf_employee'],
+            pf_employer=computed['pf_employer'],
+            esi_employee=computed['esi_employee'],
+            esi_employer=computed['esi_employer'],
+            other_deductions=computed['other_deductions'],
+            total_deductions=computed['total_deductions'],
+            net_salary=computed['net_salary'],
+            status='GENERATED',
+            paid_days=days_in_month,
         )
         
         return Response({
@@ -397,7 +464,6 @@ class GenerateMonthlyPayrollView(APIView):
         import calendar as cal
         from attendance.models import Attendance, Holiday
         from datetime import date, timedelta
-        from decimal import Decimal
 
         days_in_month = cal.monthrange(year, month)[1]
 
@@ -476,37 +542,27 @@ class GenerateMonthlyPayrollView(APIView):
             # Cap at days_in_month
             pay_days = min(pay_days, days_in_month)
 
-            # Prorate salary
-            ratio = Decimal(str(pay_days)) / Decimal(str(days_in_month))
-
-            gross        = ss.calculate_gross_salary() * ratio
-            pf_employee  = ss.pf_employee  * ratio
-            esi_employee = ss.esi_employee * ratio
-            other_ded    = ss.other_deductions * ratio
-            total_ded    = pf_employee + esi_employee + other_ded
-            net_salary   = gross - total_ded
-
-            # Round to 2dp
-            def r(v): return v.quantize(Decimal('0.01'))
+            # Compute earned salary (full-month if pay_days==days_in_month, prorated otherwise)
+            computed = _compute_earned(ss, float(pay_days), days_in_month)
 
             sal = Salary.objects.create(
                 employee=emp,
                 month=month, year=year,
                 ctc_monthly=ss.ctc_monthly,
-                basic_salary=r(ss.basic_salary * ratio),
-                hra=r(ss.hra * ratio),
-                ca=r(ss.ca * ratio),
-                cca=r(ss.cca * ratio),
-                bonus=r(ss.bonus * ratio),
-                mobile=r(ss.mobile * ratio),
-                gross_salary=r(gross),
-                pf_employee=r(pf_employee),
-                pf_employer=r(ss.pf_employer * ratio),
-                esi_employee=r(esi_employee),
-                esi_employer=r(ss.esi_employer * ratio),
-                other_deductions=r(other_ded),
-                total_deductions=r(total_ded),
-                net_salary=r(net_salary),
+                basic_salary=computed['basic_salary'],
+                hra=computed['hra'],
+                ca=computed['ca'],
+                cca=computed['cca'],
+                bonus=computed['bonus'],
+                mobile=computed['mobile'],
+                gross_salary=computed['gross_salary'],
+                pf_employee=computed['pf_employee'],
+                pf_employer=computed['pf_employer'],
+                esi_employee=computed['esi_employee'],
+                esi_employer=computed['esi_employer'],
+                other_deductions=computed['other_deductions'],
+                total_deductions=computed['total_deductions'],
+                net_salary=computed['net_salary'],
                 status='GENERATED',
                 paid_days=float(pay_days),
                 remarks=f'Pay days: {pay_days}/{days_in_month} (Present:{present} + Sundays:{sundays})'
