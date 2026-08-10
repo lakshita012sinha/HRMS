@@ -148,21 +148,32 @@ class PromotionSerializer(serializers.ModelSerializer):
         }
 
     def get_previous_designation(self, obj):
+        # Find the promotion that immediately preceded this one (by date/id)
         prev_promotions = Promotion.objects.filter(
             employee=obj.employee,
             promoted_date__lt=obj.promoted_date
         ).order_by('-promoted_date', '-id')
         if prev_promotions.exists():
-            return prev_promotions.first().promoted_designation.name if prev_promotions.first().promoted_designation else "-"
-        
-        try:
-            from accounts.models_extended import EmploymentDetails
-            emp_details = EmploymentDetails.objects.filter(employee=obj.employee).first()
-            if emp_details and emp_details.designation:
-                return emp_details.designation.name
-        except Exception:
-            pass
-        return "-"
+            prev = prev_promotions.first()
+            return prev.promoted_designation.name if prev.promoted_designation else '-'
+
+        # This is the first promotion — find the same-day promotions earlier by id
+        same_day_earlier = Promotion.objects.filter(
+            employee=obj.employee,
+            promoted_date=obj.promoted_date,
+            id__lt=obj.id
+        ).order_by('-id')
+        if same_day_earlier.exists():
+            prev = same_day_earlier.first()
+            return prev.promoted_designation.name if prev.promoted_designation else '-'
+
+        # No earlier promotion found. Return the designation stored in the
+        # initial_designation snapshot field if available, otherwise '-'.
+        # We intentionally do NOT fall back to EmploymentDetails.designation
+        # because that has already been updated to the promoted designation.
+        if obj.initial_designation:
+            return obj.initial_designation
+        return '-'
 
     def create(self, validated_data):
         employee_code = validated_data.pop('employee_code', None)

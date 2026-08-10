@@ -4,6 +4,32 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 
 
+class PayrollSettings(models.Model):
+    """Global payroll settings"""
+    minimum_days_for_payroll = models.IntegerField(
+        default=6,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum qualifying worked days required for payroll generation eligibility (excludes Sundays/weekly-offs)"
+    )
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='payroll_settings_updates')
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'payroll_settings'
+        verbose_name = 'Payroll Settings'
+        verbose_name_plural = 'Payroll Settings'
+    
+    def __str__(self):
+        return f"Payroll Settings (Min Days: {self.minimum_days_for_payroll})"
+    
+    @classmethod
+    def get_settings(cls):
+        """Get or create singleton payroll settings"""
+        settings, created = cls.objects.get_or_create(id=1)
+        return settings
+
+
 class SalaryStructure(models.Model):
     """CTC-based salary structure for each employee"""
     employee = models.OneToOneField(User, on_delete=models.CASCADE, related_name='salary_structure')
@@ -77,19 +103,19 @@ class SalaryStructure(models.Model):
         help_text="Employer PF - 12% of basic (Auto-calculated, deducted from CTC)"
     )
     
-    # ESI calculations (only for salary <= 21000)
+    # ESI calculations (only for monthly CTC <= 22000)
     # Employee ESI = gross * 0.75%
     esi_employee = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, 
         validators=[MinValueValidator(Decimal('0.00'))], 
-        help_text="Employee ESI - 0.75% of gross (if salary <= 21000)"
+        help_text="Employee ESI - 0.75% of gross (if monthly CTC <= 22000)"
     )
     
     # Employer ESI = gross * 3.25%
     esi_employer = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, 
         validators=[MinValueValidator(Decimal('0.00'))], 
-        help_text="Employer ESI - 3.25% of gross (if salary <= 21000)"
+        help_text="Employer ESI - 3.25% of gross (if monthly CTC <= 22000)"
     )
     
     # Other deductions
@@ -121,33 +147,27 @@ class SalaryStructure(models.Model):
           Employee PF = 12% × Basic
           Employer PF = 12% × Basic
 
-        ESI (only when Gross ≤ ESI_WAGE_LIMIT = 21,000):
+        ESI (only when Monthly CTC ≤ ₹22,000):
           Employee ESI = 0.75% × Gross
           Employer ESI = 3.25% × Gross
 
         Deriving Gross from CTC:
           CTC = Gross × (1 + 0.12×0.5)  [+ Employer ESI if applicable]
-              = Gross × 1.06             (if Gross > 21,000 — no ESI)
-              = Gross × 1.0925           (if Gross ≤ 21,000 — ESI applies)
+              = Gross × 1.06             (if CTC > 22,000 — no ESI)
+              = Gross × 1.0925           (if CTC ≤ 22,000 — ESI applies)
         """
-        ESI_WAGE_LIMIT = Decimal('21000.00')
+        ESI_CTC_LIMIT = Decimal('22000.00')  # Changed from 21000 to 22000 and based on CTC
         R = Decimal('0.01')  # rounding quantum
 
-        # ── Step 1: Determine whether ESI applies by first estimating Gross ────
-        # Estimate without ESI: Gross ≈ CTC / 1.06
-        gross_estimate = (self.ctc_monthly / Decimal('1.06')).quantize(R)
-        esi_applies = gross_estimate <= ESI_WAGE_LIMIT
+        # ── Step 1: Determine whether ESI applies based on monthly CTC ────
+        # ESI applies when monthly CTC ≤ ₹22,000
+        esi_applies = self.ctc_monthly <= ESI_CTC_LIMIT
 
-        # If ESI might apply, refine with the ESI divisor
+        # Calculate Gross from CTC using the appropriate divisor
         if esi_applies:
-            gross_estimate = (self.ctc_monthly / Decimal('1.0925')).quantize(R)
-            # Edge case: after ESI divisor the gross might flip above the limit
-            # In that case fall back to no-ESI divisor
-            if gross_estimate > ESI_WAGE_LIMIT:
-                esi_applies = False
-                gross_estimate = (self.ctc_monthly / Decimal('1.06')).quantize(R)
-
-        gross = gross_estimate
+            gross = (self.ctc_monthly / Decimal('1.0925')).quantize(R)
+        else:
+            gross = (self.ctc_monthly / Decimal('1.06')).quantize(R)
 
         # ── Step 2: Derive all components from Gross ────────────────────────────
         basic = (gross * Decimal('0.50')).quantize(R)
@@ -240,11 +260,30 @@ class Salary(models.Model):
         ('GENERATED', 'Generated'),
         ('PAID', 'Paid'),
         ('CANCELLED', 'Cancelled'),
+        ('NOT_ELIGIBLE', 'Not Eligible'),
     ]
     
     employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='salaries')
     month = models.IntegerField(validators=[MinValueValidator(1)], help_text="Month (1-12)")
     year = models.IntegerField(validators=[MinValueValidator(2000)], help_text="Year")
+    
+    # Payroll eligibility tracking
+    worked_days = models.DecimalField(
+        max_digits=5, decimal_places=1, default=0,
+        help_text="Qualifying worked days (PRESENT + HALF_DAY attendance, excluding Sundays/weekly-offs/holidays)"
+    )
+    minimum_required_days = models.IntegerField(
+        default=6,
+        help_text="Minimum qualifying worked days required for payroll eligibility (from settings)"
+    )
+    is_eligible = models.BooleanField(
+        default=True,
+        help_text="Whether employee is eligible for payroll generation based on worked days"
+    )
+    ineligibility_reason = models.TextField(
+        blank=True,
+        help_text="Reason for payroll ineligibility"
+    )
     
     # CTC and salary components
     ctc_monthly = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
@@ -265,12 +304,13 @@ class Salary(models.Model):
     esi_employer = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(Decimal('0.00'))], help_text="Employer ESI (3.25% of gross if applicable)")
     
     # Other deductions
+    tds = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(Decimal('0.00'))], help_text="Tax Deducted at Source (TDS)")
     other_deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(Decimal('0.00'))])
-    total_deductions = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))], help_text="Total employee deductions")
+    total_deductions = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))], help_text="Total employee deductions (PF + ESI + TDS + Other)")
     net_salary = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='GENERATED')
-    paid_days = models.DecimalField(max_digits=5, decimal_places=1, default=0, help_text="Actual paid days (present + sundays)")
+    paid_days = models.DecimalField(max_digits=5, decimal_places=1, default=0, help_text="Payable days (present + sundays + paid leaves) for salary calculation")
     payment_date = models.DateField(null=True, blank=True, help_text="Date when salary was paid")
     remarks = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -301,3 +341,42 @@ class SalaryGrade(models.Model):
 
     def __str__(self):
         return f"{self.grade} - {self.designation}"
+
+
+class EmployeeTDS(models.Model):
+    """Employee TDS (Tax Deducted at Source) records"""
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tds_records')
+    financial_year = models.CharField(max_length=20, help_text="e.g., 2026-27")
+    effective_date_from = models.DateField(help_text="Start date for TDS deduction")
+    effective_date_to = models.DateField(null=True, blank=True, help_text="End date for TDS deduction (leave blank for 'Effective Until Changed')")
+    tds_per_month = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="TDS amount per month"
+    )
+    tds_per_year = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="TDS amount per year (auto-calculated as tds_per_month * 12)"
+    )
+    remark = models.TextField(blank=True, help_text="Optional remark")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """Auto-calculate TDS per year from TDS per month"""
+        self.tds_per_year = self.tds_per_month * Decimal('12')
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.employee.user_id} - {self.financial_year} - ₹{self.tds_per_month}/month"
+
+    class Meta:
+        db_table = 'employee_tds'
+        ordering = ['-financial_year', '-effective_date_from']
+        verbose_name = 'Employee TDS'
+        verbose_name_plural = 'Employee TDS Records'
+        unique_together = ['employee', 'financial_year']

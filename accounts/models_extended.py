@@ -265,6 +265,9 @@ class Promotion(models.Model):
     approved_by = models.CharField(max_length=100)
     remark = models.TextField(blank=True, null=True)
     document = models.FileField(upload_to='promotion_documents/', blank=True, null=True)
+    # Snapshot of the designation BEFORE this promotion — set at save time
+    initial_designation = models.CharField(max_length=100, blank=True, default='',
+                                           help_text="Designation held before this promotion (snapshot)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

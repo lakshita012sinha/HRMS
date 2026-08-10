@@ -495,6 +495,68 @@ class PromotionListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(employee__user__user_id__icontains=emp_code)
         return qs
 
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Capture the employee's CURRENT designation BEFORE saving the promotion
+        # so get_previous_designation() returns the correct pre-promotion value
+        # even after EmploymentDetails has been updated.
+        employee_code = request.data.get('employee_code', '')
+        pre_promotion_designation = None
+        try:
+            from .models_extended import EmploymentDetails, EmployeeProfile
+            profile = EmployeeProfile.objects.filter(user__user_id=employee_code).first()
+            if profile:
+                ed = EmploymentDetails.objects.filter(employee=profile).first()
+                if ed and ed.designation:
+                    pre_promotion_designation = ed.designation.name
+        except Exception:
+            pass
+
+        promotion = serializer.save()
+
+        # Store the pre-promotion designation as initial_designation snapshot
+        if pre_promotion_designation:
+            promotion.initial_designation = pre_promotion_designation
+            promotion.save(update_fields=['initial_designation'])
+
+        # ── Update EmploymentDetails: designation + grade_level ───────────────
+        try:
+            from .models_extended import EmploymentDetails, GradePayLevel
+            emp_details = EmploymentDetails.objects.filter(employee=promotion.employee).first()
+            if emp_details:
+                changed = False
+
+                # Update designation if provided
+                if promotion.promoted_designation:
+                    emp_details.designation = promotion.promoted_designation
+                    changed = True
+
+                # Update grade_level if pay_level matches a GradePayLevel name
+                if promotion.pay_level:
+                    gl = GradePayLevel.objects.filter(name=promotion.pay_level, is_active=True).first()
+                    if gl:
+                        emp_details.grade_level = gl
+                        emp_details.grade = gl.name
+                        changed = True
+
+                if changed:
+                    emp_details.save()
+
+        except Exception:
+            pass
+
+        # Attach pre_promotion_designation to the serializer data for the response
+        response_data = serializer.data
+        if pre_promotion_designation:
+            response_data = dict(response_data)
+            response_data['previous_designation'] = pre_promotion_designation
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class IncrementListCreateView(generics.ListCreateAPIView):
     """API endpoint for listing and creating employee increments"""
@@ -518,6 +580,37 @@ class IncrementListCreateView(generics.ListCreateAPIView):
         if emp_code:
             qs = qs.filter(employee__user__user_id__icontains=emp_code)
         return qs
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        increment = serializer.save()
+
+        # ── Apply new CTC to the employee's SalaryStructure ───────────────────
+        # new_basic_pay stores the new monthly CTC value
+        new_ctc_str = str(increment.new_basic_pay).strip()
+        effective   = increment.effective_date_from
+
+        if new_ctc_str:
+            try:
+                from decimal import Decimal, InvalidOperation
+                from payroll.models import SalaryStructure
+                new_ctc = Decimal(new_ctc_str)
+                if new_ctc > 0:
+                    ss = SalaryStructure.objects.filter(
+                        employee=increment.employee.user,
+                        is_active=True
+                    ).first()
+                    if ss:
+                        ss.ctc_monthly   = new_ctc
+                        ss.effective_from = effective
+                        ss.save()   # triggers full recalculation via model.save()
+            except (InvalidOperation, ValueError):
+                pass  # non-numeric new_basic_pay — skip salary update
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TransferListCreateView(generics.ListCreateAPIView):

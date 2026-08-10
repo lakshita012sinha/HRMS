@@ -1,0 +1,232 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee TDS History{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">Employee TDS History</h4>
+  <ul class="breadcrumbs mb-3">
+    <li class="nav-home">
+      <a href="/dashboard/">
+        <i class="ri-home-3-line"></i>
+      </a>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">Salary</span>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <a href="/hr/employee-tds/">
+        <span class="op-7">TDS</span>
+      </a>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">Employee TDS History</span>
+    </li>
+  </ul>
+</div>
+<div class="row">
+  <div class="col-sm-12 col-md-12">
+    <div class="card card-stats card-round">
+      <div class="card-header d-print-none text-start">
+        <a href="/hr/employee-tds/"><button class="btn btn-black btn-sm mb-1"><strong><i class="ri-arrow-left-circle-line"></i> Back</strong></button></a>
+        <button class="btn btn-secondary btn-sm mb-1 ms-2" id="addTDSBtn"><strong><i class="ri-add-line"></i> Add TDS</strong></button>
+      </div>
+      <div class="card-body modify-form">
+        <div class="row">
+          <div class="table-responsive">
+            <table class="display table table-bordered my-3 table-head-bg-light" width="100%">
+              <thead>
+                <th colspan="4" class="text-center">Employee Details</th>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Employee Name</td>
+                  <td class="fw-bold" id="empName">-</td>
+                  <td>Employee Code</td>
+                  <td colspan="3" class="fw-bold" id="empCode">-</td>
+                </tr>
+                <tr>
+                  <td>Department</td>
+                  <td class="fw-bold" id="empDept">-</td>
+                  <td>Deputed Project</td>
+                  <td colspan="3" class="fw-bold" id="empProject">-</td>
+                </tr>
+                <tr>
+                  <td>Present Designation</td>
+                  <td class="fw-bold" id="empDesignation">-</td>
+                  <td>Date of Joining</td>
+                  <td colspan="3" class="fw-bold" id="empDoj">-</td>
+                </tr>
+                <tr>
+                  <td>Employee Type</td>
+                  <td class="fw-bold" id="empType">-</td>
+                  <td>Employee Status</td>
+                  <td colspan="3" class="fw-bold" id="empStatus">-</td>
+                </tr>
+                <tr>
+                  <td>Contact Number</td>
+                  <td class="fw-bold" id="empContact">-</td>
+                  <td>Email ID</td>
+                  <td colspan="3" class="fw-bold" id="empEmail">-</td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="display table table-bordered my-3 table-head-bg-light" width="100%">
+              <thead>
+                <th colspan="8" class="text-center">TDS History</th>
+                <tr class="text-center">
+                  <th>Financial Year</th>
+                  <th>Effective Date From</th>
+                  <th>Effective Until Changed</th>
+                  <th>TDS per month(₹)</th>
+                  <th>TDS per year(₹)</th>
+                  <th>Added Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tdsHistoryBody">
+                <tr class="text-center">
+                  <td colspan="7">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+    } catch(e) {
+      return dateStr;
+    }
+  }
+
+  async function loadEmployeeTDSHistory() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const empCode = urlParams.get('emp');
+    
+    if (!empCode) {
+      alert('Employee code not provided');
+      window.location.href = '/hr/employee-tds/';
+      return;
+    }
+
+    // Set up Add TDS button to pass employee code
+    document.getElementById('addTDSBtn').addEventListener('click', function() {
+      window.location.href = '/hr/employee-tds-add/?emp=' + empCode;
+    });
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = '/login/';
+      return;
+    }
+
+    const headers = { 'Authorization': 'Token ' + token };
+
+    try {
+      // Fetch employee details
+      let url = '/api/accounts/employees/';
+      let foundEmp = null;
+
+      while (url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+
+        foundEmp = list.find(e => 
+          (e.user_id && e.user_id.toLowerCase() === empCode.toLowerCase()) ||
+          (e.id && String(e.id) === String(empCode))
+        );
+
+        if (foundEmp) break;
+        url = Array.isArray(data) ? null : data.next;
+      }
+
+      if (foundEmp) {
+        const profile = foundEmp.employee_profile || {};
+        const employment = foundEmp.employment_details || {};
+        const firstName = (foundEmp.first_name || '').trim();
+        const lastName = (foundEmp.last_name || '').trim();
+        const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || foundEmp.user_id || '-';
+
+        document.getElementById('empName').textContent = fullName;
+        document.getElementById('empCode').textContent = foundEmp.user_id || '-';
+        document.getElementById('empDept').textContent = employment.department || '-';
+        document.getElementById('empProject').textContent = employment.deputed_project || '-';
+        document.getElementById('empDesignation').textContent = employment.designation || '-';
+        document.getElementById('empDoj').textContent = formatDate(profile.date_of_joining || foundEmp.created_at);
+        document.getElementById('empType').textContent = employment.employment_type || 'Permanent';
+        document.getElementById('empStatus').textContent = foundEmp.is_active !== false ? 'Active' : 'Inactive';
+        document.getElementById('empContact').textContent = profile.contact_number || '-';
+        document.getElementById('empEmail').textContent = foundEmp.email || profile.official_email || '-';
+      }
+
+      // Load TDS history from API
+      const tbody = document.getElementById('tdsHistoryBody');
+      
+      try {
+        const tdsRes = await fetch('/api/payroll/tds/?employee=' + empCode, { headers });
+        if (tdsRes.ok) {
+          const tdsData = await tdsRes.json();
+          const tdsList = Array.isArray(tdsData) ? tdsData : (tdsData.results || []);
+
+          if (tdsList.length > 0) {
+            tbody.innerHTML = tdsList.map(item => `
+              <tr class="text-center">
+                <td>${item.financial_year}</td>
+                <td>${item.effective_date_from}</td>
+                <td>${item.effective_date_to || '<span class="badge bg-success">Ongoing</span>'}</td>
+                <td>${item.tds_per_month}</td>
+                <td>${item.tds_per_year}</td>
+                <td>${item.added_date}</td>
+                <td>
+                  <a href="/hr/employee-tds-add/?emp=${empCode}&tds=${item.id}"><button class="btn btn-warning btn-sm mb-1">Edit</button></a>
+                </td>
+              </tr>
+            `).join('');
+          } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No TDS records found for this employee</td></tr>';
+          }
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No TDS records found for this employee</td></tr>';
+        }
+      } catch (tdsErr) {
+        console.error('Error loading TDS data:', tdsErr);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No TDS records found for this employee</td></tr>';
+      }
+
+    } catch (err) {
+      console.error('Error loading TDS history:', err);
+      document.getElementById('tdsHistoryBody').innerHTML = 
+        '<tr><td colspan="7" class="text-center text-danger py-3">Error loading data. Please try again.</td></tr>';
+    }
+  }
+
+  $(document).ready(function() {
+    loadEmployeeTDSHistory();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Add TDS{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">TDS Form</h4>
+</div>
+<div class="row">
+  <div class="col-sm-12 col-md-12">
+    <div class="card card-stats card-round">
+      <div class="card-body">
+        <form id="tdsForm">
+          <div class="row">
+            <h5><strong>Employee Details</strong></h5>
+            <!-- Hidden employee ID field -->
+            <input type="hidden" id="employeeId" value="">
+            
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="employeeName">Employee Name</label>
+                <input type="text" class="form-control" id="employeeName" value="" readonly>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="employeeCode">Employee Code</label>
+                <input type="text" class="form-control" id="employeeCode" value="" readonly>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="employeeDepartment">Department</label>
+                <input type="text" class="form-control" id="employeeDepartment" value="" readonly>   
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="deputedProject">Deputed Project</label>
+                <input type="text" class="form-control" id="deputedProject" value="" readonly>    
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="employeeDesignation">Present Designation</label>
+                <input type="text" class="form-control" id="employeeDesignation" value="" readonly>   
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="doj">Date of Joining</label>
+                <input type="Date" class="form-control" id="doj" value="" readonly>   
+              </div>
+            </div>   
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="contactNumber1">Contact Number</label>
+                <input type="text" id="contactNumber1" name="contactNumber1" class="form-control" maxlength="10" value="" readonly>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="emailId">Email ID</label>
+                <input type="email" id="emailId" name="emailId" class="form-control" value="" readonly>
+              </div>
+            </div>                   
+          </div>
+          <div class="row">
+            <h5 class="mt-2"><strong>TDS Details</strong></h5>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="financialYear">Financial Year <i class="ri-asterisk"></i></label>
+                <select class="form-select" id="financialYear" name="financialYear" required="">
+                  <option value="">Select Financial Year</option>
+                  <option value="2026-27">2026-27</option>
+                  <option value="2025-26">2025-26</option>
+                  <option value="2024-25">2024-25</option>
+                </select>    
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="effectiveFrom">Effective Date From <i class="ri-asterisk"></i></label>
+                <input type="Date" class="form-control" id="effectiveFrom" name="effectiveFrom" required>   
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="effectiveTo">Effective Until Changed</label>
+                <input type="Date" class="form-control" id="effectiveTo" name="effectiveTo" placeholder="Leave blank for ongoing">   
+                <small class="form-text text-muted">Leave blank if TDS is effective until changed</small>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="tdsValue">TDS Value (₹) <i class="ri-asterisk"></i></label>
+                <input type="number" step="0.01" class="form-control" id="tdsValue" name="tdsValue" placeholder="Enter TDS Value" required>   
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="form-group">
+                <label for="othersRemark">Remark (Optional)</label>
+                <textarea id="othersRemark" name="othersRemark" class="form-control" rows="3" cols="20" placeholder="Enter Remark"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="col-12 py-3 px-3 text-center">
+              <button type="submit" class="btn btn-success btn-sm" name="submit" id="submit">Submit</button>
+              <a href="/hr/employee-tds/" class="btn btn-secondary btn-sm ms-2">Cancel</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let selectedEmployee = null;
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
+    } catch(e) {
+      return '';
+    }
+  }
+
+  async function loadEmployeeDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const empCode = urlParams.get('emp');
+    
+    if (!empCode) {
+      alert('Employee code not provided. Redirecting to TDS list.');
+      window.location.href = '/hr/employee-tds/';
+      return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = '/login/';
+      return;
+    }
+
+    const headers = { 'Authorization': 'Token ' + token };
+
+    try {
+      // Fetch employee details
+      let url = '/api/accounts/employees/';
+      let foundEmp = null;
+
+      while (url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) break;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.results || []);
+
+        foundEmp = list.find(e => 
+          (e.user_id && e.user_id.toLowerCase() === empCode.toLowerCase()) ||
+          (e.id && String(e.id) === String(empCode))
+        );
+
+        if (foundEmp) break;
+        url = Array.isArray(data) ? null : data.next;
+      }
+
+      if (foundEmp) {
+        selectedEmployee = foundEmp;
+        const profile = foundEmp.employee_profile || {};
+        const employment = foundEmp.employment_details || {};
+        const firstName = (foundEmp.first_name || '').trim();
+        const lastName = (foundEmp.last_name || '').trim();
+        const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || foundEmp.user_id || '-';
+
+        document.getElementById('employeeId').value = foundEmp.id;
+        document.getElementById('employeeName').value = fullName;
+        document.getElementById('employeeCode').value = foundEmp.user_id || '-';
+        document.getElementById('employeeDepartment').value = employment.department || '-';
+        document.getElementById('deputedProject').value = employment.deputed_project || '-';
+        document.getElementById('employeeDesignation').value = employment.designation || '-';
+        document.getElementById('doj').value = formatDate(profile.date_of_joining || foundEmp.created_at);
+        document.getElementById('contactNumber1').value = profile.contact_number || '-';
+        document.getElementById('emailId').value = foundEmp.email || profile.official_email || '-';
+      } else {
+        alert('Employee not found. Redirecting to TDS list.');
+        window.location.href = '/hr/employee-tds/';
+      }
+    } catch (err) {
+      console.error('Error loading employee details:', err);
+      alert('Error loading employee details. Please try again.');
+    }
+  }
+
+  document.getElementById('tdsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = '/login/';
+      return;
+    }
+
+    if (!selectedEmployee) {
+      alert('Employee information not loaded. Please try again.');
+      return;
+    }
+
+    const formData = {
+      employee: selectedEmployee.id,
+      financial_year: document.getElementById('financialYear').value,
+      effective_date_from: document.getElementById('effectiveFrom').value,
+      effective_date_to: document.getElementById('effectiveTo').value || null,
+      tds_per_month: parseFloat(document.getElementById('tdsValue').value),
+      remark: document.getElementById('othersRemark').value
+    };
+
+    // Validation
+    if (!formData.financial_year || !formData.effective_date_from || !formData.tds_per_month) {
+      alert('Please fill all required fields (Financial Year, Effective Date From, and TDS Value)');
+      return;
+    }
+
+    if (isNaN(formData.tds_per_month) || formData.tds_per_month < 0) {
+      alert('Please enter a valid TDS value');
+      return;
+    }
+
+    // Validate date range if effective_date_to is provided
+    if (formData.effective_date_to) {
+      const fromDate = new Date(formData.effective_date_from);
+      const toDate = new Date(formData.effective_date_to);
+      if (fromDate >= toDate) {
+        alert('Effective Until Changed date must be after Effective Date From');
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('/api/payroll/tds/', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Token ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        alert('TDS entry saved successfully!');
+        window.location.href = '/hr/employee-tds-history/?emp=' + selectedEmployee.user_id;
+      } else {
+        const errorData = await res.json();
+        let errorMsg = 'Failed to save TDS entry';
+        if (errorData.error) {
+          errorMsg += ': ' + errorData.error;
+        } else if (errorData.financial_year) {
+          errorMsg += ': ' + errorData.financial_year[0];
+        } else if (errorData.effective_date_to) {
+          errorMsg += ': ' + errorData.effective_date_to[0];
+        }
+        alert(errorMsg);
+      }
+
+    } catch (err) {
+      console.error('Error saving TDS entry:', err);
+      alert('Error saving TDS entry. Please try again.');
+    }
+  });
+
+  $(document).ready(function() {
+    loadEmployeeDetails();
+  });
+</script>
+{% endblock %}

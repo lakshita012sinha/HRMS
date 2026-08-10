@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SalaryStructure, Salary
+from .models import SalaryStructure, Salary, EmployeeTDS
 
 
 @admin.register(SalaryStructure)
@@ -72,6 +72,35 @@ class SalaryAdmin(admin.ModelAdmin):
         }),
         ('Payment Information', {
             'fields': ('status', 'payment_date', 'remarks')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(EmployeeTDS)
+class EmployeeTDSAdmin(admin.ModelAdmin):
+    list_display = ['employee', 'financial_year', 'tds_per_month', 'tds_per_year', 
+                    'effective_date_from', 'effective_date_to', 'is_active', 'created_at']
+    list_filter = ['is_active', 'financial_year', 'effective_date_from']
+    search_fields = ['employee__user_id', 'employee__first_name', 'employee__last_name', 'financial_year']
+    readonly_fields = ['tds_per_year', 'created_at', 'updated_at']
+    date_hierarchy = 'effective_date_from'
+    
+    fieldsets = (
+        ('Employee Information', {
+            'fields': ('employee', 'financial_year', 'is_active')
+        }),
+        ('TDS Period', {
+            'fields': ('effective_date_from', 'effective_date_to')
+        }),
+        ('TDS Amount', {
+            'fields': ('tds_per_month', 'tds_per_year')
+        }),
+        ('Remark', {
+            'fields': ('remark',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

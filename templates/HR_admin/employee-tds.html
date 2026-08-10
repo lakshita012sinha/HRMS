@@ -1,0 +1,301 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employee TDS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/datatables/datatables.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Modal -->
+<div class="modal fade" id="fileModal" tabindex="-1" >
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">File Preview</h5>
+
+        <div class="btn-group me-2 ms-2">
+          <button id="fullscreenBtn" class="btn btn-sm btn-outline-primary d-none" onclick="toggleFullscreen()">
+            <i class="ri-fullscreen-line"></i>
+          </button>
+        </div>
+
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div id="zoomControls" class="mb-2 text-center d-none">
+          <button class="btn btn-sm btn-info" onclick="zoomIn()"><i class="ri-add-line"></i></button>
+          <button class="btn btn-sm btn-info" onclick="zoomOut()"><i class="ri-subtract-line"></i></button>
+          <button class="btn btn-sm btn-secondary" onclick="resetZoom()">Reset</button>
+        </div>
+
+        <div id="fileContainer"
+            style="width:100%; height:75vh; max-height:calc(100vh - 160px); overflow:auto; text-align:center;">
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">TDS</h4>
+  <ul class="breadcrumbs mb-3">
+    <li class="nav-home">
+      <a href="/dashboard/">
+        <i class="ri-home-3-line"></i>
+      </a>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">Salary</span>
+    </li>
+    <li class="separator">
+      <i class="ri-arrow-right-s-line"></i>
+    </li>
+    <li class="nav-item">
+      <span class="op-7">TDS</span>
+    </li>
+  </ul>
+</div>
+<div class="row">
+  <div class="col-sm-12 col-md-12">
+    
+    <div class="card card-stats card-round">                  
+      <div class="card-body">
+        <div class="table-responsive">
+          <div class="d-print-none">
+            <p class="text-start">
+                <button type="submit" class="btn btn-primary btn-sm" name="submit" id="exportExcel" onclick="exportExcel()"><strong><i class="ri-download-2-line"></i> Export</strong></button>
+            </p>
+          </div>
+          <table id="basic-datatables" class="display table table-hover table-bordered table-head-bg-light">
+            <thead>
+              <tr>
+                <th colspan="11" class="text-center bg-light"><strong>Applicable Employees TDS List</strong></th>
+              </tr>
+              <tr class="text-center">
+                <th>#</th>
+                <th>Employee Code</th>
+                <th>Employee Name</th>
+                <th>Branch</th>
+                <th>Department</th>
+                <th>Present Designation</th>
+                <th>Pay Level</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tdsListBody">
+              <tr>
+                <td colspan="8" class="text-center text-muted py-3">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+    let scale = 1;
+    const step = 0.2;
+    const minScale = 0.5;
+    const maxScale = 4;
+    let isFullscreen = false;
+
+    function openModal(type, fileUrl) {
+      const container = document.getElementById('fileContainer');
+      const zoomControls = document.getElementById('zoomControls');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+      scale = 1;
+      container.innerHTML = '';
+      zoomControls.classList.add('d-none');
+      fullscreenBtn.classList.add('d-none');
+
+      if (type === 'image') {
+        zoomControls.classList.remove('d-none');
+        fullscreenBtn.classList.remove('d-none');
+
+        container.innerHTML = `
+          <img id="previewImage"
+                src="${fileUrl}"
+                class="img-fluid"
+                style="transform:scale(1); transition:transform .15s ease; cursor:zoom-in; user-select: none;">
+          `;
+
+          enableImageInteractions();
+        }
+
+        if (type === 'pdf') {
+          
+        container.innerHTML = `
+            <iframe src="${fileUrl}"
+                    style="width:100%; height:100%; border:none;">
+            </iframe>
+          `;
+        }
+
+        new bootstrap.Modal(document.getElementById('fileModal')).show();
+      }
+
+
+      function zoomIn() {
+        if (scale < maxScale) scale += step;
+        applyZoom();
+      }
+
+      function zoomOut() {
+        if (scale > minScale) scale -= step;
+        applyZoom();
+      }
+
+      function resetZoom() {
+        scale = 1;
+        applyZoom();
+      }
+
+      function applyZoom() {
+        const img = document.getElementById('previewImage');
+        if (img) {
+          img.style.transform = `scale(${scale})`;
+        }
+      }
+
+      function enableImageInteractions() {
+        const img = document.getElementById('previewImage');
+
+        img.addEventListener('wheel', function (e) {
+          e.preventDefault();
+          e.deltaY < 0 ? zoomIn() : zoomOut();
+        });
+
+        img.addEventListener('dblclick', function () {
+          scale = scale === 1 ? 2 : 1;
+          applyZoom();
+        });
+      }
+
+      function toggleFullscreen() {
+        const modalContent = document.querySelector('#fileModal .modal-content');
+
+        if (!document.fullscreenElement) {
+          modalContent.requestFullscreen();
+          isFullscreen = true;
+        } else {
+          document.exitFullscreen();
+          isFullscreen = false;
+        }
+      }
+
+      document.getElementById('fileModal')
+        .addEventListener('hidden.bs.modal', () => {
+          document.getElementById('fileContainer').innerHTML = '';
+          scale = 1;
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+      });
+
+    function exportExcel() {
+      // Get table
+      const table = document.getElementById('basic-datatables');
+      
+      // Convert to workbook
+      const wb = XLSX.utils.table_to_book(table, {sheet: "TDS List"});
+      
+      // Generate filename with current date
+      const date = new Date().toISOString().slice(0,10);
+      const filename = `TDS_List_${date}.xlsx`;
+      
+      // Download
+      XLSX.writeFile(wb, filename);
+    }
+
+    async function loadTDSList() {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/login/';
+        return;
+      }
+
+      const headers = { 'Authorization': 'Token ' + token };
+      const tbody = document.getElementById('tdsListBody');
+
+      try {
+        // Fetch all employees
+        let url = '/api/accounts/employees/';
+        let allEmployees = [];
+        
+        while (url) {
+          const res = await fetch(url, { headers });
+          if (!res.ok) {
+            throw new Error('Failed to fetch employees');
+          }
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.results || []);
+          allEmployees = allEmployees.concat(list);
+          url = Array.isArray(data) ? null : data.next;
+        }
+
+        // Filter employees who have salary structure (potential TDS applicants)
+        // In a real scenario, you'd filter based on salary threshold or TDS applicability
+        const tdsApplicableEmployees = allEmployees.filter(emp => {
+          return emp.is_active !== false; // Active employees only
+        });
+
+        if (tdsApplicableEmployees.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No TDS applicable employees found</td></tr>';
+          return;
+        }
+
+        // Render table rows
+        tbody.innerHTML = tdsApplicableEmployees.map((emp, index) => {
+          const employment = emp.employment_details || {};
+          const firstName = (emp.first_name || '').trim();
+          const lastName = (emp.last_name || '').trim();
+          const fullName = [firstName, lastName].filter(Boolean).join(' ').toUpperCase() || emp.user_id || '-';
+
+          return `
+            <tr class="text-center">
+              <td>${index + 1}</td>
+              <td>${emp.user_id || '-'}</td>
+              <td>${fullName}</td>
+              <td>${employment.branch || '-'}</td>
+              <td>${employment.department || '-'}</td>
+              <td>${employment.designation || '-'}</td>
+              <td>${employment.pay_level || '-'}</td>
+              <td>
+                <a href="/hr/employee-tds-history/?emp=${emp.user_id}"><button class="btn btn-info btn-sm mb-1">View</button></a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Initialize DataTable after data is loaded
+        $('#basic-datatables').DataTable();
+
+      } catch (err) {
+        console.error('Error loading TDS list:', err);
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-3">Error loading data. Please try again.</td></tr>';
+      }
+    }
+
+    $(document).ready(function() {
+      loadTDSList();
+    });
+</script>
+{% endblock %}

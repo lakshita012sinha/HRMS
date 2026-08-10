@@ -82,10 +82,6 @@
               <label for="promotedDesignation">Promoted Designation<span class="text-danger">*</span></label>
               <select class="form-select" id="promotedDesignation" name="promotedDesignation" required="">
                 <option value="">Select Promoted Designation</option>
-                <option value="Field Officer">Field Officer</option>
-                <option value="Back Office Executive">Back Office Executive</option>
-                <option value="Area Manager">Area Manager</option>
-                <option value="Zone Manager">Zone Manager</option>
               </select>    
             </div>
           </div>
@@ -94,16 +90,13 @@
               <label for="payLevel">Pay Level<span class="text-danger">*</span></label>
               <select class="form-select" id="payLevel" name="payLevel" required>
                 <option value="">Select Pay Level</option>
-                <option value="L2">L2</option>
-                <option value="L3">L3</option>
-                <option value="L4">L4</option>
               </select>    
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="basicPay">Basic Pay<span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="basicPay" name="basicPay" required>
+              <label for="basicPay">Monthly CTC<span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="basicPay" name="basicPay" required step="0.01" min="0" placeholder="Auto-filled from salary structure">
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
@@ -183,9 +176,11 @@
         );
         if (found) {
           populateEmpFields(found);
+          fetchCurrentCTC(found.id);
         }
       } else if (allEmp.length > 0) {
         populateEmpFields(allEmp[0]);
+        fetchCurrentCTC(allEmp[0].id);
       }
     } catch (err) {
       console.error('Error fetching employee details:', err);
@@ -231,7 +226,65 @@
     }
   }
 
+  /* ── Load designation + pay-level dropdowns from DB ────────────────────── */
+  async function loadDropdowns() {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    // Designations
+    try {
+      const res = await fetch('/api/accounts/designations/', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const desigs = Array.isArray(data) ? data : (data.results || []);
+        const sel = document.getElementById('promotedDesignation');
+        desigs.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.name;
+          opt.textContent = d.name;
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e) { console.error('Designation load error:', e); }
+
+    // Pay levels (grade levels)
+    try {
+      const res = await fetch('/api/accounts/grade-levels/', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const levels = Array.isArray(data) ? data : (data.results || []);
+        const sel = document.getElementById('payLevel');
+        levels.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g.name;
+          opt.dataset.id = g.id;
+          opt.dataset.range = g.ctc_range || '';
+          opt.textContent = g.name + (g.ctc_range ? ' — ' + g.ctc_range : '');
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e) { console.error('Grade level load error:', e); }
+  }
+
+  /* ── Auto-fill Monthly CTC from salary structure ────────────────────────── */
+  function fetchCurrentCTC(empId) {
+    const token = localStorage.getItem('authToken');
+    if (!empId || !token) return;
+    fetch('/api/payroll/salary-structures/?employee=' + empId, {
+      headers: { 'Authorization': 'Token ' + token }
+    }).then(r => r.ok ? r.json() : []).then(data => {
+      const list = Array.isArray(data) ? data : (data.results || []);
+      if (list.length > 0) {
+        const ctc = parseFloat(list[0].ctc_monthly || 0);
+        if (ctc > 0) {
+          document.getElementById('basicPay').value = ctc.toFixed(2);
+        }
+      }
+    }).catch(() => {});
+  }
+
   $(document).ready(function() {
+    loadDropdowns();
     loadEmployeeForForm();
 
     $('#submit').on('click', async function(e) {

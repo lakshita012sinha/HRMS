@@ -123,7 +123,7 @@ class SalarySerializer(serializers.ModelSerializer):
         fields = ['id', 'employee', 'employee_id', 'employee_name', 'month', 'month_name',
                   'year', 'ctc_monthly', 'basic_salary', 'hra', 'ca', 'cca', 'bonus', 'mobile',
                   'gross_salary', 'pf_employee', 'pf_employer', 'esi_employee', 'esi_employer',
-                  'other_deductions', 'total_deductions', 'net_salary', 'status', 'paid_days',
+                  'tds', 'other_deductions', 'total_deductions', 'net_salary', 'status', 'paid_days',
                   'payment_date', 'remarks', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
     
@@ -276,3 +276,69 @@ class SalaryGradeSerializer(serializers.ModelSerializer):
         from .models import SalaryGrade
         self.Meta.model = SalaryGrade
         super().__init__(*args, **kwargs)
+
+
+class EmployeeTDSSerializer(serializers.ModelSerializer):
+    employee_id = serializers.CharField(source='employee.user_id', read_only=True)
+    employee_name = serializers.CharField(source='employee.get_full_name', read_only=True)
+    added_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = None
+        fields = ['id', 'employee', 'employee_id', 'employee_name', 'financial_year',
+                  'effective_date_from', 'effective_date_to', 'tds_per_month', 'tds_per_year',
+                  'remark', 'is_active', 'added_date', 'created_at', 'updated_at']
+        read_only_fields = ['tds_per_year', 'created_at', 'updated_at']
+
+    def __init__(self, *args, **kwargs):
+        from .models import EmployeeTDS
+        self.Meta.model = EmployeeTDS
+        super().__init__(*args, **kwargs)
+
+    def get_added_date(self, obj):
+        """Return formatted added date"""
+        if obj.created_at:
+            return obj.created_at.strftime('%B %d, %Y')
+        return ''
+
+    def validate_employee(self, value):
+        """Check if employee exists"""
+        try:
+            User.objects.get(id=value.id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Employee not found")
+        return value
+
+    def validate_tds_per_month(self, value):
+        """Validate TDS amount"""
+        if value < 0:
+            raise serializers.ValidationError("TDS amount cannot be negative")
+        return value
+
+    def validate(self, attrs):
+        """Validate TDS record"""
+        employee = attrs.get('employee')
+        financial_year = attrs.get('financial_year')
+        effective_date_from = attrs.get('effective_date_from')
+        effective_date_to = attrs.get('effective_date_to')
+
+        # Check date range validity only if effective_date_to is provided
+        if effective_date_from and effective_date_to:
+            if effective_date_from >= effective_date_to:
+                raise serializers.ValidationError({
+                    "effective_date_to": "To Date must be after From Date"
+                })
+
+        # Check for duplicate TDS record for the same financial year
+        if self.instance is None:  # Only for create
+            from .models import EmployeeTDS
+            if EmployeeTDS.objects.filter(
+                employee=employee,
+                financial_year=financial_year,
+                is_active=True
+            ).exists():
+                raise serializers.ValidationError({
+                    "error": f"TDS record already exists for {financial_year}"
+                })
+
+        return attrs

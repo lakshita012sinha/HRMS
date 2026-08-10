@@ -98,7 +98,7 @@
                   <th>Office</th>
                   <th>Designation</th>
                   <th>Pay Level</th>
-                  <th>Basic Pay</th>
+                  <th>Monthly CTC</th>
                   <th>Remark (Optional)</th>
                 </tr>
               </thead>
@@ -114,7 +114,7 @@
                   <th>Promotion Date</th>
                   <th>Designation</th>
                   <th>Pay Level</th>
-                  <th>Basic Pay</th>
+                  <th>Monthly CTC</th>
                   <th>Effective From</th>
                   <th>Approved By</th>
                   <th>Remarks (optional)</th>
@@ -132,9 +132,9 @@
                 <tr class="text-center">
                   <th>Increment Date</th>
                   <th>Increment Type</th>
-                  <th>Previous Basic Pay</th>
+                  <th>Previous Monthly CTC</th>
                   <th>Increment Amount</th>
-                  <th>New Basic Pay</th>
+                  <th>New Monthly CTC</th>
                   <th>Pay Level</th>
                   <th>Effective Date</th>
                   <th>Remarks (Optional)</th>
@@ -332,17 +332,26 @@
         const employment = foundEmp.employment_details || {};
         const joiningDate = profile.date_of_joining || foundEmp.created_at;
 
-        allServiceEvents = [{
+        // Store raw employee data — Initial Appointment row is built AFTER
+        // promotion history is loaded, so we can use the pre-promotion designation.
+        window._initialAppointmentBase = {
           effective_date: joiningDate,
           event: 'Initial Appointment',
           department: employment.department || '-',
           office: employment.deputed_project || '-',
-          designation: employment.designation || '-',
-          pay_level: 'L1',
-          basic_pay: '-',
+          // designation and monthly_ctc filled in after history loads
+          designation: employment.designation || '-', // Fallback to current
+          pay_level: employment.pay_level || 'L1',
+          basic_pay: '-', // Will be filled from salary or increment history
           remark: 'Joined'
-        }];
+        };
 
+        // Fetch salary structure to get initial CTC if no history
+        window._employeeUserId = foundEmp.user_id;
+        await loadSalaryStructure(foundEmp.user_id);
+
+        // Start with an empty list — Initial row added after promotions load
+        allServiceEvents = [];
         renderServiceHistory(allServiceEvents);
       }
 
@@ -372,6 +381,30 @@
     document.getElementById('empStatusVal').textContent = emp.is_active !== false ? 'Active' : 'Inactive';
     document.getElementById('empContactVal').textContent = profile.contact_number || '-';
     document.getElementById('empEmailVal').textContent = emp.email || profile.official_email || '-';
+  }
+
+  async function loadSalaryStructure(employeeId) {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': 'Token ' + token } : {};
+
+    try {
+      const res = await fetch('/api/payroll/salary-structures/?employee=' + employeeId, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const salaryList = Array.isArray(data) ? data : (data.results || []);
+        
+        if (salaryList.length > 0) {
+          const salary = salaryList[0]; // Get the salary structure
+          if (window._initialAppointmentBase) {
+            // Store the current CTC as fallback for initial appointment
+            window._initialAppointmentBase.basic_pay = salary.ctc_monthly || '-';
+            window._initialAppointmentBase._currentCTC = salary.ctc_monthly;
+          }
+        }
+      }
+    } catch(err) {
+      console.error('Error fetching salary structure:', err);
+    }
   }
 
   async function loadPromotionHistory(targetCode) {
@@ -423,31 +456,116 @@
     } catch(err) {
       console.error('Error fetching transfer history:', err);
     }
+
+    // After all histories are loaded, build the Initial Appointment row
+    buildInitialAppointmentRow();
+  }
+
+  function buildInitialAppointmentRow() {
+    // Build the Initial Appointment row using historical data
+    if (!window._initialAppointmentBase) return;
+
+    const base = window._initialAppointmentBase;
+
+    // Find the chronologically earliest promotion and increment events
+    const promoEvents = allServiceEvents
+      .filter(e => e.event === 'Promotion')
+      .sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
+    
+    const incrementEvents = allServiceEvents
+      .filter(e => e.event === 'Increment')
+      .sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
+
+    let initialDesignation;
+    let initialCTC;
+    let initialPayLevel;
+
+    // Determine initial designation
+    if (promoEvents.length > 0 && promoEvents[0]._previous_designation) {
+      // Use the pre-promotion designation stored on the event
+      initialDesignation = promoEvents[0]._previous_designation;
+    } else {
+      // No promotions — current designation IS the initial designation
+      initialDesignation = base.designation;
+    }
+
+    // Determine initial CTC from the first event's previous value
+    // Check which event is earlier: promotion or increment
+    let earliestEvent = null;
+    if (promoEvents.length > 0 && incrementEvents.length > 0) {
+      const promoDate = new Date(promoEvents[0].effective_date);
+      const incDate = new Date(incrementEvents[0].effective_date);
+      earliestEvent = promoDate < incDate ? promoEvents[0] : incrementEvents[0];
+    } else if (promoEvents.length > 0) {
+      earliestEvent = promoEvents[0];
+    } else if (incrementEvents.length > 0) {
+      earliestEvent = incrementEvents[0];
+    }
+
+    if (earliestEvent && earliestEvent._previous_ctc) {
+      initialCTC = earliestEvent._previous_ctc;
+      initialPayLevel = earliestEvent._previous_pay_level || base.pay_level;
+    } else {
+      // No history — use the current salary if available
+      initialCTC = base._currentCTC || base.basic_pay;
+      initialPayLevel = base.pay_level;
+    }
+
+    const initialRow = Object.assign({}, base, { 
+      designation: initialDesignation,
+      basic_pay: initialCTC || '-',
+      pay_level: initialPayLevel || base.pay_level
+    });
+    
+    // Prepend the initial appointment row (it's always the earliest event)
+    allServiceEvents = [initialRow].concat(allServiceEvents);
+    allServiceEvents.sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
+    renderServiceHistory(allServiceEvents);
   }
 
   function updateServiceHistory(items, type) {
     let newEvents = [];
     if (type === 'Promotion') {
-      newEvents = items.map(p => ({
+      // Sort promotions chronologically so we can track designation chain
+      const sorted = [...items].sort((a, b) => new Date(a.effective_date_from) - new Date(b.effective_date_from));
+      newEvents = sorted.map(p => ({
         effective_date: p.effective_date_from,
         event: 'Promotion',
-        department: 'Rajasthan ULB',
-        office: 'NAGAR NIGAM JAIPUR',
-        designation: p.designation_name,
+        department: p.department_name || 'Rajasthan ULB',
+        office: p.office || 'NAGAR NIGAM JAIPUR',
+        designation: p.designation_name || '-',
         pay_level: p.pay_level,
         basic_pay: p.basic_pay,
-        remark: p.remark || 'Regular Promotion'
+        remark: p.remark || 'Regular Promotion',
+        // Store the pre-promotion designation and CTC so the Initial row can use it
+        _previous_designation: p.previous_designation || '-',
+        _previous_ctc: p.previous_basic_pay || null,
+        _previous_pay_level: p.previous_pay_level || null
       }));
+
+      // Store current designation on the initial base (for no-promotion case)
+      if (window._initialAppointmentBase) {
+        // Walk the designation chain backward: the initial designation is the
+        // previous_designation of the chronologically first promotion
+        const firstPromo = sorted[0];
+        if (firstPromo) {
+          window._initialAppointmentBase._currentDesignation = firstPromo.previous_designation || '-';
+        }
+      }
     } else if (type === 'Increment') {
-      newEvents = items.map(inc => ({
+      const sorted = [...items].sort((a, b) => new Date(a.effective_date_from) - new Date(b.effective_date_from));
+      newEvents = sorted.map(inc => ({
         effective_date: inc.effective_date_from,
         event: 'Increment',
-        department: 'Rajasthan ULB',
-        office: 'NAGAR NIGAM JAIPUR',
-        designation: 'Tax Collector',
+        department: inc.department || 'Rajasthan ULB',
+        office: inc.office || 'NAGAR NIGAM JAIPUR',
+        designation: inc.designation || '-',
         pay_level: inc.pay_level,
         basic_pay: inc.new_basic_pay,
-        remark: `${inc.increment_type} (+${inc.increment_amount})`
+        remark: `${inc.increment_type} (+${inc.increment_amount})`,
+        // Store the pre-increment CTC for Initial Appointment row
+        _previous_ctc: inc.previous_basic_pay || null,
+        _previous_pay_level: inc.previous_pay_level || null
       }));
     } else if (type === 'Transfer') {
       newEvents = items.map(t => ({
@@ -455,8 +573,8 @@
         event: 'Transfer',
         department: t.new_department,
         office: t.new_office,
-        designation: 'Tax Collector',
-        pay_level: 'L2',
+        designation: t.designation || '-',
+        pay_level: '-',
         basic_pay: '-',
         remark: t.remark || 'Regular Transfer'
       }));

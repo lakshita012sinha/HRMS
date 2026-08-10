@@ -5,6 +5,7 @@ from .views import (
     GenerateSalaryView, MarkSalaryPaidView, CancelSalaryView, MySalaryView,
     CreateCTCSalaryStructureView, GenerateMonthlyPayrollView,
     SalaryGradeListCreateView, SalaryGradeDetailView,
+    EmployeeTDSListCreateView, EmployeeTDSDetailView,
 )
 
 urlpatterns = [
@@ -24,4 +25,8 @@ urlpatterns = [
     path('generate-monthly-payroll/', GenerateMonthlyPayrollView.as_view(), name='generate-monthly-payroll'),
     path('salary-grades/', SalaryGradeListCreateView.as_view(), name='salary-grade-list'),
     path('salary-grades/<int:pk>/', SalaryGradeDetailView.as_view(), name='salary-grade-detail'),
+    
+    # TDS
+    path('tds/', EmployeeTDSListCreateView.as_view(), name='tds-list-create'),
+    path('tds/<int:pk>/', EmployeeTDSDetailView.as_view(), name='tds-detail'),
 ]

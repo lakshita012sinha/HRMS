@@ -100,20 +100,20 @@
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="previousBasicPay">Previous Basic Pay</label>
-              <input type="text" class="form-control" id="previousBasicPay" name="previousBasicPay" value="">
+              <label for="previousBasicPay">Previous Monthly CTC</label>
+              <input type="number" class="form-control" id="previousBasicPay" name="previousBasicPay" value="" step="0.01" min="0" placeholder="Auto-filled from salary structure">
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
               <label for="incrementAmount">Increment Amount<span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="incrementAmount" name="incrementAmount" value="">
+              <input type="number" class="form-control" id="incrementAmount" name="incrementAmount" value="" step="0.01" min="0">
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="form-group">
-              <label for="basicPay">New Basic Pay</label>
-              <input type="text" class="form-control" id="basicPay" name="basicPay" required>
+              <label for="basicPay">New Monthly CTC</label>
+              <input type="number" class="form-control" id="basicPay" name="basicPay" required step="0.01" min="0" placeholder="Auto-calculated">
             </div>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
@@ -239,7 +239,62 @@
     if (document.getElementById('emailId')) {
       document.getElementById('emailId').value = emp.email || profile.official_email || '-';
     }
+
+    // ── Present Pay Level: from employment grade_level ────────────────────────
+    const payLevelSel = document.getElementById('payLevel');
+    const gradeLevel  = employment.grade_level;   // {id, name, ctc_range, ...}
+    const gradeName   = gradeLevel ? gradeLevel.name : (employment.grade || '');
+    if (payLevelSel && gradeName) {
+      // Try matching existing option
+      let matched = false;
+      for (let i = 0; i < payLevelSel.options.length; i++) {
+        if (payLevelSel.options[i].value === gradeName) {
+          payLevelSel.value = gradeName;
+          matched = true;
+          break;
+        }
+      }
+      // If no match, inject an option so value is preserved
+      if (!matched) {
+        const opt = document.createElement('option');
+        opt.value = gradeName;
+        opt.textContent = gradeName + (gradeLevel && gradeLevel.ctc_range ? ' (' + gradeLevel.ctc_range + ')' : '');
+        payLevelSel.insertBefore(opt, payLevelSel.options[1] || null);
+        payLevelSel.value = gradeName;
+      }
+    }
+
+    // ── Previous Monthly CTC: from active SalaryStructure ────────────────────
+    const token = localStorage.getItem('authToken');
+    if (emp.id && token) {
+      fetch('/api/payroll/salary-structures/?employee=' + emp.id, {
+        headers: { 'Authorization': 'Token ' + token }
+      }).then(r => r.ok ? r.json() : []).then(data => {
+        const list = Array.isArray(data) ? data : (data.results || []);
+        if (list.length > 0) {
+          const ctc = parseFloat(list[0].ctc_monthly || 0);
+          if (ctc > 0) {
+            document.getElementById('previousBasicPay').value = ctc.toFixed(2);
+            recalcNewCTC();
+          }
+        }
+      }).catch(() => {});
+    }
   }
+
+  // ── Auto-calculate New Monthly CTC when Increment Amount changes ─────────
+  function recalcNewCTC() {
+    const prev = parseFloat(document.getElementById('previousBasicPay').value) || 0;
+    const inc  = parseFloat(document.getElementById('incrementAmount').value)  || 0;
+    if (prev > 0 || inc > 0) {
+      document.getElementById('basicPay').value = (prev + inc).toFixed(2);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('incrementAmount').addEventListener('input', recalcNewCTC);
+    document.getElementById('previousBasicPay').addEventListener('input', recalcNewCTC);
+  });
 
   $(document).ready(function() {
     loadEmployeeForForm();

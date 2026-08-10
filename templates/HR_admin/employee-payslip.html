@@ -204,7 +204,7 @@
                                                                         <tr>
                                                                             <td style="border-bottom:0;" class="text-center">TDS</td>
                                                                             <td style="border-bottom:0;"><strong>:</strong></td>
-                                                                            <td style="border-bottom:0;" class="text-end">0.00</td>
+                                                                            <td style="border-bottom:0;" class="text-end" id="psTDS">-</td>
                                                                         </tr>
                                                                         <tr>
                                                                             <td style="border-bottom:0;" class="text-center">PF</td>
@@ -416,9 +416,14 @@
 
         // Entitled = full-month salary recalculated from CTC using new formula
         // New rules: Basic = 50% × Gross,  Gross = CTC / (1.06 or 1.0925)
+        // ESI applies when monthly CTC ≤ ₹22,000
         const ctc       = parseFloat(sal.ctc_monthly || 0);
-        let eGross      = ctc / 1.06;    // Assume no ESI first
-        if (eGross <= 21000) eGross = ctc / 1.0925;  // If Gross ≤ 21k, ESI applies
+        let eGross;
+        if (ctc <= 22000) {
+            eGross = ctc / 1.0925;  // ESI applies when CTC ≤ 22k
+        } else {
+            eGross = ctc / 1.06;    // No ESI when CTC > 22k
+        }
         const eBasic    = eGross * 0.50;
         const eHRA      = eBasic * 0.40;
         const eCA       = eBasic * 0.20;
@@ -445,6 +450,7 @@
         document.getElementById('psGrossA').textContent  = fmt(gross);
 
         // Deductions
+        document.getElementById('psTDS').textContent     = fmt(sal.tds);
         document.getElementById('psPFDed').textContent   = fmt(sal.pf_employee);
         document.getElementById('psESIDed').textContent  = fmt(sal.esi_employee);
         document.getElementById('psTotalDed').textContent = fmt(sal.total_deductions);
