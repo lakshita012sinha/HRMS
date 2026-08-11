@@ -1,0 +1,282 @@
+{% extends 'HR_admin/base_bar.html' %}
+{% load static %}
+
+{% block title %}Employees Salary Report - HRMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>
+  .page-inner { background: white !important; min-height: 500px; }
+  .card { background: white !important; }
+  #loadingState { display: none; }
+  #emptyState   { display: none; }
+  #tableWrapper { display: none; }
+  #alertArea    { margin-bottom: 10px; }
+  .dt-title-row th { font-size: 0.85rem; }
+  table.dataTable thead th { white-space: nowrap; font-size: 0.78rem; }
+  table.dataTable tbody td { font-size: 0.78rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <h4 class="fw-bold mb-3">Employees Salary Report</h4>
+  <ul class="breadcrumbs mb-3">
+    <li class="nav-home">
+      <a href="{% url 'dashboard' %}"><i class="ri-home-3-line"></i></a>
+    </li>
+    <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+    <li class="nav-item"><span class="op-7">Reports</span></li>
+    <li class="separator"><i class="ri-arrow-right-s-line"></i></li>
+    <li class="nav-item"><span class="op-7">Employees Salary Report</span></li>
+  </ul>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+
+      <!-- Search filters -->
+      <div class="card-header d-print-none">
+        <div class="row align-items-end">
+          <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="form-group mb-0">
+              <label for="month">Month <i class="ri-asterisk text-danger" style="font-size:8px;"></i></label>
+              <select class="form-select" id="month" name="month">
+                <option value="">Select</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="form-group mb-0">
+              <label for="year">Year <i class="ri-asterisk text-danger" style="font-size:8px;"></i></label>
+              <select class="form-select" id="year" name="year">
+                <option value="">Select</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-12 py-3 text-center">
+            <button class="btn btn-primary btn-sm" id="orSearch">
+              <i class="fa fa-search"></i> Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div id="alertArea"></div>
+
+        <!-- Loading -->
+        <div id="loadingState" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Loading salary report...</p>
+        </div>
+
+        <!-- Empty -->
+        <div id="emptyState" class="text-center py-5">
+          <i class="ri-file-search-line" style="font-size:48px; color:#ccc;"></i>
+          <p class="text-muted mt-2">No payroll records found for the selected month/year.<br>
+            Please generate payroll first from <a href="/hr/attendance-report/">Attendance Report</a>.
+          </p>
+        </div>
+
+        <!-- Table -->
+        <div id="tableWrapper">
+          <div class="d-print-none mb-2">
+            <button class="btn btn-success btn-sm" id="exportExcel">
+              <strong><i class="ri-file-excel-line"></i> Export Excel</strong>
+            </button>
+          </div>
+          <div class="table-responsive" id="printableArea">
+            <table id="salaryTable" class="display table table-hover table-bordered">
+              <thead>
+                <tr class="dt-title-row">
+                  <th colspan="24" class="text-center bg-light" id="reportTitle">
+                    <strong>Employees Salary Report</strong>
+                  </th>
+                </tr>
+                <tr>
+                  <th colspan="7" class="text-center bg-info text-white"><strong>EMPLOYEE DETAILS</strong></th>
+                  <th colspan="8" class="text-center bg-warning"><strong>TOTAL EARNINGS (₹)</strong></th>
+                  <th colspan="8" class="text-center bg-danger text-white"><strong>TOTAL DEDUCTIONS (₹)</strong></th>
+                  <th colspan="1" class="text-center bg-success text-white"><strong>NET PAYABLE (₹)</strong></th>
+                </tr>
+                <tr class="text-center">
+                  <th>#</th>
+                  <th>Employee Code</th>
+                  <th>Employee Name</th>
+                  <th>Department</th>
+                  <th>Designation</th>
+                  <th>Branch</th>
+                  <th>Pay Days</th>
+                  <th>Basic</th>
+                  <th>Bonus</th>
+                  <th>HRA</th>
+                  <th>CA</th>
+                  <th>CCA</th>
+                  <th>Mobile &amp; Internet</th>
+                  <th>Other Allowance</th>
+                  <th>Gross Salary</th>
+                  <th>PF</th>
+                  <th>ESI</th>
+                  <th>PT</th>
+                  <th>TDS</th>
+                  <th>Loan</th>
+                  <th>Advance Salary</th>
+                  <th>Other Deductions</th>
+                  <th>Total Deduction</th>
+                  <th>Net Salary</th>
+                </tr>
+              </thead>
+              <tbody id="salaryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/datatables/datatables.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+let dtInstance = null;
+
+document.getElementById('orSearch').addEventListener('click', async function () {
+  const month = document.getElementById('month').value;
+  const year  = document.getElementById('year').value;
+
+  if (!month || !year) {
+    document.getElementById('alertArea').innerHTML =
+      '<div class="alert alert-warning py-2">Please select both Month and Year.</div>';
+    return;
+  }
+
+  document.getElementById('alertArea').innerHTML     = '';
+  document.getElementById('loadingState').style.display  = 'block';
+  document.getElementById('tableWrapper').style.display  = 'none';
+  document.getElementById('emptyState').style.display    = 'none';
+
+  try {
+    const res  = await fetch(`/api/payroll/salary-report/?month=${month}&year=${year}`, {
+      headers: { 'Authorization': 'Token ' + token }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load data');
+
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (!data.records || data.records.length === 0) {
+      document.getElementById('emptyState').style.display = 'block';
+      return;
+    }
+
+    // Update report title
+    document.getElementById('reportTitle').innerHTML =
+      `<strong>Employees Salary Report for the Month of ${data.month_name} ${data.year}</strong>`;
+
+    // Populate table rows
+    const tbody = document.getElementById('salaryTableBody');
+    tbody.innerHTML = data.records.map(r => `
+      <tr class="text-center">
+        <td>${r.sno}</td>
+        <td>${r.employee_code}</td>
+        <td>${r.employee_name}</td>
+        <td>${r.department}</td>
+        <td>${r.designation}</td>
+        <td>${r.branch}</td>
+        <td>${r.pay_days}</td>
+        <td>${r.basic.toFixed(2)}</td>
+        <td>${r.bonus.toFixed(2)}</td>
+        <td>${r.hra.toFixed(2)}</td>
+        <td>${r.ca.toFixed(2)}</td>
+        <td>${r.cca.toFixed(2)}</td>
+        <td>${r.mobile.toFixed(2)}</td>
+        <td>${r.other_allowance.toFixed(2)}</td>
+        <td>${r.gross_salary.toFixed(2)}</td>
+        <td>${r.pf.toFixed(2)}</td>
+        <td>${r.esi.toFixed(2)}</td>
+        <td>${r.pt.toFixed(2)}</td>
+        <td>${r.tds.toFixed(2)}</td>
+        <td>${r.loan.toFixed(2)}</td>
+        <td>${r.advance_salary.toFixed(2)}</td>
+        <td>${r.other_deductions.toFixed(2)}</td>
+        <td>${r.total_deductions.toFixed(2)}</td>
+        <td><strong>${r.net_salary.toFixed(2)}</strong></td>
+      </tr>
+    `).join('');
+
+    // Init / re-init DataTable
+    if (dtInstance) { dtInstance.destroy(); }
+    dtInstance = $('#salaryTable').DataTable({
+      pageLength: 25,
+      // skip the title/group header rows from sorting
+      columnDefs: [{ targets: '_all', orderable: true }],
+      // start sorting from 3rd header row (index 2)
+      orderCellsTop: true,
+      fixedHeader: false,
+      destroy: true,
+    });
+
+    document.getElementById('tableWrapper').style.display = 'block';
+
+  } catch (e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('alertArea').innerHTML =
+      `<div class="alert alert-danger py-2">Error: ${e.message}</div>`;
+  }
+});
+
+// Export to Excel
+document.getElementById('exportExcel').addEventListener('click', function () {
+  if (!dtInstance) return;
+
+  const month = document.getElementById('month').value;
+  const year  = document.getElementById('year').value;
+  const monthNames = ['','January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+
+  // Build data array from table
+  const headers = ['#','Employee Code','Employee Name','Department','Designation','Branch',
+    'Pay Days','Basic','Bonus','HRA','CA','CCA','Mobile & Internet','Other Allowance',
+    'Gross Salary','PF','ESI','PT','TDS','Loan','Advance Salary','Other Deductions',
+    'Total Deduction','Net Salary'];
+
+  const rows = [];
+  $('#salaryTable tbody tr').each(function () {
+    const row = [];
+    $(this).find('td').each(function () { row.push($(this).text().trim()); });
+    rows.push(row);
+  });
+
+  const wb  = XLSX.utils.book_new();
+  const ws  = XLSX.utils.aoa_to_sheet([
+    [`Employees Salary Report - ${monthNames[parseInt(month)] || ''} ${year}`],
+    [],
+    headers,
+    ...rows
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Salary Report');
+  XLSX.writeFile(wb, `Salary_Report_${monthNames[parseInt(month)] || month}_${year}.xlsx`);
+});
+</script>
+{% endblock %}

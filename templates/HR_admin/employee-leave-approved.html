@@ -227,20 +227,17 @@ function renderTable(requests) {
             
             if (r.status === 'PENDING_MANAGER') {
                 if (r.reporting_manager_id === userId) {
+                    // This user IS the reporting manager
                     actions = `
                         <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
                         <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
                     `;
                 } else if (role === 'HR' || role === 'ADMIN') {
-                    const timeDiff = new Date() - new Date(r.created_at);
-                    if (timeDiff >= 48 * 3600 * 1000) {
-                        actions = `
-                            <button class="btn btn-warning btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> HR Override Approve</button>
-                            <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> HR Override Reject</button>
-                        `;
-                    } else {
-                        actions = `<span class="text-muted small">Pending Manager</span>`;
-                    }
+                    // HR/Admin can always approve or reject any leave — no waiting required
+                    actions = `
+                        <button class="btn btn-success btn-xs mb-1" onclick="approveLeave(${r.id})"><i class="ri-check-line"></i> Approve</button>
+                        <button class="btn btn-danger btn-xs mb-1" onclick="openRejectModal(${r.id})"><i class="ri-close-line"></i> Reject</button>
+                    `;
                 } else {
                     actions = `<span class="text-muted small">Pending Manager</span>`;
                 }

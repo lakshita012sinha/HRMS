@@ -28,11 +28,47 @@
     </style>
     {% block extra_css %}{% endblock %}
     <script>
+        // ── Auth guard (runs before body renders) ──────────────────────────────
         (function () {
-            if (!localStorage.getItem('authToken')) {
-                document.documentElement.style.display = 'none';
-                window.location.replace('/login/');
+            function guardNow() {
+                if (!localStorage.getItem('authToken')) {
+                    document.documentElement.style.display = 'none';
+                    window.location.replace('/login/');
+                    return true;
+                }
+                return false;
             }
+
+            // Block initial render if no token
+            guardNow();
+
+            // Block bfcache restores — fires when user presses Back/Forward
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) {
+                    if (guardNow()) return;
+
+                    // Re-validate token on every bfcache restore
+                    document.documentElement.style.display = 'none';
+                    var tok = localStorage.getItem('authToken');
+                    fetch('/api/accounts/profile/', {
+                        headers: { 'Authorization': 'Token ' + tok },
+                        cache: 'no-store'
+                    })
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('invalid');
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        // User-side pages: any authenticated user is allowed
+                        document.documentElement.style.display = '';
+                    })
+                    .catch(function() {
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('user');
+                        window.location.replace('/login/');
+                    });
+                }
+            });
         })();
     </script>
 </head>

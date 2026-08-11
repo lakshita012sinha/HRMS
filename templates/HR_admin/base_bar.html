@@ -34,12 +34,58 @@
     </style>
     {% block extra_css %}{% endblock %}
     <script>
-        // Auth guard in <head> — runs before body renders, prevents flash
+        // ── Auth guard (runs before body renders) ──────────────────────────────
+        // Also handles bfcache (Back-Forward Cache): when browser restores a page
+        // from bfcache via Back/Forward, 'pageshow' fires with persisted=true.
+        // We hide the page immediately and re-validate the token on every restore.
         (function () {
-            if (!localStorage.getItem('authToken')) {
-                document.documentElement.style.display = 'none';
-                window.location.replace('/login/');
+            function guardNow() {
+                if (!localStorage.getItem('authToken')) {
+                    document.documentElement.style.display = 'none';
+                    window.location.replace('/login/');
+                    return true;
+                }
+                return false;
             }
+
+            // Block initial render if no token
+            guardNow();
+
+            // Block bfcache restores — fires when user presses Back/Forward
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) {
+                    // Page was restored from bfcache — re-check immediately
+                    if (guardNow()) return;
+
+                    // Token exists but may belong to a different user now.
+                    // Hide the page and do a role check before showing anything.
+                    document.documentElement.style.display = 'none';
+                    var tok = localStorage.getItem('authToken');
+                    fetch('/api/accounts/profile/', {
+                        headers: { 'Authorization': 'Token ' + tok },
+                        cache: 'no-store'
+                    })
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('invalid');
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        var role = (data.role_name || (data.role && data.role.name) || '');
+                        if (role !== 'HR' && role !== 'ADMIN') {
+                            localStorage.removeItem('authToken');
+                            localStorage.removeItem('user');
+                            window.location.replace('/login/');
+                        } else {
+                            document.documentElement.style.display = '';
+                        }
+                    })
+                    .catch(function() {
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('user');
+                        window.location.replace('/login/');
+                    });
+                }
+            });
         })();
     </script>
 </head>
@@ -169,9 +215,35 @@
                                 </ul>
                             </div>
                         </li>
-                    </ul>
-                </div>
+                        <li class="nav-item">
+                          <a data-bs-toggle="collapse" href="#reportsMaster">
+                            <i class="ri-bar-chart-box-line"></i>
+                            <p>Reports</p>
+                            <span class="caret"></span>
+                          </a>
+                          <div class="collapse" id="reportsMaster">
+                             <ul class="nav nav-collapse">
+                               <li>
+                                <a href="/hr/employees-salary-report/">
+                                   <span class="sub-item">Employees Salary Report</span>
+                                </a>
+                               </li>
+                               <li>
+                                <a href="/hr/employees-salary-bank-report/">
+                                   <span class="sub-item">Employees Salary bank Report</span>
+                                </a>
+                                </li>
+                                <li>
+                                   <a href="/hr/employees-esic-report/">
+                                      <span class="sub-item">Employees ESIC Report</span>
+                                    </a>
+                                </li>
+                                </ul>
+                          </div>
+                        </li>
+                    </div>    
             </div>
+
         </div>
         <!-- ========== END SIDEBAR ========== -->
 

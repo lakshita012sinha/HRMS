@@ -447,16 +447,29 @@ class MonthlyAttendanceView(APIView):
         for a in att_qs:
             att_map[(a.employee_id, a.date)] = a.status
 
+        # Import Sunday Sandwich Rule utility
+        from attendance.utils import is_sunday_sandwiched
+
         result = []
         for emp in employees:
             days = {}
             present = absent = holiday_count = sunday_count = leave_count = half_day = 0
+            sandwiched_sunday_count = 0
+            
             for d in range(1, days_in_month + 1):
                 dt = date(year, month, d)
                 weekday = dt.weekday()  # 6 = Sunday
+                
                 if weekday == 6:
-                    days[d] = 'OFF'
-                    sunday_count += 1
+                    # Check if this Sunday is sandwiched by unapproved leave/absence
+                    sandwich_info = is_sunday_sandwiched(emp, dt)
+                    if sandwich_info['is_sandwiched']:
+                        days[d] = 'A'  # Show as Absent due to sandwich rule
+                        absent += 1
+                        sandwiched_sunday_count += 1
+                    else:
+                        days[d] = 'OFF'  # Normal weekly off
+                        sunday_count += 1
                 elif dt in holidays:
                     days[d] = 'H'
                     holiday_count += 1
@@ -473,7 +486,7 @@ class MonthlyAttendanceView(APIView):
                     else:
                         days[d] = ''  # not marked yet
 
-            pay_days = present + sunday_count
+            pay_days = present + sunday_count  # sandwiched Sundays not included in pay_days
             result.append({
                 'employee_id': emp.id,
                 'user_id': emp.user_id,
@@ -487,6 +500,7 @@ class MonthlyAttendanceView(APIView):
                 'half_day': half_day,
                 'pay_days': pay_days,
                 'days_in_month': days_in_month,
+                'sandwiched_sundays': sandwiched_sunday_count,
             })
 
         return Response({'month': month, 'year': year, 'days_in_month': days_in_month, 'employees': result})

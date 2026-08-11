@@ -359,53 +359,43 @@ class ApproveLeaveView(APIView):
                         message=f"Your leave request has been rejected by Manager {user.get_full_name()}. Reason: {rejection_reason}"
                     )
             elif is_hr_or_admin:
-                # HR Override
-                time_diff = timezone.now() - leave_request.created_at
-                escalation_hours = getattr(settings, 'LEAVE_ESCALATION_HOURS', 48)
-                if time_diff.total_seconds() >= escalation_hours * 3600:
-                    if action_status == 'APPROVED':
-                        leave_request.status = 'APPROVED'
-                        leave_request.approved_by = user
-                        leave_request.approved_at = timezone.now()
-                        action_name = 'HR Override Approved'
-                        notify_msg = f"HR {user.get_full_name()} override-approved the leave request."
-                        
-                        # Update balance
-                        year = leave_request.start_date.year
-                        balance = LeaveBalance.objects.get(
-                            employee=leave_request.employee,
-                            leave_type=leave_request.leave_type,
-                            year=year
-                        )
-                        balance.used += leave_request.total_days
-                        balance.calculate_available()
-                        balance.save()
-                        
-                        # Update attendance
-                        update_attendance_for_leave(leave_request)
-                        
-                        # Notify Employee
-                        LeaveNotification.objects.create(
-                            recipient=leave_request.employee,
-                            leave_request=leave_request,
-                            message=f"Your leave request has been override-approved by HR. Status is now Approved."
-                        )
-                    else:
-                        leave_request.status = 'REJECTED'
-                        leave_request.rejection_reason = rejection_reason
-                        action_name = 'HR Override Rejected'
-                        notify_msg = f"HR {user.get_full_name()} override-rejected the leave request."
-                        
-                        # Notify Employee
-                        LeaveNotification.objects.create(
-                            recipient=leave_request.employee,
-                            leave_request=leave_request,
-                            message=f"Your leave request has been override-rejected by HR. Reason: {rejection_reason}"
-                        )
+                # HR/Admin can always approve or reject any leave directly — no time restriction
+                if action_status == 'APPROVED':
+                    leave_request.status = 'APPROVED'
+                    leave_request.approved_by = user
+                    leave_request.approved_at = timezone.now()
+                    action_name = 'HR Approved'
+                    notify_msg = f"HR {user.get_full_name()} approved the leave request."
+
+                    # Update balance
+                    year = leave_request.start_date.year
+                    balance = LeaveBalance.objects.get(
+                        employee=leave_request.employee,
+                        leave_type=leave_request.leave_type,
+                        year=year
+                    )
+                    balance.used += leave_request.total_days
+                    balance.calculate_available()
+                    balance.save()
+
+                    # Update attendance
+                    update_attendance_for_leave(leave_request)
+
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been approved by HR."
+                    )
                 else:
-                    return Response(
-                        {'error': f'Cannot override yet. Manager has {escalation_hours} hours to act before HR override is active.'},
-                        status=status.HTTP_400_BAD_REQUEST
+                    leave_request.status = 'REJECTED'
+                    leave_request.rejection_reason = rejection_reason
+                    action_name = 'HR Rejected'
+                    notify_msg = f"HR {user.get_full_name()} rejected the leave request."
+
+                    LeaveNotification.objects.create(
+                        recipient=leave_request.employee,
+                        leave_request=leave_request,
+                        message=f"Your leave request has been rejected by HR. Reason: {rejection_reason}"
                     )
             else:
                 return Response(

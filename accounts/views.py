@@ -642,7 +642,14 @@ from django.shortcuts import redirect
 
 def browser_logout(request):
     logout(request)
-    return redirect('login')
+    # Flush the entire session so no session data leaks to the next user
+    request.session.flush()
+    response = redirect('login')
+    # Tell the browser to discard all cached pages immediately
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 class MyTeamView(APIView):

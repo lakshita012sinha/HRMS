@@ -147,6 +147,7 @@ async function generatePayroll(month, year, btn) {
         // Show result modal
         const generated = data.generated || [];
         const skipped   = data.skipped   || [];
+        const notEligible = data.not_eligible || [];
 
         let html = `<p class="text-success fw-bold">${data.message}</p>`;
 
@@ -156,6 +157,16 @@ async function generatePayroll(month, year, btn) {
                        <thead><tr><th>Emp Code</th><th>Name</th><th>Pay Days</th><th>Net Salary</th></tr></thead>
                        <tbody>${generated.map(g =>
                            `<tr><td>${g.employee}</td><td>${g.name}</td><td>${g.pay_days}</td><td>₹${parseFloat(g.net_salary).toFixed(2)}</td></tr>`
+                       ).join('')}</tbody>
+                     </table>`;
+        }
+
+        if (notEligible.length) {
+            html += `<p class="mb-1"><strong>Not Eligible (${notEligible.length}):</strong> <small class="text-muted">Insufficient worked days</small></p>
+                     <table class="table table-sm table-bordered mb-3">
+                       <thead><tr><th>Emp Code</th><th>Name</th><th>Worked Days</th><th>Required</th><th>Reason</th></tr></thead>
+                       <tbody>${notEligible.map(n =>
+                           `<tr class="table-warning"><td>${n.employee}</td><td>${n.name}</td><td class="text-danger fw-bold">${n.worked_days}</td><td>${n.required_days}</td><td class="text-muted small">${n.reason}</td></tr>`
                        ).join('')}</tbody>
                      </table>`;
         }

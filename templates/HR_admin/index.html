@@ -113,7 +113,7 @@
                     <div class="col col-stats ms-3">
                         <div class="numbers">
                             <p class="card-category">Total Department</p>
-                            <h4 class="card-title">10</h4>
+                            <h4 class="card-title" id="statTotalDepartment">-</h4>
                         </div>
                     </div>
                 </div>
@@ -250,6 +250,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             const count = Array.isArray(data) ? data.length : (data.count || (data.results && data.results.length) || 0);
             document.getElementById('statLeaveRequest').textContent = count;
         }
+    } catch(e) { console.error(e); }
+
+    // Total departments count — fetch all pages
+    try {
+        let total = 0, nextUrl = '/api/accounts/departments/';
+        while (nextUrl) {
+            const res = await fetch(nextUrl, { headers: { 'Authorization': 'Token ' + token } });
+            if (!res.ok) break;
+            const data = await res.json();
+            if (Array.isArray(data)) { total += data.length; nextUrl = null; }
+            else { total += (data.results || []).length; nextUrl = data.next || null; }
+        }
+        document.getElementById('statTotalDepartment').textContent = total;
     } catch(e) { console.error(e); }
 
     // ── Upcoming Holidays ────────────────────────────────────────────────────

@@ -238,20 +238,27 @@ document.getElementById('employeeSelect').addEventListener('change', async funct
 /* ── load all dropdowns ──────────────────────────────────────────── */
 async function loadDropdowns() {
     try {
-        const [eRes, dRes] = await Promise.all([
-            fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + TOKEN } }),
-            fetch('/api/accounts/designations/', { headers: { 'Authorization': 'Token ' + TOKEN } })
-        ]);
+        // Fetch employees (single call — no pagination issue for small lists)
+        const eRes = await fetch('/api/accounts/employees/', { headers: { 'Authorization': 'Token ' + TOKEN } });
         const emps = await eRes.json();
         const eSel = document.getElementById('employeeSelect');
         (Array.isArray(emps) ? emps : (emps.results || [])).forEach(function(e) {
             const name = ((e.first_name || '') + (e.last_name ? ' ' + e.last_name : '')).trim().toUpperCase() || e.user_id;
             eSel.innerHTML += '<option value="' + e.id + '">' + name + ' (' + e.user_id + ')</option>';
         });
-        if (dRes.ok) {
-            const depts = await dRes.json();
+
+        // Fetch designations — loop all pages to get complete list
+        let desigs = [], nextDesigUrl = '/api/accounts/designations/?ordering=name';
+        while (nextDesigUrl) {
+            const dRes = await fetch(nextDesigUrl, { headers: { 'Authorization': 'Token ' + TOKEN } });
+            if (!dRes.ok) break;
+            const dData = await dRes.json();
+            if (Array.isArray(dData)) { desigs = desigs.concat(dData); nextDesigUrl = null; }
+            else { desigs = desigs.concat(dData.results || []); nextDesigUrl = dData.next || null; }
+        }
+        if (desigs.length) {
             const dSel  = document.getElementById('designation');
-            (Array.isArray(depts) ? depts : (depts.results || [])).forEach(function(d) {
+            desigs.forEach(function(d) {
                 dSel.innerHTML += '<option value="' + d.name + '">' + d.name + '</option>';
             });
         }

@@ -444,16 +444,22 @@
         document.getElementById('empPermPin').textContent = val(profile.permanent_pincode);
 
         // Professional tab
-        const bdd = `${val(employment.branch)} | ${val(employment.department)} | ${val(employment.designation)}`;
         const gradeDisplay = employment.grade_level
-          ? `${employment.grade_level.name} <small class="text-muted">(${employment.grade_level.ctc_range})</small>`
+          ? employment.grade_level.name
           : val(employment.grade);
+        // Reporting officer: strip the "- EMP0001" suffix and show only the name
+        const reportingOfficerRaw = employment.reporting_officer || '';
+        const reportingOfficer = reportingOfficerRaw
+          ? reportingOfficerRaw.replace(/\s*-\s*[A-Z0-9]+$/, '').trim() || reportingOfficerRaw
+          : '-';
         document.getElementById('professionalTableBody').innerHTML = `
             <tr class="text-center">
-                <td>${bdd}</td>
+                <td>${val(employment.branch)}</td>
+                <td>${val(employment.department)}</td>
+                <td>${val(employment.designation)}</td>
                 <td>${gradeDisplay}</td>
                 <td>${val(employment.employment_type)}</td>
-                <td>${val(employment.reporting_officer)}</td>
+                <td>${reportingOfficer}</td>
                 <td>${formatDate(employment.effective_date)}</td>
             </tr>`;
 

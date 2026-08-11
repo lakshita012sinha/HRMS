@@ -37,6 +37,7 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
     leave_type_name = serializers.CharField(source='leave_type.name', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
     reporting_manager_id = serializers.SerializerMethodField()
+    employee_role = serializers.SerializerMethodField()
     approval_history = LeaveApprovalHistorySerializer(many=True, read_only=True)
     
     class Meta:
@@ -45,7 +46,7 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
                   'leave_type_name', 'start_date', 'end_date', 'total_days', 'reason',
                   'status', 'approved_by', 'approved_by_name', 'approved_at',
                   'rejection_reason', 'created_at', 'updated_at',
-                  'reporting_manager_id', 'approval_history', 'document']
+                  'reporting_manager_id', 'employee_role', 'approval_history', 'document']
         read_only_fields = ['employee', 'total_days', 'status', 'approved_by', 
                            'approved_at', 'created_at', 'updated_at']
     
@@ -60,6 +61,13 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return None
+
+    def get_employee_role(self, obj):
+        """Return the role name of the leave applicant."""
+        try:
+            return obj.employee.role.name if obj.employee.role else None
+        except Exception:
+            return None
 
     def validate(self, attrs):
         """Validate leave request"""

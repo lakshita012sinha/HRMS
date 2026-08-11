@@ -208,17 +208,19 @@
     });
     
     // Check if already logged in — validate token against API first
-    window.addEventListener('load', async function() {
+    // Also handles bfcache: if Back is pressed to reach this page, re-check.
+    async function checkLoginState() {
         const token = localStorage.getItem('authToken');
         if (!token) return; // no token, show login form
 
         try {
             const res = await fetch('/api/accounts/profile/', {
-                headers: { 'Authorization': 'Token ' + token }
+                headers: { 'Authorization': 'Token ' + token },
+                cache: 'no-store'
             });
             if (res.ok) {
                 // Token is valid — redirect to dashboard
-                window.location.href = '/dashboard/';
+                window.location.replace('/dashboard/');
             } else {
                 // Token expired or invalid — clear it and show login form
                 localStorage.removeItem('authToken');
@@ -228,6 +230,15 @@
             // Network error — clear token and show login form
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
+        }
+    }
+
+    window.addEventListener('load', checkLoginState);
+
+    // Handle bfcache restore — fires when Back/Forward button is used
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+            checkLoginState();
         }
     });
 </script>

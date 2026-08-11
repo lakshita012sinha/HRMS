@@ -526,6 +526,7 @@ class GenerateMonthlyPayrollView(APIView):
         from attendance.models import Attendance, Holiday
         from datetime import date, timedelta
         from .models import PayrollSettings
+        from attendance.utils import count_sandwiched_sundays
 
         # Get minimum days setting
         payroll_settings = PayrollSettings.get_settings()
@@ -649,8 +650,14 @@ class GenerateMonthlyPayrollView(APIView):
                 if dt.weekday() != 6 and dt not in worked_dates:
                     paid_leave_days += 1
             
-            # Payable days = present + sundays + paid leaves (used for salary calculation)
-            pay_days = present + sundays + paid_leave_days
+            # ── Sunday Sandwich Rule ────────────────────────────────────────────
+            # Count how many Sundays are sandwiched by unapproved leave/absence
+            # These Sundays should NOT be counted as payable days
+            sandwiched_sunday_count = count_sandwiched_sundays(emp, year, month)
+            effective_sundays = sundays - sandwiched_sunday_count
+            
+            # Payable days = present + effective_sundays + paid leaves (used for salary calculation)
+            pay_days = present + effective_sundays + paid_leave_days
 
             # Cap at days_in_month
             pay_days = min(pay_days, days_in_month)
@@ -686,7 +693,7 @@ class GenerateMonthlyPayrollView(APIView):
                 net_salary=computed['net_salary'],
                 status='GENERATED',
                 paid_days=float(pay_days),
-                remarks=f'Worked: {worked_days} days, Payable: {pay_days}/{days_in_month} (Present:{present} + Sundays:{sundays} + PaidLeave:{paid_leave_days})'
+                remarks=f'Worked: {worked_days} days, Payable: {pay_days}/{days_in_month} (Present:{present} + Sundays:{effective_sundays}/{sundays} + PaidLeave:{paid_leave_days})'
             )
             generated.append({
                 'employee': emp.user_id,
@@ -694,6 +701,7 @@ class GenerateMonthlyPayrollView(APIView):
                 'worked_days': float(worked_days),
                 'pay_days': float(pay_days),
                 'net_salary': float(sal.net_salary),
+                'sandwiched_sundays': sandwiched_sunday_count,
             })
 
         return Response({
@@ -774,3 +782,230 @@ class EmployeeTDSDetailView(generics.RetrieveUpdateDestroyAPIView):
         """Soft delete by setting is_active to False"""
         instance.is_active = False
         instance.save()
+
+
+# ── Report API Views ──────────────────────────────────────────────────────────
+
+MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December']
+
+
+class SalaryReportView(APIView):
+    """
+    GET /api/payroll/salary-report/?month=7&year=2026
+    Returns full salary breakdown for all eligible employees for a given month/year.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.role or request.user.role.name not in ['HR', 'ADMIN']:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        month = request.query_params.get('month')
+        year  = request.query_params.get('year')
+        if not month or not year:
+            return Response({'error': 'month and year are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            month, year = int(month), int(year)
+        except ValueError:
+            return Response({'error': 'month and year must be integers'}, status=status.HTTP_400_BAD_REQUEST)
+
+        salaries = (
+            Salary.objects
+            .filter(month=month, year=year, status__in=['GENERATED', 'PAID'])
+            .select_related(
+                'employee',
+                'employee__employee_profile__employment_details__branch',
+                'employee__employee_profile__employment_details__department',
+                'employee__employee_profile__employment_details__designation',
+            )
+            .order_by('employee__user_id')
+        )
+
+        result = []
+        for idx, s in enumerate(salaries, start=1):
+            emp = s.employee
+            try:
+                ed = emp.employee_profile.employment_details
+                department  = ed.department.name  if ed.department  else ''
+                designation = ed.designation.name if ed.designation else ''
+                branch      = ed.branch.name      if ed.branch      else ''
+            except Exception:
+                department = designation = branch = ''
+
+            result.append({
+                'sno':              idx,
+                'employee_code':    emp.user_id,
+                'employee_name':    f"{emp.first_name} {emp.last_name}".strip().upper(),
+                'department':       department,
+                'designation':      designation,
+                'branch':           branch,
+                'pay_days':         float(s.paid_days),
+                'basic':            float(s.basic_salary),
+                'bonus':            float(s.bonus),
+                'hra':              float(s.hra),
+                'ca':               float(s.ca),
+                'cca':              float(s.cca),
+                'mobile':           float(s.mobile),
+                'other_allowance':  0.0,            # not stored separately
+                'gross_salary':     float(s.gross_salary),
+                'pf':               float(s.pf_employee),
+                'esi':              float(s.esi_employee),
+                'pt':               0.0,            # Professional Tax – not in current model
+                'tds':              float(s.tds),
+                'loan':             0.0,
+                'advance_salary':   0.0,
+                'other_deductions': float(s.other_deductions),
+                'total_deductions': float(s.total_deductions),
+                'net_salary':       float(s.net_salary),
+                'status':           s.status,
+            })
+
+        return Response({
+            'month':      month,
+            'year':       year,
+            'month_name': MONTH_NAMES[month],
+            'count':      len(result),
+            'records':    result,
+        })
+
+
+class SalaryBankReportView(APIView):
+    """
+    GET /api/payroll/salary-bank-report/?month=7&year=2026
+    Returns bank-transfer details for salary payment for a given month/year.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.role or request.user.role.name not in ['HR', 'ADMIN']:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        month = request.query_params.get('month')
+        year  = request.query_params.get('year')
+        if not month or not year:
+            return Response({'error': 'month and year are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            month, year = int(month), int(year)
+        except ValueError:
+            return Response({'error': 'month and year must be integers'}, status=status.HTTP_400_BAD_REQUEST)
+
+        salaries = (
+            Salary.objects
+            .filter(month=month, year=year, status__in=['GENERATED', 'PAID'])
+            .select_related(
+                'employee',
+                'employee__employee_profile__bank_details',
+            )
+            .order_by('employee__user_id')
+        )
+
+        result = []
+        total_amount = 0.0
+        for idx, s in enumerate(salaries, start=1):
+            emp = s.employee
+            try:
+                bd = emp.employee_profile.bank_details
+                bank_name      = bd.bank_name
+                account_number = bd.account_number
+                ifsc_code      = bd.ifsc_code
+                account_type   = 'Savings'
+            except Exception:
+                bank_name = account_number = ifsc_code = account_type = ''
+
+            payment_date = s.payment_date.strftime('%d-%b-%Y') if s.payment_date else ''
+            net = float(s.net_salary)
+            total_amount += net
+
+            result.append({
+                'sno':            idx,
+                'employee_code':  emp.user_id,
+                'employee_name':  f"{emp.first_name} {emp.last_name}".strip().upper(),
+                'bank_name':      bank_name,
+                'account_number': account_number,
+                'ifsc_code':      ifsc_code,
+                'account_type':   account_type,
+                'payment_date':   payment_date,
+                'net_salary':     net,
+                'narration':      f'SALARY {MONTH_NAMES[month].upper()} {year}',
+                'status':         s.status,
+            })
+
+        return Response({
+            'month':        month,
+            'year':         year,
+            'month_name':   MONTH_NAMES[month],
+            'count':        len(result),
+            'total_amount': round(total_amount, 2),
+            'records':      result,
+        })
+
+
+class ESICReportView(APIView):
+    """
+    GET /api/payroll/esic-report/?month=7&year=2026
+    Returns ESIC contribution details for employees eligible for ESIC for a given month/year.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.role or request.user.role.name not in ['HR', 'ADMIN']:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        month = request.query_params.get('month')
+        year  = request.query_params.get('year')
+        if not month or not year:
+            return Response({'error': 'month and year are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            month, year = int(month), int(year)
+        except ValueError:
+            return Response({'error': 'month and year must be integers'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Only include employees who actually have ESIC deducted (esi_employee > 0)
+        salaries = (
+            Salary.objects
+            .filter(month=month, year=year, status__in=['GENERATED', 'PAID'],
+                    esi_employee__gt=0)
+            .select_related(
+                'employee',
+                'employee__employee_profile',
+            )
+            .order_by('employee__user_id')
+        )
+
+        result = []
+        for idx, s in enumerate(salaries, start=1):
+            emp = s.employee
+            esic_number = ''
+            try:
+                esic_number = emp.employee_profile.esic_number or ''
+            except Exception:
+                pass
+
+            total_esic = float(s.esi_employee) + float(s.esi_employer)
+
+            result.append({
+                'sno':                  idx,
+                'employee_code':        emp.user_id,
+                'employee_name':        f"{emp.first_name} {emp.last_name}".strip().upper(),
+                'esic_number':          esic_number,
+                'no_of_days':           float(s.paid_days),
+                'esic_wages':           float(s.gross_salary),
+                'employee_esic':        float(s.esi_employee),
+                'employer_esic':        float(s.esi_employer),
+                'total_esic':           round(total_esic, 2),
+                'zero_wages_reason':    '' if float(s.gross_salary) > 0 else 'No Wages',
+                'last_working_day':     '',
+                'status':               s.status,
+            })
+
+        return Response({
+            'month':      month,
+            'year':       year,
+            'month_name': MONTH_NAMES[month],
+            'count':      len(result),
+            'records':    result,
+        })

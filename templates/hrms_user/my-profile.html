@@ -197,12 +197,13 @@
                                                 <th>Designation</th>
                                                 <th>Grade</th>
                                                 <th>Employment Type</th>
-                                                <th>Date of Joining</th>
+                                                <th>Reporting Officer</th>
+                                                <th>Effective Date</th>
                                             </tr>
                                         </thead>
                                         <tbody id="professionalBody">
                                             <tr>
-                                                <td colspan="6" class="text-center text-muted">Loading...</td>
+                                                <td colspan="7" class="text-center text-muted">Loading...</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -388,12 +389,20 @@
         document.getElementById('bi-pin-perm').textContent = val(p.permanent_pincode);
 
         // Professional tab
+        const gradeDisplay = ed.grade_level ? ed.grade_level.name : val(ed.grade);
+        const reportingOfficerRaw = ed.reporting_officer || '';
+        const reportingOfficer = reportingOfficerRaw
+          ? reportingOfficerRaw.replace(/\s*-\s*[A-Z0-9]+$/, '').trim() || reportingOfficerRaw
+          : '-';
         document.getElementById('professionalBody').innerHTML = `
         <tr class="text-center">
-            <td>${val(ed.branch)} | ${val(ed.department)} | ${val(ed.designation)}</td>
-            <td>${val(ed.grade)}</td>
+            <td>${val(ed.branch)}</td>
+            <td>${val(ed.department)}</td>
+            <td>${val(ed.designation)}</td>
+            <td>${gradeDisplay}</td>
             <td>${val(ed.employment_type)}</td>
-            <td>${fmtDate(p.date_of_joining)}</td>
+            <td>${reportingOfficer}</td>
+            <td>${fmtDate(ed.effective_date)}</td>
         </tr>`;
 
         // Documents tab

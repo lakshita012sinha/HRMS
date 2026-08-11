@@ -6,6 +6,7 @@ from .views import (
     CreateCTCSalaryStructureView, GenerateMonthlyPayrollView,
     SalaryGradeListCreateView, SalaryGradeDetailView,
     EmployeeTDSListCreateView, EmployeeTDSDetailView,
+    SalaryReportView, SalaryBankReportView, ESICReportView,
 )
 
 urlpatterns = [
@@ -29,4 +30,9 @@ urlpatterns = [
     # TDS
     path('tds/', EmployeeTDSListCreateView.as_view(), name='tds-list-create'),
     path('tds/<int:pk>/', EmployeeTDSDetailView.as_view(), name='tds-detail'),
+
+    # Reports
+    path('salary-report/', SalaryReportView.as_view(), name='salary-report'),
+    path('salary-bank-report/', SalaryBankReportView.as_view(), name='salary-bank-report'),
+    path('esic-report/', ESICReportView.as_view(), name='esic-report'),
 ]
